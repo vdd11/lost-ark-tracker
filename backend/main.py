@@ -49,3 +49,18 @@ def get_characters():
     db.close()
 
     return characters
+@app.delete("/characters/{character_id}")
+def delete_character(character_id: int):
+    db = SessionLocal()
+
+    character = db.query(Character).filter(Character.id == character_id).first()
+
+    if character is None:
+        db.close()
+        return {"message": "Character not found"}
+
+    db.delete(character)
+    db.commit()
+    db.close()
+
+    return {"message": "Character deleted"}

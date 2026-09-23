@@ -46,6 +46,16 @@ export default function Home() {
       });
   }
 
+  function deleteCharacter(id: number) {
+    fetch(`http://127.0.0.1:8000/characters/${id}`, {
+      method: "DELETE",
+    })
+      .then((response) => response.json())
+      .then(() => {
+        fetchCharacters();
+      });
+  }
+
   return (
     <main className="p-8">
       <h1 className="mb-8 text-3xl font-bold">Lost Ark Tracker</h1>
@@ -87,6 +97,13 @@ export default function Home() {
         <div key={character.id} className="mb-6">
           <p className="font-semibold">{character.name}</p>
           <p>{character.class_name}</p>
+
+          <button
+            onClick={() => deleteCharacter(character.id)}
+            className="mt-2 border px-3 py-1"
+          >
+            Delete
+          </button>
         </div>
       ))}
     </main>
