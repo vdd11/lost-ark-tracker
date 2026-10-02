@@ -11,27 +11,34 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, add_missing_columns, engine, get_db
-from models import Character, CharacterTask, Completion, GoldEntry, RaidDifficulty, Task
+from models import Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
 from resets import daily_reset_before, period_for, utc_now, week_of, weekly_reset_before
 from schemas import (
     AssignTask,
     CharacterCreate,
     CharacterRead,
     CharacterUpdate,
+    CompletionUpdate,
     DifficultyCreate,
     DifficultyRead,
     DifficultyUpdate,
+    EventRaidCreate,
+    EventTemplate,
+    GemEntryCreate,
+    GemEntryRead,
     GoldEntryCreate,
     GoldEntryRead,
     RestState,
+    Run,
     RestUpdate,
     TaskCreate,
     TaskRead,
     TaskUpdate,
     TrackerState,
+    WeeklyGems,
     WeeklyGold,
 )
-from raids import GOLD_RAIDS_PER_WEEK, best_difficulty, sync_raid_catalog
+from raids import EVENT_NOTE, EXTREME_BASES, EXTREME_TEMPLATE, GOLD_RAIDS_PER_WEEK, best_difficulty, sync_catalog
 from rest import RestRules, rest_at_start_of, run_is_rested, start_value_for_shown
 from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
@@ -47,7 +54,7 @@ async def lifespan(app: FastAPI):
         # Databases from before rest tracking get the default rules once.
         if ("tasks", "rest_max") in added_columns:
             apply_default_rest_rules(db)
-        sync_raid_catalog(db)
+        sync_catalog(db)
     yield
 
 
@@ -133,7 +140,11 @@ def create_character(character_data: CharacterCreate, db: Session = Depends(get_
     # New characters start with every daily and weekly; raids are opted into
     # per character since they depend on item level.
     for task in db.query(Task).filter(Task.category.in_(["daily", "weekly"]), Task.archived.is_(False)):
-        db.add(CharacterTask(character_id=character.id, task_id=task.id))
+        db.add(CharacterTask(
+            character_id=character.id,
+            task_id=task.id,
+            difficulty_id=choose_difficulty(db, task, character, None),
+        ))
 
     for choice in {c.task_id: c for c in character_data.raids}.values():
         task = get_or_404(db, Task, choice.task_id)
@@ -154,16 +165,31 @@ def create_character(character_data: CharacterCreate, db: Session = Depends(get_
 @router.patch("/characters/{character_id}", response_model=CharacterRead)
 def update_character(character_id: int, changes: CharacterUpdate, db: Session = Depends(get_db)):
     character = get_or_404(db, Character, character_id)
+    old_item_level = character.item_level
 
     for field, value in changes.model_dump(exclude_unset=True).items():
         setattr(character, field, value)
     if not character.reserved_for:
         character.reserved_for = None
 
+    if character.item_level != old_item_level:
+        follow_item_level(db, character, old_item_level)
+
     db.commit()
     db.refresh(character)
 
     return read_character(db, character)
+
+
+def follow_item_level(db: Session, character: Character, old_item_level: float):
+    """Move assignments that were on the best tier for the old item level to the new best."""
+    for assignment in db.query(CharacterTask).filter_by(character_id=character.id):
+        if assignment.difficulty_id is None:
+            continue
+        difficulties = db.query(RaidDifficulty).filter_by(task_id=assignment.task_id).all()
+        old_best = best_difficulty(difficulties, old_item_level)
+        if old_best is not None and old_best.id == assignment.difficulty_id:
+            assignment.difficulty_id = best_difficulty(difficulties, character.item_level).id
 
 
 @router.delete("/characters/{character_id}", status_code=204)
@@ -291,16 +317,17 @@ def get_tracker(db: Session = Depends(get_db)):
     weekly_reset = weekly_reset_before(now)
 
     rows = (
-        db.query(Completion.character_id, Completion.task_id, Completion.period, Task.category)
+        db.query(Completion, Task.category)
         .join(Task, Task.id == Completion.task_id)
         .filter(Completion.character_id.is_not(None))
         .filter(Completion.period >= weekly_reset.date())
         .all()
     )
-    completed = [
-        (character_id, task_id)
-        for character_id, task_id, period, category in rows
-        if period == period_for(category, now)
+    current = [c for c, category in rows if c.period == period_for(category, now)]
+    completed = [(c.character_id, c.task_id) for c in current]
+    runs = [
+        Run(character_id=c.character_id, task_id=c.task_id, difficulty_id=c.difficulty_id, count=c.count)
+        for c in current
     ]
 
     return TrackerState(
@@ -309,6 +336,7 @@ def get_tracker(db: Session = Depends(get_db)):
         next_daily_reset=daily_reset + timedelta(days=1),
         next_weekly_reset=weekly_reset + timedelta(days=7),
         completed=completed,
+        runs=runs,
         rest=current_rest(db, daily_reset.date()),
     )
 
@@ -384,37 +412,82 @@ def set_rest(character_id: int, task_id: int, update: RestUpdate, db: Session = 
 
 
 @router.put("/characters/{character_id}/tasks/{task_id}/completion", status_code=204)
-def complete_task(character_id: int, task_id: int, db: Session = Depends(get_db)):
+def complete_task(
+    character_id: int,
+    task_id: int,
+    body: CompletionUpdate | None = None,
+    db: Session = Depends(get_db),
+):
+    """Check a task off, or update this period's run (difficulty, run count).
+
+    Works for raids the character doesn't usually run, so extra clears count.
+    """
     character = get_or_404(db, Character, character_id)
     task = get_or_404(db, Task, task_id)
+    body = body or CompletionUpdate()
 
     now = utc_now()
     period = period_for(task.category, now)
-
     existing = (
         db.query(Completion)
         .filter_by(character_id=character_id, task_id=task_id, period=period)
         .first()
     )
+
+    if body.count == 0:
+        if existing is not None:
+            db.delete(existing)
+            db.commit()
+        return Response(status_code=204)
+
+    if task.roster_limited:
+        other = (
+            db.query(Character.name)
+            .join(Completion, Completion.character_id == Character.id)
+            .filter(Completion.task_id == task_id, Completion.period == period, Character.id != character_id)
+            .first()
+        )
+        if other is not None:
+            raise HTTPException(status_code=409, detail=f"{task.name} was already cleared this week by {other.name}")
+
     if existing is None:
-        db.add(Completion(
+        existing = Completion(
             character_id=character_id,
             task_id=task_id,
             period=period,
             completed_at=now,
-            gold=completion_gold(db, character, task, period),
-        ))
-        db.commit()
+            difficulty_id=run_difficulty(db, task, character, body.difficulty_id),
+            count=body.count or 1,
+        )
+        db.add(existing)
+        db.flush()
+        existing.gold = completion_gold(db, character, task, existing)
+    else:
+        if body.count is not None:
+            existing.count = body.count
+        # Only a different difficulty re-prices a clear; history stays as recorded.
+        if body.difficulty_id is not None and body.difficulty_id != existing.difficulty_id:
+            existing.difficulty_id = run_difficulty(db, task, character, body.difficulty_id)
+            existing.gold = completion_gold(db, character, task, existing)
+    db.commit()
 
     return Response(status_code=204)
 
 
-def completion_gold(db: Session, character: Character, task: Task, period) -> int:
+def run_difficulty(db: Session, task: Task, character: Character, requested: int | None) -> int | None:
+    """The requested difficulty, else the usual one, else the best for the item level."""
+    if requested is None:
+        assignment = db.get(CharacterTask, (character.id, task.id))
+        if assignment is not None and assignment.difficulty_id is not None:
+            return assignment.difficulty_id
+    return choose_difficulty(db, task, character, requested)
+
+
+def completion_gold(db: Session, character: Character, task: Task, completion: Completion) -> int:
     """Gold a clear pays right now, snapshotted onto the completion."""
     gold = task.gold
-    assignment = db.get(CharacterTask, (character.id, task.id))
-    if assignment is not None and assignment.difficulty_id is not None:
-        difficulty = db.get(RaidDifficulty, assignment.difficulty_id)
+    if completion.difficulty_id is not None:
+        difficulty = db.get(RaidDifficulty, completion.difficulty_id)
         gold = (difficulty.gold or 0) if difficulty else 0
 
     if task.gold_for_everyone:
@@ -428,7 +501,8 @@ def completion_gold(db: Session, character: Character, task: Task, period) -> in
             .join(Task, Task.id == Completion.task_id)
             .filter(
                 Completion.character_id == character.id,
-                Completion.period == period,
+                Completion.period == completion.period,
+                Completion.id != completion.id,
                 Completion.gold > 0,
                 Task.category == "raid",
                 Task.gold_for_everyone.is_(False),
@@ -455,6 +529,15 @@ def uncomplete_task(character_id: int, task_id: int, db: Session = Depends(get_d
 
 # ---------- Gold ----------
 
+def to_naive_utc(moment: datetime | None) -> datetime:
+    """Entries default to now; explicit times are stored as naive UTC."""
+    if moment is None:
+        return utc_now()
+    if moment.tzinfo is not None:
+        return moment.astimezone(timezone.utc).replace(tzinfo=None)
+    return moment
+
+
 @router.get("/gold-entries", response_model=list[GoldEntryRead])
 def get_gold_entries(limit: int = Query(default=100, le=1000), db: Session = Depends(get_db)):
     return (
@@ -471,12 +554,7 @@ def create_gold_entry(entry_data: GoldEntryCreate, db: Session = Depends(get_db)
         get_or_404(db, Character, entry_data.character_id)
 
     values = entry_data.model_dump()
-    earned_at = values.pop("earned_at")
-    if earned_at is None:
-        earned_at = utc_now()
-    elif earned_at.tzinfo is not None:
-        earned_at = earned_at.astimezone(timezone.utc).replace(tzinfo=None)
-
+    earned_at = to_naive_utc(values.pop("earned_at"))
     entry = GoldEntry(**values, earned_at=earned_at)
     db.add(entry)
     db.commit()
@@ -523,6 +601,106 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
 
     for bucket in totals.values():
         bucket.total = bucket.raid_gold + bucket.other_gold
+
+    return [totals[week] for week in week_starts]
+
+
+# ---------- Event raids ----------
+
+@router.get("/event-raids/template", response_model=EventTemplate)
+def get_event_template():
+    return EventTemplate(
+        bases=EXTREME_BASES,
+        difficulties=[
+            DifficultyCreate(name=name, min_item_level=item_level, gold=gold)
+            for name, item_level, gold in EXTREME_TEMPLATE
+        ],
+    )
+
+
+@router.post("/event-raids", response_model=TaskRead, status_code=201)
+def create_event_raid(data: EventRaidCreate, db: Session = Depends(get_db)):
+    """A limited-time raid such as "Act 3 Extreme": one clear per roster, gold for anyone."""
+    task = Task(
+        name=data.name,
+        category="raid",
+        ends_on=data.ends_on,
+        roster_limited=True,
+        gold_for_everyone=True,
+        note=EVENT_NOTE,
+        position=next_position(db, Task),
+    )
+    db.add(task)
+    db.flush()
+    for position, difficulty in enumerate(data.difficulties):
+        db.add(RaidDifficulty(task_id=task.id, position=position, **difficulty.model_dump()))
+    db.commit()
+    db.refresh(task)
+    return read_task(db, task)
+
+
+# ---------- Gems ----------
+
+def lv1_equivalent(level: int, count: int) -> int:
+    """Gems combine 3 to 1, so a level-n gem is worth 3^(n-1) level-1 gems."""
+    return count * 3 ** (level - 1)
+
+
+@router.get("/gem-entries", response_model=list[GemEntryRead])
+def get_gem_entries(limit: int = Query(default=100, le=1000), db: Session = Depends(get_db)):
+    return (
+        db.query(GemEntry)
+        .order_by(GemEntry.earned_at.desc(), GemEntry.id.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+@router.post("/gem-entries", response_model=GemEntryRead, status_code=201)
+def create_gem_entry(data: GemEntryCreate, db: Session = Depends(get_db)):
+    if data.character_id is not None:
+        get_or_404(db, Character, data.character_id)
+    gems = {str(level): count for level, count in sorted(data.gems.items()) if count > 0}
+    if not gems:
+        raise HTTPException(status_code=400, detail="Enter at least one gem")
+
+    entry = GemEntry(
+        source=data.source,
+        character_id=data.character_id,
+        gems=gems,
+        note=data.note,
+        earned_at=to_naive_utc(data.earned_at),
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+@router.delete("/gem-entries/{entry_id}", status_code=204)
+def delete_gem_entry(entry_id: int, db: Session = Depends(get_db)):
+    db.delete(get_or_404(db, GemEntry, entry_id))
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.get("/gems/weekly", response_model=list[WeeklyGems])
+def get_weekly_gems(weeks: int = Query(default=12, ge=1, le=104), db: Session = Depends(get_db)):
+    """Gems per reset week, oldest first, in level-1 equivalents."""
+    current_week = week_of(utc_now())
+    week_starts = [current_week - timedelta(weeks=i) for i in reversed(range(weeks))]
+    first_reset = weekly_reset_before(utc_now()) - timedelta(weeks=weeks - 1)
+    totals = {week: WeeklyGems(week=week, total=0, by_source={}, by_level={}) for week in week_starts}
+
+    for entry in db.query(GemEntry).filter(GemEntry.earned_at >= first_reset):
+        bucket = totals.get(week_of(entry.earned_at))
+        if bucket is None:
+            continue
+        for level, count in entry.gems.items():
+            value = lv1_equivalent(int(level), count)
+            bucket.total += value
+            bucket.by_source[entry.source] = bucket.by_source.get(entry.source, 0) + value
+            bucket.by_level[int(level)] = bucket.by_level.get(int(level), 0) + count
 
     return [totals[week] for week in week_starts]
 
@@ -585,6 +763,7 @@ BACKUP_MODELS = {
     "character_tasks": CharacterTask,
     "completions": Completion,
     "gold_entries": GoldEntry,
+    "gem_entries": GemEntry,
 }
 BACKUP_FORMAT = 1
 

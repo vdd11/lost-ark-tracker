@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -44,10 +44,13 @@ class Task(Base):
     roster_limited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     gold_for_everyone: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Tracked as a number of runs per period instead of a checkbox (Ebony Cube).
+    counted: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
 
 class RaidDifficulty(Base):
-    """One difficulty of a raid (Normal, Hard, ...), with its own gold and item level."""
+    """One tier of a task: a raid difficulty (Normal, Hard, ...) or a cube unlock,
+    each with its own item level and gold."""
 
     __tablename__ = "raid_difficulties"
 
@@ -97,6 +100,10 @@ class Completion(Base):
     period: Mapped[date] = mapped_column(Date)
     completed_at: Mapped[datetime] = mapped_column(DateTime)
     gold: Mapped[int] = mapped_column(Integer, default=0)
+    # The difficulty actually run, which can differ from the usual one.
+    difficulty_id: Mapped[int | None] = mapped_column(ForeignKey("raid_difficulties.id"), nullable=True)
+    # Runs this period, for counted tasks.
+    count: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
 
 class GoldEntry(Base):
@@ -108,5 +115,19 @@ class GoldEntry(Base):
     source: Mapped[str] = mapped_column(String(50))
     amount: Mapped[int] = mapped_column(Integer)
     character_id: Mapped[int | None] = mapped_column(ForeignKey("characters.id"), nullable=True)
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    earned_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class GemEntry(Base):
+    """Gems from one drop or session, e.g. {"1": 3, "2": 1} for three Lv1 and one Lv2."""
+
+    __tablename__ = "gem_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    source: Mapped[str] = mapped_column(String(50))
+    character_id: Mapped[int | None] = mapped_column(ForeignKey("characters.id"), nullable=True)
+    # Gem level (as a string, JSON keys) -> count.
+    gems: Mapped[dict] = mapped_column(JSON)
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
     earned_at: Mapped[datetime] = mapped_column(DateTime)

@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
+import CountCell from "@/components/CountCell";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
 import {
+  canRun,
   difficultyOf,
   formatItemLevel,
-  formatShortGold,
   GOLD_RAIDS_PER_WEEK,
   isActiveRaid,
   paidRaids,
@@ -21,10 +23,10 @@ import {
   byPosition,
   CATEGORIES,
   Character,
-  Difficulty,
   formatGold,
   parseUtc,
   RestState,
+  Run,
   send,
   Task,
   TrackerState,
@@ -60,10 +62,13 @@ export default function TrackerPage() {
       .catch((e) => setError(describeError(e)));
   }, []);
 
-  // Rest values depend on check-offs, so re-read them after each change.
-  const refreshRest = useCallback(() => {
+  // Rest, runs and roster limits depend on check-offs, so re-read after changes.
+  const refreshTracker = useCallback(() => {
     api<TrackerState>("/tracker")
-      .then(setTracker)
+      .then((trackerData) => {
+        setTracker(trackerData);
+        setCompleted(new Set(trackerData.completed.map(([c, t]) => cellKey(c, t))));
+      })
       .catch((e) => setError(describeError(e)));
   }, []);
 
@@ -105,6 +110,11 @@ export default function TrackerPage() {
     [tracker],
   );
   const restedRunsAvailable = tracker?.rest.filter((r) => r.rested_run_available).length ?? 0;
+  const runByCell = useMemo(
+    () => new Map<string, Run>((tracker?.runs ?? []).map((r) => [cellKey(r.character_id, r.task_id), r])),
+    [tracker],
+  );
+  const namesById = new Map(characters.map((c) => [c.id, c.name]));
 
   const assigned = useMemo(
     () => new Set(characters.flatMap((c) => c.task_ids.map((t) => cellKey(c.id, t)))),
@@ -121,7 +131,11 @@ export default function TrackerPage() {
     tasks: tasks
       .filter((t) => t.category === category.value)
       .filter((t) => t.category !== "raid" || isActiveRaid(t))
-      .filter((t) => editMode || characters.some((c) => c.task_ids.includes(t.id)))
+      .filter(
+        (t) =>
+          editMode ||
+          characters.some((c) => c.task_ids.includes(t.id) || (isTiered(t) && t.category === "raid" && canRun(c, t))),
+      )
       .sort(byPosition),
   })).filter((group) => group.tasks.length > 0);
   const visibleTasks = columnGroups.flatMap((group) => group.tasks);
@@ -146,9 +160,36 @@ export default function TrackerPage() {
     try {
       await send(wasDone ? "DELETE" : "PUT", `/characters/${character.id}/tasks/${task.id}/completion`);
       loadWeeklyGold();
-      if (task.rest_max > 0) refreshRest();
+      if (task.rest_max > 0) refreshTracker();
     } catch (e) {
       update(wasDone);
+      setError(describeError(e));
+    }
+  }
+
+  /** Check off (or un-check) a raid at a difficulty; works for extra raids too. */
+  async function toggleRaid(character: Character, task: Task, done: boolean, difficultyId: number | undefined) {
+    try {
+      const path = `/characters/${character.id}/tasks/${task.id}/completion`;
+      await (done ? send("PUT", path, { difficulty_id: difficultyId ?? null }) : send("DELETE", path));
+      loadWeeklyGold();
+      refreshTracker();
+    } catch (e) {
+      setError(describeError(e));
+    }
+  }
+
+  /** Change the difficulty in a raid cell: the usual one if assigned, and this week's run if done. */
+  async function chooseRaidDifficulty(character: Character, task: Task, difficultyId: number, done: boolean) {
+    if (character.task_ids.includes(task.id)) await setRaidDifficulty(character, task, difficultyId);
+    if (done) await toggleRaid(character, task, true, difficultyId);
+  }
+
+  async function setRunCount(character: Character, task: Task, count: number) {
+    try {
+      await send("PUT", `/characters/${character.id}/tasks/${task.id}/completion`, { count });
+      refreshTracker();
+    } catch (e) {
       setError(describeError(e));
     }
   }
@@ -156,7 +197,7 @@ export default function TrackerPage() {
   async function setRest(character: Character, task: Task, value: number) {
     try {
       await send("PUT", `/characters/${character.id}/tasks/${task.id}/rest`, { value });
-      refreshRest();
+      refreshTracker();
     } catch (e) {
       setError(describeError(e));
     }
@@ -263,8 +304,9 @@ export default function TrackerPage() {
 
       {editMode && (
         <p className="mb-3 text-sm text-muted">
-          Click a cell to toggle whether that character does the task, or pick a raid&apos;s difficulty. Unassigned
-          cells show as –. Raids nobody runs are listed here too.
+          Choose each character&apos;s usual tasks and raid difficulties. These count toward &quot;Done&quot; and
+          possible gold. Raids a character qualifies for but doesn&apos;t usually run still show faded on the tracker,
+          so you can tick an extra clear.
         </p>
       )}
 
@@ -347,16 +389,17 @@ export default function TrackerPage() {
                       const border =
                         index === 0 || visibleTasks[index - 1].category !== task.category ? "border-l border-border" : "";
 
-                      const difficulty = task.difficulties.length > 0 ? difficultyOf(character, task) : undefined;
+                      const difficulty = isTiered(task) ? difficultyOf(character, task) : undefined;
+                      const run = runByCell.get(key);
 
-                      if (editMode && task.difficulties.length > 0) {
+                      if (editMode && isTiered(task)) {
                         return (
                           <td key={task.id} className={`px-1 text-center ${border}`}>
                             <select
                               value={isAssigned ? (difficulty?.id ?? "") : ""}
                               onChange={(e) => setRaidDifficulty(character, task, e.target.value ? Number(e.target.value) : null)}
                               aria-label={`${task.name} difficulty for ${character.name}`}
-                              className={`w-full py-1 text-xs ${isAssigned ? "border-accent! bg-accent/15 font-medium" : "text-muted"}`}
+                              className={`w-full py-1 text-xs ${isAssigned ? "border-accent bg-accent/15 font-medium" : "text-muted"}`}
                             >
                               <option value="">–</option>
                               {task.difficulties.map((d) => (
@@ -384,11 +427,48 @@ export default function TrackerPage() {
                         );
                       }
 
+                      if (task.category === "raid" && isTiered(task)) {
+                        const otherClear = task.roster_limited
+                          ? (tracker?.runs ?? []).find((r) => r.task_id === task.id && r.character_id !== character.id)
+                          : undefined;
+                        return (
+                          <td key={task.id} className={`p-0 text-center ${border}`}>
+                            {isAssigned || canRun(character, task) ? (
+                              <RaidCell
+                                task={task}
+                                character={character}
+                                isAssigned={isAssigned}
+                                run={run}
+                                clearedBy={otherClear ? namesById.get(otherClear.character_id) : undefined}
+                                onToggle={(done, difficultyId) => toggleRaid(character, task, done, difficultyId)}
+                                onDifficulty={(difficultyId, done) => chooseRaidDifficulty(character, task, difficultyId, done)}
+                              />
+                            ) : (
+                              <span className="text-muted/50">–</span>
+                            )}
+                          </td>
+                        );
+                      }
+
+                      if (task.counted && isAssigned) {
+                        return (
+                          <td key={task.id} className={`p-0 text-center ${border}`}>
+                            <CountCell
+                              task={task}
+                              character={character}
+                              tier={difficulty}
+                              count={run?.count ?? 0}
+                              onSet={(count) => setRunCount(character, task, count)}
+                            />
+                          </td>
+                        );
+                      }
+
                       return (
                         <td key={task.id} className={`p-0 text-center ${border}`}>
                           {isAssigned ? (
                             <div className={isDone ? "bg-done/15" : ""}>
-                              <label className={`flex cursor-pointer items-center justify-center ${rest || difficulty ? "h-8" : "h-12"}`}>
+                              <label className={`flex cursor-pointer items-center justify-center ${rest ? "h-8" : "h-12"}`}>
                                 <input
                                   type="checkbox"
                                   checked={isDone}
@@ -397,7 +477,6 @@ export default function TrackerPage() {
                                   className="h-4 w-4 cursor-pointer"
                                 />
                               </label>
-                              {difficulty && <RaidBadge difficulty={difficulty} itemLevel={character.item_level} />}
                               {rest && (
                                 <RestGauge
                                   task={task}
@@ -428,21 +507,9 @@ export default function TrackerPage() {
   );
 }
 
-function RaidBadge({ difficulty, itemLevel }: { difficulty: Difficulty; itemLevel: number }) {
-  const underLevel = difficulty.min_item_level > itemLevel;
-  return (
-    <div
-      className={`pb-1.5 text-[11px] leading-none ${underLevel ? "text-danger" : "text-muted"}`}
-      title={
-        underLevel
-          ? `${difficulty.name} needs item level ${formatItemLevel(difficulty.min_item_level)}`
-          : `${difficulty.name}: ${difficulty.gold === null ? "gold unknown" : `${formatGold(difficulty.gold)} gold`}`
-      }
-    >
-      {shortDifficulty(difficulty.name)} · {formatShortGold(difficulty.gold)}
-      {underLevel && " ⚠"}
-    </div>
-  );
+/** Tasks split into tiers: raid difficulties or cube unlocks. */
+function isTiered(task: Task) {
+  return task.difficulties.length > 0;
 }
 
 function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: ReactNode; accent?: boolean }) {

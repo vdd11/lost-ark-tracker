@@ -26,13 +26,28 @@ export function difficultyOf(character: Character, task: Task): Difficulty | und
   return task.difficulties.find((d) => d.id === id);
 }
 
-/** The hardest group difficulty the item level allows (mirrors the backend). */
+/** The hardest difficulty the item level allows, else the easiest (mirrors the backend). */
 export function bestDifficulty(task: Task, itemLevel: number): Difficulty | undefined {
-  const group = task.difficulties.filter((d) => d.name !== "Solo");
-  const pool = group.length ? group : task.difficulties;
-  const eligible = pool.filter((d) => d.min_item_level <= itemLevel);
+  const eligible = task.difficulties.filter((d) => d.min_item_level <= itemLevel);
   const byLevel = (a: Difficulty, b: Difficulty) => a.min_item_level - b.min_item_level || a.position - b.position;
-  return eligible.length ? [...eligible].sort(byLevel).at(-1) : [...pool].sort(byLevel)[0];
+  return eligible.length ? [...eligible].sort(byLevel).at(-1) : [...task.difficulties].sort(byLevel)[0];
+}
+
+/** Whether a character's item level reaches at least the easiest difficulty. */
+export function canRun(character: Character, task: Task) {
+  return task.difficulties.some((d) => d.min_item_level <= character.item_level);
+}
+
+/** Raids worth suggesting for a new character: the top N by gold they qualify for. */
+export function topGoldRaids(raids: Task[], itemLevel: number, limit = GOLD_RAIDS_PER_WEEK) {
+  return raids
+    .filter((t) => !t.gold_for_everyone)
+    .map((task) => ({ task, difficulty: bestDifficulty(task, itemLevel) }))
+    .filter((pick): pick is { task: Task; difficulty: Difficulty } =>
+      Boolean(pick.difficulty && pick.difficulty.min_item_level <= itemLevel),
+    )
+    .sort((a, b) => (b.difficulty.gold ?? 0) - (a.difficulty.gold ?? 0))
+    .slice(0, limit);
 }
 
 /** Gold a character would earn from a raid, or null if the amount is unknown. */

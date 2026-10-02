@@ -1,10 +1,15 @@
 "use client";
 
 import { formatGold, Task } from "@/lib/api";
-import { bestDifficulty, formatItemLevel, GOLD_RAIDS_PER_WEEK } from "@/lib/raids";
+import { bestDifficulty, formatItemLevel, GOLD_RAIDS_PER_WEEK, topGoldRaids } from "@/lib/raids";
 
 /** task_id -> difficulty_id */
 export type RaidSelection = Record<number, number>;
+
+/** The usual pick for a character: their top raids by gold at the right difficulty. */
+export function suggestedRaids(raids: Task[], itemLevel: number): RaidSelection {
+  return Object.fromEntries(topGoldRaids(raids, itemLevel).map(({ task, difficulty }) => [task.id, difficulty.id]));
+}
 
 /** Choose which raids (and difficulty) a new character runs. */
 export default function RaidPicker({
@@ -29,15 +34,8 @@ export default function RaidPicker({
     onChange(next);
   }
 
-  // Best gold first: the hardest eligible difficulty of each raid, top N.
   function pickTopGold() {
-    const ranked = raids
-      .filter((t) => !t.gold_for_everyone)
-      .map((task) => ({ task, difficulty: bestDifficulty(task, itemLevel) }))
-      .filter(({ difficulty }) => difficulty && difficulty.min_item_level <= itemLevel)
-      .sort((a, b) => (b.difficulty!.gold ?? 0) - (a.difficulty!.gold ?? 0))
-      .slice(0, GOLD_RAIDS_PER_WEEK);
-    onChange(Object.fromEntries(ranked.map(({ task, difficulty }) => [task.id, difficulty!.id])));
+    onChange(suggestedRaids(raids, itemLevel));
   }
 
   return (

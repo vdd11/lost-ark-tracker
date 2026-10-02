@@ -5,7 +5,7 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react"
 import Link from "next/link";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
-import RaidPicker, { RaidSelection } from "@/components/RaidPicker";
+import RaidPicker, { RaidSelection, suggestedRaids } from "@/components/RaidPicker";
 import { api, byPosition, CATEGORIES, Character, send, Task, TaskCategory } from "@/lib/api";
 import { isActiveRaid } from "@/lib/raids";
 
@@ -214,6 +214,13 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
   const [isGoldEarner, setIsGoldEarner] = useState(true);
   const [reservedFor, setReservedFor] = useState("");
   const [selectedRaids, setSelectedRaids] = useState<RaidSelection>({});
+  // Until the raid list is changed by hand, it follows the item level.
+  const [autoPick, setAutoPick] = useState(true);
+
+  function changeItemLevel(value: string) {
+    setItemLevel(value);
+    if (autoPick) setSelectedRaids(suggestedRaids(raids, Number(value) || 0));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -233,6 +240,7 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
     setItemLevel("");
     setReservedFor("");
     setSelectedRaids({});
+    setAutoPick(true);
   }
 
   return (
@@ -245,7 +253,7 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
         min="0"
         placeholder="Item level"
         value={itemLevel}
-        onChange={(e) => setItemLevel(e.target.value)}
+        onChange={(e) => changeItemLevel(e.target.value)}
         className="w-28"
       />
       <input placeholder="Saved for (optional)" value={reservedFor} onChange={(e) => setReservedFor(e.target.value)} />
@@ -258,7 +266,10 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
         itemLevel={Number(itemLevel) || 0}
         isGoldEarner={isGoldEarner}
         value={selectedRaids}
-        onChange={setSelectedRaids}
+        onChange={(value) => {
+          setSelectedRaids(value);
+          setAutoPick(false);
+        }}
       />
       <button type="submit" className="rounded-md bg-accent px-3 py-1.5 font-medium text-background">
         Add character

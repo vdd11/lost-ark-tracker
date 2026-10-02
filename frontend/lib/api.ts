@@ -49,7 +49,16 @@ export type Task = {
   roster_limited: boolean;
   gold_for_everyone: boolean;
   note: string | null;
+  /** Tracked as a run count per period (Ebony Cube) instead of a checkbox. */
+  counted: boolean;
   difficulties: Difficulty[];
+};
+
+export type Run = {
+  character_id: number;
+  task_id: number;
+  difficulty_id: number | null;
+  count: number;
 };
 
 export type RestState = {
@@ -65,6 +74,7 @@ export type TrackerState = {
   next_daily_reset: string;
   next_weekly_reset: string;
   completed: [number, number][];
+  runs: Run[];
   rest: RestState[];
 };
 
@@ -116,3 +126,25 @@ export function formatGold(amount: number) {
 export function byPosition<T extends { position: number; id: number }>(a: T, b: T) {
   return a.position - b.position || a.id - b.id;
 }
+
+export type GemEntry = {
+  id: number;
+  source: string;
+  character_id: number | null;
+  /** Gem level (JSON key) -> count. */
+  gems: Record<string, number>;
+  note: string | null;
+  earned_at: string;
+};
+
+export type WeeklyGems = {
+  week: string;
+  /** Level-1 equivalents: a level-n gem counts as 3^(n-1). */
+  total: number;
+  by_source: Record<string, number>;
+  by_level: Record<string, number>;
+};
+
+export type DifficultyDraft = { name: string; min_item_level: number; gold: number | null };
+
+export type EventTemplate = { bases: string[]; difficulties: DifficultyDraft[] };

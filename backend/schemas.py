@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 TaskCategory = Literal["daily", "weekly", "raid"]
 
@@ -111,7 +111,33 @@ class TaskRead(BaseModel):
     roster_limited: bool
     gold_for_everyone: bool
     note: str | None
+    counted: bool
     difficulties: list[DifficultyRead] = []
+
+
+class EventRaidCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    ends_on: date
+    difficulties: list[DifficultyCreate] = Field(min_length=1)
+
+
+class EventTemplate(BaseModel):
+    bases: list[str]
+    difficulties: list[DifficultyCreate]
+
+
+class CompletionUpdate(BaseModel):
+    # Which difficulty was run; defaults to the character's usual one.
+    difficulty_id: int | None = None
+    # Runs this period for counted tasks; 0 removes the completion.
+    count: int | None = Field(default=None, ge=0)
+
+
+class Run(BaseModel):
+    character_id: int
+    task_id: int
+    difficulty_id: int | None
+    count: int
 
 
 class RestState(BaseModel):
@@ -136,6 +162,7 @@ class TrackerState(BaseModel):
     next_weekly_reset: datetime
     # [character_id, task_id] pairs completed in the current period.
     completed: list[tuple[int, int]]
+    runs: list[Run] = []
     rest: list[RestState] = []
 
 
@@ -164,3 +191,39 @@ class WeeklyGold(BaseModel):
     other_gold: int
     total: int
     by_source: dict[str, int]
+
+
+class GemEntryCreate(BaseModel):
+    source: str = Field(min_length=1, max_length=50)
+    character_id: int | None = None
+    # Gem level -> how many of that level.
+    gems: dict[int, int]
+    note: str | None = Field(default=None, max_length=200)
+    earned_at: datetime | None = None
+
+    @field_validator("gems")
+    @classmethod
+    def check_gems(cls, gems: dict[int, int]) -> dict[int, int]:
+        for level, count in gems.items():
+            if not 1 <= level <= 10 or count < 0:
+                raise ValueError("Gem levels are 1-10 and counts can't be negative")
+        return gems
+
+
+class GemEntryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    source: str
+    character_id: int | None
+    gems: dict[int, int]
+    note: str | None
+    earned_at: datetime
+
+
+class WeeklyGems(BaseModel):
+    week: date
+    # Level-1 equivalents: a level-n gem counts as 3^(n-1).
+    total: int
+    by_source: dict[str, int]
+    by_level: dict[int, int]
