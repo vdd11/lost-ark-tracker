@@ -68,6 +68,11 @@ that restores your data on another computer, or after a reinstall.
   once in Terminal, then open it (or right-click → Open).
 - **Linux**: `chmod +x LostArkTracker-linux` once, then run it.
 
+**If it won't start or something breaks,** the window says so and stays open.
+The details are in `tracker.log` in the same data folder, so send that file to
+whoever's helping. If the database itself got damaged, close the app and copy
+the newest file from `backups` over `database.db`.
+
 Options: `--port 9000` to use another port, `--no-browser` to skip opening a
 tab, `--data-dir PATH` to keep the database somewhere else.
 

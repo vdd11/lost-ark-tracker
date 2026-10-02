@@ -8,6 +8,7 @@ frontend has been exported (`npm run build` in frontend/):
 
 import argparse
 import json
+import logging
 import os
 import socket
 import sys
@@ -15,6 +16,7 @@ import threading
 import time
 import urllib.request
 import webbrowser
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from version import APP_NAME, APP_VERSION
@@ -62,6 +64,26 @@ def any_free_port() -> int:
         return sock.getsockname()[1]
 
 
+def setup_logging(data_dir: Path) -> Path:
+    """Warnings to the console, everything useful to a log file friends can send."""
+    log_path = data_dir / "tracker.log"
+    file_handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    console = logging.StreamHandler()
+    console.setLevel(logging.WARNING)
+    logging.basicConfig(level=logging.INFO, handlers=[file_handler, console], force=True)
+    return log_path
+
+
+def wait_before_closing(message: str):
+    """The packaged app runs in its own console window, which vanishes on exit.
+    Keep it open so a friend can read (or screenshot) what went wrong."""
+    print(message, flush=True)
+    if getattr(sys, "frozen", False) and sys.stdin and sys.stdin.isatty():
+        input("Press Enter to close this window.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=APP_NAME)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
@@ -89,6 +111,8 @@ def main():
 
     args.data_dir.mkdir(parents=True, exist_ok=True)
     database_path = args.data_dir / "database.db"
+    log_path = setup_logging(args.data_dir)
+    logging.getLogger(__name__).info("Starting %s %s on port %s", APP_NAME, APP_VERSION, port)
 
     # main.py reads these at import time.
     os.environ["DATABASE_URL"] = f"sqlite:///{database_path.as_posix()}"
@@ -98,13 +122,15 @@ def main():
 
     from main import app
 
-    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
+    # log_config=None keeps uvicorn on the handlers above instead of its own.
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_config=None, access_log=False))
 
     def open_browser_when_ready():
         while not server.started:
             time.sleep(0.1)
         print(f"{APP_NAME} {APP_VERSION} is running at {url}", flush=True)
         print(f"Data: {database_path}", flush=True)
+        print(f"Log:  {log_path}", flush=True)
         print("Keep this window open while you use the tracker. Close it to stop.", flush=True)
         if not args.no_browser:
             webbrowser.open(url)
@@ -113,5 +139,22 @@ def main():
     server.run()
 
 
+
+def run():
+    error = f"{APP_NAME} stopped because of an error. Details are in tracker.log in your data folder."
+    try:
+        main()
+    except SystemExit as exit_:
+        # uvicorn exits with a non-zero code when startup fails (e.g. a
+        # database it can't open); SystemExit isn't an Exception.
+        if exit_.code not in (0, None):
+            wait_before_closing(error)
+        raise
+    except Exception:
+        logging.getLogger(__name__).exception("Fatal error")
+        wait_before_closing(error)
+        raise
+
+
 if __name__ == "__main__":
-    main()
+    run()
