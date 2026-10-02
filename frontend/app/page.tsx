@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
-import CountCell from "@/components/CountCell";
+import ContentCell, { RunChanges } from "@/components/ContentCell";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
@@ -185,9 +185,11 @@ export default function TrackerPage() {
     if (done) await toggleRaid(character, task, true, difficultyId);
   }
 
-  async function setRunCount(character: Character, task: Task, count: number) {
+  /** Update this week's run of tiered content: runs, sands, lucky rooms. */
+  async function updateRun(character: Character, task: Task, changes: RunChanges | null) {
     try {
-      await send("PUT", `/characters/${character.id}/tasks/${task.id}/completion`, { count });
+      const path = `/characters/${character.id}/tasks/${task.id}/completion`;
+      await (changes === null ? send("DELETE", path) : send("PUT", path, changes));
       refreshTracker();
     } catch (e) {
       setError(describeError(e));
@@ -352,7 +354,10 @@ export default function TrackerPage() {
             </thead>
             <tbody>
               {visibleCharacters.map((character) => {
-                const rowTasks = visibleTasks.filter((t) => assigned.has(cellKey(character.id, t.id)));
+                // Tiered weeklies the character can't enter yet (e.g. Hourglass under 1730) don't count.
+                const rowTasks = visibleTasks.filter(
+                  (t) => assigned.has(cellKey(character.id, t.id)) && (t.category === "raid" || !isTiered(t) || canRun(character, t)),
+                );
                 const rowDone = rowTasks.filter((t) => completed.has(cellKey(character.id, t.id))).length;
                 const paidRaidCount = paidRaids(character, tasks).length;
 
@@ -450,16 +455,21 @@ export default function TrackerPage() {
                         );
                       }
 
-                      if (task.counted && isAssigned) {
+                      if (isTiered(task)) {
                         return (
                           <td key={task.id} className={`p-0 text-center ${border}`}>
-                            <CountCell
-                              task={task}
-                              character={character}
-                              tier={difficulty}
-                              count={run?.count ?? 0}
-                              onSet={(count) => setRunCount(character, task, count)}
-                            />
+                            {isAssigned && canRun(character, task) ? (
+                              <ContentCell
+                                task={task}
+                                character={character}
+                                tier={difficulty}
+                                run={run}
+                                onChange={(changes) => updateRun(character, task, changes)}
+                                onRemove={() => updateRun(character, task, null)}
+                              />
+                            ) : (
+                              <span className="text-muted/50" title={`${task.name} unlocks at a higher item level`}>–</span>
+                            )}
                           </td>
                         );
                       }

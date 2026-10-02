@@ -32,7 +32,15 @@ export type Difficulty = {
   gold: number | null;
   catalog_item_level: number | null;
   catalog_gold: number | null;
+  /** Expected gems {level: count} per run / lucky room / mega lucky room; null = unknown. */
+  reward_gems: GemTable | null;
+  lucky_gems: GemTable | null;
+  mega_gems: GemTable | null;
+  catalog_rewards: Partial<Record<GemTableField, GemTable | null>> | null;
 };
+
+export type GemTable = Record<string, number>;
+export type GemTableField = "reward_gems" | "lucky_gems" | "mega_gems";
 
 export type Task = {
   id: number;
@@ -51,6 +59,8 @@ export type Task = {
   note: string | null;
   /** Tracked as a run count per period (Ebony Cube) instead of a checkbox. */
   counted: boolean;
+  /** Rewards scale with Sands of Trial spent (Haal's Hourglass). */
+  sand_scaled: boolean;
   difficulties: Difficulty[];
 };
 
@@ -59,6 +69,11 @@ export type Run = {
   task_id: number;
   difficulty_id: number | null;
   count: number;
+  lucky_rooms: number;
+  mega_rooms: number;
+  sands: number;
+  /** Expected gems from this run. */
+  gems: GemTable | null;
 };
 
 export type RestState = {
@@ -143,8 +158,18 @@ export type WeeklyGems = {
   total: number;
   by_source: Record<string, number>;
   by_level: Record<string, number>;
+  by_character: Record<string, number>;
 };
 
 export type DifficultyDraft = { name: string; min_item_level: number; gold: number | null };
 
 export type EventTemplate = { bases: string[]; difficulties: DifficultyDraft[] };
+
+/** Level-1 equivalents: three gems of a level combine into one of the next. */
+export function gemsToLv1(gems: GemTable | null | undefined) {
+  return Object.entries(gems ?? {}).reduce((sum, [level, count]) => sum + count * 3 ** (Number(level) - 1), 0);
+}
+
+export function formatGems(value: number) {
+  return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+}

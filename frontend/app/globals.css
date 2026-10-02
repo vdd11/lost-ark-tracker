@@ -14,6 +14,7 @@
   --series-2: #eb6834;
   --series-3: #1baf7a;
   --series-4: #eda100;
+  --series-5: #e87ba4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +32,7 @@
     --series-2: #d95926;
     --series-3: #199e70;
     --series-4: #c98500;
+    --series-5: #d55181;
   }
 }
 
@@ -48,6 +50,7 @@
   --color-series-2: var(--series-2);
   --color-series-3: var(--series-3);
   --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

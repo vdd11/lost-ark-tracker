@@ -100,7 +100,8 @@ def test_three_raids_pay_and_an_extra_run_does_not(client, set_now):
 
     assert raid_gold(client) == 54000 + 50000 + 48000
     runs = client.get("/api/tracker").json()["runs"]
-    assert {"character_id": sorc["id"], "task_id": act4["id"], "difficulty_id": difficulty(act4, "Normal")["id"], "count": 1} in runs
+    extra = next(r for r in runs if r["task_id"] == act4["id"])
+    assert (extra["character_id"], extra["difficulty_id"]) == (sorc["id"], difficulty(act4, "Normal")["id"])
 
 
 def test_extra_run_pays_when_a_slot_is_free(client, set_now):
@@ -170,6 +171,7 @@ def test_gems_are_summed_as_level_one_equivalents(client, set_now):
         "total": 3 + 3 + 9,
         "by_source": {"Ebony Cube": 6, "Field Boss": 9},
         "by_level": {"1": 3, "2": 1, "3": 1},
+        "by_character": {"Unassigned": 15},
     }
 
 

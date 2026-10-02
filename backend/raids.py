@@ -30,11 +30,22 @@ EVENT_NOTE = "Event raid: one clear per roster per week, gold for any character.
 EXTREME_BASES = ["Act 1", "Act 2", "Act 3", "Act 4", "The Final Day", "Serca", "Thaemine"]
 
 
+# Gem tables are {level: expected count}, string keys like the database's JSON.
+Gems = dict[str, float]
+
+
 @dataclass(frozen=True)
 class Difficulty:
     name: str
     item_level: float
     gold: int | None
+    # Expected gems per run / lucky room / mega lucky room; None = unknown.
+    reward_gems: Gems | None = None
+    lucky_gems: Gems | None = None
+    mega_gems: Gems | None = None
+
+    def rewards(self) -> dict:
+        return {"reward_gems": self.reward_gems, "lucky_gems": self.lucky_gems, "mega_gems": self.mega_gems}
 
 
 @dataclass(frozen=True)
@@ -44,6 +55,7 @@ class CatalogTask:
     difficulties: list[Difficulty]
     category: str = "raid"
     counted: bool = False
+    sand_scaled: bool = False
     note: str | None = None
     # Earlier names, so existing columns are adopted (and renamed) instead of duplicated.
     legacy_names: list[str] = field(default_factory=list)
@@ -96,6 +108,18 @@ CATALOG = [
             Difficulty("4th", 1720, 0),
         ],
         note="Runs depend on tickets, so count them.",
+    ),
+    CatalogTask(
+        key="haals-hourglass",
+        name="Haal's Hourglass",
+        category="weekly",
+        sand_scaled=True,
+        difficulties=[
+            # Base reward: 15 Lv2 gem chests (one random Lv2 gem each).
+            Difficulty("Lv1", 1730, 0, reward_gems={"2": 15}),
+            Difficulty("Lv2", 1750, 0),
+        ],
+        note="Once a week. Sands of Trial (up to 5) multiply the rewards.",
     ),
 ]
 
@@ -157,6 +181,7 @@ def sync_catalog(db: Session):
             task.name = item.name
         task.category = item.category
         task.counted = item.counted
+        task.sand_scaled = item.sand_scaled
         task.note = item.note
 
         sync_difficulties(db, task, item.difficulties)
@@ -189,6 +214,8 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
                 gold=spec.gold,
                 catalog_item_level=spec.item_level,
                 catalog_gold=spec.gold,
+                **spec.rewards(),
+                catalog_rewards=spec.rewards(),
             ))
             continue
 
@@ -199,6 +226,12 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
         difficulty.catalog_gold = spec.gold
         difficulty.catalog_item_level = spec.item_level
         difficulty.position = position
+
+        previous = difficulty.catalog_rewards or {}
+        for field, value in spec.rewards().items():
+            if getattr(difficulty, field) == previous.get(field):
+                setattr(difficulty, field, value)
+        difficulty.catalog_rewards = spec.rewards()
 
 
 def assign_missing_difficulties(db: Session):

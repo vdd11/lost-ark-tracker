@@ -10,7 +10,9 @@ non-raid sources to see your weekly gold over time.
     right in the cell.
   - Raids a character qualifies for but doesn't usually run show faded, so you
     can tick an extra clear.
-  - Ebony Cube has a run counter at each character's unlock tier.
+  - Ebony Cube has a run counter at each character's unlock tier, and Haal's
+    Hourglass (1730+) a weekly checkbox at Lv1/Lv2. Click the tier label to
+    log Sands of Trial, lucky rooms and mega lucky rooms.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
   rest gauge, highlighted in gold when a rested run is available today. Click
   the number to match it to the game.
@@ -23,8 +25,10 @@ non-raid sources to see your weekly gold over time.
     per roster, pay any character, and disappear when they end.
 - **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly gold
   (raid clears + logged gold).
-- **Gems**: log gem drops by level from Ebony Cube, Guardian Raids and Field
-  Bosses, and chart weekly gems in level-1 equivalents (Lv2 = 3, Lv3 = 9).
+- **Gems**: Ebony Cube and Haal's Hourglass gems are counted from the tracker
+  using each tier's reward table (editable on the Gems page). Log Guardian
+  Raid and Field Boss drops by hand. Weekly chart and per-character totals in
+  level-1 equivalents (Lv2 = 3, Lv3 = 9).
 - **Settings**: add characters (their usual raids are pre-selected from item
   level), edit daily/weekly columns, and download/restore backups.
 

@@ -4,17 +4,36 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import StackedWeeklyChart, { ChartSeries } from "@/components/StackedWeeklyChart";
-import { api, byPosition, Character, formatGold, GemEntry, parseUtc, send, WeeklyGems } from "@/lib/api";
+import {
+  api,
+  byPosition,
+  Character,
+  Difficulty,
+  formatGems,
+  GemEntry,
+  GemTable,
+  GemTableField,
+  gemsToLv1,
+  parseUtc,
+  send,
+  Task,
+  WeeklyGems,
+} from "@/lib/api";
+import { formatItemLevel } from "@/lib/raids";
 
-// Fixed order and colors; anything else folds into "Other".
-const SOURCES = ["Ebony Cube", "Guardian Raid", "Field Boss"];
+// Fixed order and colors; anything else folds into "Other". Ebony Cube and
+// Haal's Hourglass are filled in from the tracker, the rest are logged here.
+const TRACKED = ["Ebony Cube", "Haal's Hourglass"];
+const SOURCES = ["Guardian Raid", "Field Boss"];
 const OTHER = "Other";
 const SERIES: ChartSeries[] = [
   { key: "Ebony Cube", label: "Ebony Cube", color: "var(--series-1)" },
-  { key: "Guardian Raid", label: "Guardian Raid", color: "var(--series-2)" },
-  { key: "Field Boss", label: "Field Boss", color: "var(--series-3)" },
-  { key: OTHER, label: OTHER, color: "var(--series-4)" },
+  { key: "Haal's Hourglass", label: "Haal's Hourglass", color: "var(--series-2)" },
+  { key: "Guardian Raid", label: "Guardian Raid", color: "var(--series-3)" },
+  { key: "Field Boss", label: "Field Boss", color: "var(--series-4)" },
+  { key: OTHER, label: OTHER, color: "var(--series-5)" },
 ];
+const KNOWN_SOURCES = [...TRACKED, ...SOURCES];
 const LEVELS = Array.from({ length: 10 }, (_, i) => i + 1);
 const RANGES = [8, 12, 26, 52];
 
@@ -27,7 +46,7 @@ function todayInputValue() {
 function bySeries(bySource: Record<string, number>) {
   const values: Record<string, number> = {};
   for (const [source, amount] of Object.entries(bySource)) {
-    const key = SOURCES.includes(source) ? source : OTHER;
+    const key = KNOWN_SOURCES.includes(source) ? source : OTHER;
     values[key] = (values[key] ?? 0) + amount;
   }
   return values;
@@ -36,7 +55,7 @@ function bySeries(bySource: Record<string, number>) {
 function describeGems(gems: Record<string, number>) {
   return Object.entries(gems)
     .sort(([a], [b]) => Number(a) - Number(b))
-    .map(([level, count]) => `${count}× Lv${level}`)
+    .map(([level, count]) => `${formatGems(count)}× Lv${level}`)
     .join(", ");
 }
 
@@ -44,6 +63,7 @@ export default function GemsPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [entries, setEntries] = useState<GemEntry[]>([]);
   const [weeks, setWeeks] = useState<WeeklyGems[]>([]);
+  const [rewardTasks, setRewardTasks] = useState<Task[]>([]);
   const [range, setRange] = useState(12);
   const [showTable, setShowTable] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +73,13 @@ export default function GemsPage() {
       api<Character[]>("/characters"),
       api<GemEntry[]>("/gem-entries?limit=50"),
       api<WeeklyGems[]>(`/gems/weekly?weeks=${range}`),
+      api<Task[]>("/tasks"),
     ])
-      .then(([characterData, entryData, weekData]) => {
+      .then(([characterData, entryData, weekData, taskData]) => {
         setCharacters(characterData.sort(byPosition));
         setEntries(entryData);
         setWeeks(weekData);
+        setRewardTasks(taskData.filter((t) => t.category !== "raid" && t.difficulties.length > 0).sort(byPosition));
         setError(null);
       })
       .catch((e) => setError(describeError(e)));
@@ -79,15 +101,24 @@ export default function GemsPage() {
   const characterName = (id: number | null) => characters.find((c) => c.id === id)?.name ?? "";
   const thisWeek = weeks.at(-1);
   const lastWeek = weeks.at(-2);
-  const average = weeks.length ? Math.round(weeks.reduce((sum, w) => sum + w.total, 0) / weeks.length) : 0;
+  const average = weeks.length ? weeks.reduce((sum, w) => sum + w.total, 0) / weeks.length : 0;
+  // Per character: this week and the weekly average over the shown range.
+  const characterRows = [...characters.map((c) => c.name), "Unassigned"]
+    .map((name) => ({
+      name,
+      thisWeek: thisWeek?.by_character[name] ?? 0,
+      average: weeks.reduce((sum, w) => sum + (w.by_character[name] ?? 0), 0) / Math.max(1, weeks.length),
+    }))
+    .filter((row) => row.thisWeek > 0 || row.average > 0);
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Gems</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted">
-          Log the gems you get to see how many you generate each week. Totals are in level-1 equivalents: three of a
-          level combine into one of the next, so a Lv2 counts as 3 and a Lv3 as 9.
+          Gems from Ebony Cube and Haal&apos;s Hourglass are added from the tracker using the reward table below. Log
+          everything else (Guardian Raids, Field Bosses) here. Totals are in level-1 equivalents: three of a level
+          combine into one of the next, so a Lv2 counts as 3 and a Lv3 as 9.
         </p>
       </div>
       <ErrorBanner error={error} />
@@ -133,9 +164,9 @@ export default function GemsPage() {
                   <tr key={week.week} className="border-b border-border last:border-b-0">
                     <td className="py-1.5">{week.week}</td>
                     {SERIES.map((s) => (
-                      <td key={s.key} className="py-1.5 text-right">{formatGold(values[s.key] ?? 0)}</td>
+                      <td key={s.key} className="py-1.5 text-right">{formatGems(values[s.key] ?? 0)}</td>
                     ))}
-                    <td className="py-1.5 text-right font-medium">{formatGold(week.total)}</td>
+                    <td className="py-1.5 text-right font-medium">{formatGems(week.total)}</td>
                   </tr>
                 );
               })}
@@ -153,6 +184,33 @@ export default function GemsPage() {
           />
         )}
       </section>
+
+      <section className="overflow-x-auto rounded-md border border-border bg-surface p-4">
+        <h2 className="mb-3 font-semibold">By character (Lv1 equivalents)</h2>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-muted">
+              <th className="py-1.5 font-medium">Character</th>
+              <th className="py-1.5 text-right font-medium">This week</th>
+              <th className="py-1.5 text-right font-medium">Weekly average</th>
+            </tr>
+          </thead>
+          <tbody className="tabular-nums">
+            {characterRows.map((row) => (
+              <tr key={row.name} className="border-b border-border last:border-b-0">
+                <td className="py-1.5">{row.name}</td>
+                <td className="py-1.5 text-right">{formatGems(row.thisWeek)}</td>
+                <td className="py-1.5 text-right">{formatGems(row.average)}</td>
+              </tr>
+            ))}
+            {characterRows.length === 0 && (
+              <tr><td className="py-2 text-muted">Nothing yet.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      <RewardTables tasks={rewardTasks} mutate={mutate} />
 
       <section className="overflow-x-auto rounded-md border border-border bg-surface p-4">
         <h2 className="mb-3 font-semibold">Recent drops</h2>
@@ -190,7 +248,7 @@ function Tile({ label, value, accent }: { label: string; value: number; accent?:
   return (
     <div className="rounded-md border border-border bg-surface px-4 py-3">
       <div className="text-xs text-muted">{label}</div>
-      <div className={`text-2xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{formatGold(value)}</div>
+      <div className={`text-2xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{formatGems(value)}</div>
     </div>
   );
 }
@@ -233,6 +291,11 @@ function AddGemsForm({ characters, onAdd }: { characters: Character[]; onAdd: (d
             <option key={s} value={s}>{s}</option>
           ))}
           <option value={OTHER}>Other…</option>
+          <optgroup label="Usually tracked automatically">
+            {TRACKED.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </optgroup>
         </select>
         {source === OTHER && (
           <input placeholder="Source" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
@@ -267,8 +330,138 @@ function AddGemsForm({ characters, onAdd }: { characters: Character[]; onAdd: (d
         <button type="submit" disabled={total === 0} className="rounded-md bg-accent px-3 py-1.5 font-medium text-background disabled:opacity-40">
           Add
         </button>
-        {total > 0 && <span className="pb-1.5 text-xs text-muted">= {formatGold(total)} Lv1 equivalents</span>}
+        {total > 0 && <span className="pb-1.5 text-xs text-muted">= {formatGems(total)} Lv1 equivalents</span>}
       </div>
     </form>
+  );
+}
+
+const TABLE_ROWS: { field: GemTableField; label: string }[] = [
+  { field: "reward_gems", label: "Per run" },
+  { field: "lucky_gems", label: "Lucky room" },
+  { field: "mega_gems", label: "Mega lucky room" },
+];
+const TABLE_LEVELS = [1, 2, 3, 4, 5];
+
+/** Expected gems per tier, used to turn tracked runs into gems. */
+function RewardTables({ tasks, mutate }: { tasks: Task[]; mutate: (action: () => Promise<unknown>) => void }) {
+  return (
+    <section className="space-y-4 rounded-md border border-border bg-surface p-4">
+      <div>
+        <h2 className="font-semibold">Reward tables</h2>
+        <p className="mt-1 text-xs text-muted">
+          Expected gems for each tier, by gem level. Averages like 0.5 are fine. Per-run values are multiplied by Cube
+          runs, or by Sands of Trial for Haal&apos;s Hourglass (1 + sands). Lucky rooms are added once per room. Changing
+          these doesn&apos;t change weeks already logged.
+        </p>
+      </div>
+      {tasks.map((task) => (
+        <div key={task.id} className="overflow-x-auto">
+          <h3 className="mb-1 text-sm font-medium">{task.name}</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-muted">
+                <th className="py-1 pr-2 font-medium">Tier</th>
+                <th className="py-1 pr-2 font-medium" />
+                {TABLE_LEVELS.map((level) => (
+                  <th key={level} className="py-1 pr-2 font-medium">Lv{level}</th>
+                ))}
+                <th className="py-1 pr-2 text-right font-medium">Lv1-eq</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {task.difficulties.map((tier) =>
+                TABLE_ROWS.map((row, index) => (
+                  <GemTableRow
+                    key={`${tier.id}-${row.field}-${JSON.stringify(tier[row.field])}`}
+                    tier={tier}
+                    showTier={index === 0}
+                    label={row.label}
+                    table={tier[row.field]}
+                    catalogTable={tier.catalog_rewards?.[row.field] ?? null}
+                    onSave={(table) => mutate(() => send("PATCH", `/difficulties/${tier.id}`, { [row.field]: table }))}
+                    onReset={() => mutate(() => send("POST", `/difficulties/${tier.id}/reset`))}
+                  />
+                )),
+              )}
+            </tbody>
+          </table>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function GemTableRow({
+  tier,
+  showTier,
+  label,
+  table,
+  catalogTable,
+  onSave,
+  onReset,
+}: {
+  tier: Difficulty;
+  showTier: boolean;
+  label: string;
+  table: GemTable | null;
+  catalogTable: GemTable | null;
+  onSave: (table: GemTable | null) => void;
+  onReset: () => void;
+}) {
+  const [draft, setDraft] = useState<Record<number, string>>(() =>
+    Object.fromEntries(TABLE_LEVELS.map((level) => [level, table?.[level] ? String(table[level]) : ""])),
+  );
+  const customized = JSON.stringify(table ?? null) !== JSON.stringify(catalogTable ?? null);
+
+  function save() {
+    const next: GemTable = {};
+    for (const level of TABLE_LEVELS) {
+      const value = Number(draft[level]);
+      if (draft[level].trim() !== "" && Number.isFinite(value) && value > 0) next[level] = value;
+    }
+    // Keep levels above Lv5 that came from elsewhere.
+    for (const [level, count] of Object.entries(table ?? {})) {
+      if (Number(level) > TABLE_LEVELS.length) next[Number(level)] = count;
+    }
+    const result = Object.keys(next).length ? next : null;
+    if (JSON.stringify(result) !== JSON.stringify(table ?? null)) onSave(result);
+  }
+
+  return (
+    <tr className={showTier ? "border-t border-border" : ""}>
+      <td className="py-1 pr-2 align-top font-medium">
+        {showTier && (
+          <>
+            {tier.name} <span className="text-xs font-normal text-muted">{formatItemLevel(tier.min_item_level)}</span>
+          </>
+        )}
+      </td>
+      <td className="whitespace-nowrap py-1 pr-2 text-xs text-muted">{label}</td>
+      {TABLE_LEVELS.map((level) => (
+        <td key={level} className="py-1 pr-2">
+          <input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="–"
+            value={draft[level]}
+            onChange={(e) => setDraft({ ...draft, [level]: e.target.value })}
+            onBlur={save}
+            aria-label={`${tier.name} ${label} Lv${level} gems`}
+            className="w-16 px-1.5 py-0.5"
+          />
+        </td>
+      ))}
+      <td className="py-1 pr-2 text-right tabular-nums text-muted">{table ? formatGems(gemsToLv1(table)) : "?"}</td>
+      <td className="py-1 text-right">
+        {customized && (catalogTable || table) && (
+          <button onClick={onReset} className="rounded px-1.5 text-xs text-muted hover:bg-surface-2" title="Back to built-in values for this tier">
+            Reset
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }

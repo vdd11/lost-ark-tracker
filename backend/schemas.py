@@ -75,10 +75,25 @@ class DifficultyCreate(BaseModel):
     gold: int | None = Field(default=None, ge=0)
 
 
+GemTable = dict[int, float]
+
+
+def check_gem_table(table: GemTable | None) -> GemTable | None:
+    for level, count in (table or {}).items():
+        if not 1 <= level <= 10 or count < 0:
+            raise ValueError("Gem levels are 1-10 and counts can't be negative")
+    return table
+
+
 class DifficultyUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=50)
     min_item_level: float | None = Field(default=None, ge=0)
     gold: int | None = Field(default=None, ge=0)
+    reward_gems: GemTable | None = None
+    lucky_gems: GemTable | None = None
+    mega_gems: GemTable | None = None
+
+    _check_gems = field_validator("reward_gems", "lucky_gems", "mega_gems")(check_gem_table)
 
 
 class DifficultyRead(BaseModel):
@@ -92,6 +107,10 @@ class DifficultyRead(BaseModel):
     gold: int | None
     catalog_item_level: float | None
     catalog_gold: int | None
+    reward_gems: GemTable | None = None
+    lucky_gems: GemTable | None = None
+    mega_gems: GemTable | None = None
+    catalog_rewards: dict | None = None
 
 
 class TaskRead(BaseModel):
@@ -112,6 +131,7 @@ class TaskRead(BaseModel):
     gold_for_everyone: bool
     note: str | None
     counted: bool
+    sand_scaled: bool
     difficulties: list[DifficultyRead] = []
 
 
@@ -131,6 +151,10 @@ class CompletionUpdate(BaseModel):
     difficulty_id: int | None = None
     # Runs this period for counted tasks; 0 removes the completion.
     count: int | None = Field(default=None, ge=0)
+    lucky_rooms: int | None = Field(default=None, ge=0)
+    mega_rooms: int | None = Field(default=None, ge=0)
+    # Sands of Trial spent (Haal's Hourglass), up to 5.
+    sands: int | None = Field(default=None, ge=0, le=5)
 
 
 class Run(BaseModel):
@@ -138,6 +162,11 @@ class Run(BaseModel):
     task_id: int
     difficulty_id: int | None
     count: int
+    lucky_rooms: int = 0
+    mega_rooms: int = 0
+    sands: int = 0
+    # Expected gems from this run, {level: count}.
+    gems: GemTable | None = None
 
 
 class RestState(BaseModel):
@@ -223,7 +252,9 @@ class GemEntryRead(BaseModel):
 
 class WeeklyGems(BaseModel):
     week: date
-    # Level-1 equivalents: a level-n gem counts as 3^(n-1).
-    total: int
-    by_source: dict[str, int]
-    by_level: dict[int, int]
+    # Level-1 equivalents: a level-n gem counts as 3^(n-1). Tracked runs use
+    # expected (average) rewards, so these can be fractional.
+    total: float
+    by_source: dict[str, float]
+    by_level: dict[int, float]
+    by_character: dict[str, float] = {}

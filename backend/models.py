@@ -46,6 +46,8 @@ class Task(Base):
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # Tracked as a number of runs per period instead of a checkbox (Ebony Cube).
     counted: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    # Rewards scale with Sands of Trial spent (Haal's Hourglass).
+    sand_scaled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
 
 class RaidDifficulty(Base):
@@ -64,6 +66,13 @@ class RaidDifficulty(Base):
     # What the catalog last set, to tell user edits apart from catalog values.
     catalog_item_level: Mapped[float | None] = mapped_column(Float, nullable=True)
     catalog_gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Expected gems as {level: count} (counts may be averages); None = unknown.
+    # Per run, per lucky room, and per mega lucky room.
+    reward_gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    lucky_gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    mega_gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    # The three gem tables as the catalog last set them, like catalog_gold.
+    catalog_rewards: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
 
 class CharacterTask(Base):
@@ -104,6 +113,12 @@ class Completion(Base):
     difficulty_id: Mapped[int | None] = mapped_column(ForeignKey("raid_difficulties.id"), nullable=True)
     # Runs this period, for counted tasks.
     count: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    lucky_rooms: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    mega_rooms: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    sands: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Expected gems from this run, snapshotted like gold so later edits to
+    # the reward tables don't rewrite past weeks.
+    gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
 
 class GoldEntry(Base):

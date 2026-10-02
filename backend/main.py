@@ -11,6 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, add_missing_columns, engine, get_db
+from gems import lv1_equivalent, run_gems
 from models import Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
 from resets import daily_reset_before, period_for, utc_now, week_of, weekly_reset_before
 from schemas import (
@@ -326,7 +327,16 @@ def get_tracker(db: Session = Depends(get_db)):
     current = [c for c, category in rows if c.period == period_for(category, now)]
     completed = [(c.character_id, c.task_id) for c in current]
     runs = [
-        Run(character_id=c.character_id, task_id=c.task_id, difficulty_id=c.difficulty_id, count=c.count)
+        Run(
+            character_id=c.character_id,
+            task_id=c.task_id,
+            difficulty_id=c.difficulty_id,
+            count=c.count,
+            lucky_rooms=c.lucky_rooms,
+            mega_rooms=c.mega_rooms,
+            sands=c.sands,
+            gems=c.gems,
+        )
         for c in current
     ]
 
@@ -450,6 +460,7 @@ def complete_task(
         if other is not None:
             raise HTTPException(status_code=409, detail=f"{task.name} was already cleared this week by {other.name}")
 
+    details = body.model_dump(include={"lucky_rooms", "mega_rooms", "sands"}, exclude_none=True)
     if existing is None:
         existing = Completion(
             character_id=character_id,
@@ -458,17 +469,25 @@ def complete_task(
             completed_at=now,
             difficulty_id=run_difficulty(db, task, character, body.difficulty_id),
             count=body.count or 1,
+            **details,
         )
         db.add(existing)
         db.flush()
         existing.gold = completion_gold(db, character, task, existing)
+        existing.gems = completion_gems(db, task, existing)
     else:
+        changed = bool(details) or body.count is not None
         if body.count is not None:
             existing.count = body.count
+        for field, value in details.items():
+            setattr(existing, field, value)
         # Only a different difficulty re-prices a clear; history stays as recorded.
         if body.difficulty_id is not None and body.difficulty_id != existing.difficulty_id:
             existing.difficulty_id = run_difficulty(db, task, character, body.difficulty_id)
             existing.gold = completion_gold(db, character, task, existing)
+            changed = True
+        if changed:
+            existing.gems = completion_gems(db, task, existing)
     db.commit()
 
     return Response(status_code=204)
@@ -481,6 +500,11 @@ def run_difficulty(db: Session, task: Task, character: Character, requested: int
         if assignment is not None and assignment.difficulty_id is not None:
             return assignment.difficulty_id
     return choose_difficulty(db, task, character, requested)
+
+
+def completion_gems(db: Session, task: Task, completion: Completion):
+    difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
+    return run_gems(task, difficulty, completion)
 
 
 def completion_gold(db: Session, character: Character, task: Task, completion: Completion) -> int:
@@ -641,11 +665,6 @@ def create_event_raid(data: EventRaidCreate, db: Session = Depends(get_db)):
 
 # ---------- Gems ----------
 
-def lv1_equivalent(level: int, count: int) -> int:
-    """Gems combine 3 to 1, so a level-n gem is worth 3^(n-1) level-1 gems."""
-    return count * 3 ** (level - 1)
-
-
 @router.get("/gem-entries", response_model=list[GemEntryRead])
 def get_gem_entries(limit: int = Query(default=100, le=1000), db: Session = Depends(get_db)):
     return (
@@ -690,18 +709,42 @@ def get_weekly_gems(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
     current_week = week_of(utc_now())
     week_starts = [current_week - timedelta(weeks=i) for i in reversed(range(weeks))]
     first_reset = weekly_reset_before(utc_now()) - timedelta(weeks=weeks - 1)
-    totals = {week: WeeklyGems(week=week, total=0, by_source={}, by_level={}) for week in week_starts}
+    totals = {
+        week: WeeklyGems(week=week, total=0, by_source={}, by_level={}, by_character={})
+        for week in week_starts
+    }
+    names = dict(db.query(Character.id, Character.name).all())
 
-    for entry in db.query(GemEntry).filter(GemEntry.earned_at >= first_reset):
-        bucket = totals.get(week_of(entry.earned_at))
+    def add(week, source: str, character_id: int | None, gems: dict):
+        bucket = totals.get(week)
         if bucket is None:
-            continue
-        for level, count in entry.gems.items():
+            return
+        who = names.get(character_id, "Unassigned")
+        for level, count in gems.items():
             value = lv1_equivalent(int(level), count)
             bucket.total += value
-            bucket.by_source[entry.source] = bucket.by_source.get(entry.source, 0) + value
+            bucket.by_source[source] = bucket.by_source.get(source, 0) + value
+            bucket.by_character[who] = bucket.by_character.get(who, 0) + value
             bucket.by_level[int(level)] = bucket.by_level.get(int(level), 0) + count
 
+    for entry in db.query(GemEntry).filter(GemEntry.earned_at >= first_reset):
+        add(week_of(entry.earned_at), entry.source, entry.character_id, entry.gems)
+
+    tracked = (
+        db.query(Completion, Task.name)
+        .outerjoin(Task, Task.id == Completion.task_id)
+        .filter(Completion.completed_at >= first_reset, Completion.gems.is_not(None))
+    )
+    for completion, task_name in tracked:
+        if not completion.gems:  # older rows may hold a JSON null
+            continue
+        add(week_of(completion.completed_at), task_name or "Other", completion.character_id, completion.gems)
+
+    for bucket in totals.values():
+        bucket.total = round(bucket.total, 1)
+        bucket.by_source = {k: round(v, 1) for k, v in bucket.by_source.items()}
+        bucket.by_character = {k: round(v, 1) for k, v in bucket.by_character.items()}
+        bucket.by_level = {k: round(v, 2) for k, v in bucket.by_level.items()}
     return [totals[week] for week in week_starts]
 
 
@@ -724,6 +767,8 @@ def create_difficulty(task_id: int, data: DifficultyCreate, db: Session = Depend
 def update_difficulty(difficulty_id: int, changes: DifficultyUpdate, db: Session = Depends(get_db)):
     difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
     for field, value in changes.model_dump(exclude_unset=True).items():
+        if field.endswith("_gems") and value is not None:
+            value = {str(level): count for level, count in sorted(value.items()) if count > 0} or None
         setattr(difficulty, field, value)
     db.commit()
     db.refresh(difficulty)
@@ -737,6 +782,8 @@ def reset_difficulty(difficulty_id: int, db: Session = Depends(get_db)):
     difficulty.gold = difficulty.catalog_gold
     if difficulty.catalog_item_level is not None:
         difficulty.min_item_level = difficulty.catalog_item_level
+    for field, value in (difficulty.catalog_rewards or {}).items():
+        setattr(difficulty, field, value)
     db.commit()
     db.refresh(difficulty)
     return difficulty
