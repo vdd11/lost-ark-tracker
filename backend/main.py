@@ -1,9 +1,13 @@
+import os
 from contextlib import asynccontextmanager
-from datetime import timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Response
+from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import Date, DateTime, func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, add_missing_columns, engine, get_db
@@ -22,6 +26,7 @@ from schemas import (
     WeeklyGold,
 )
 from seed import seed_default_tasks
+from version import APP_NAME, APP_VERSION
 
 
 @asynccontextmanager
@@ -34,7 +39,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(title=APP_NAME, version=APP_VERSION, lifespan=lifespan)
 
 # Allow the Next.js frontend to communicate with our API.
 app.add_middleware(
@@ -58,9 +63,12 @@ def next_position(db: Session, model) -> int:
     return 0 if highest is None else highest + 1
 
 
-@app.get("/")
+router = APIRouter(prefix="/api")
+
+
+@router.get("/")
 def root():
-    return {"message": "Lost Ark Tracker API is running!"}
+    return {"app": APP_NAME, "version": APP_VERSION}
 
 
 # ---------- Characters ----------
@@ -69,7 +77,7 @@ def to_character_read(character: Character, task_ids: list[int]) -> CharacterRea
     return CharacterRead.model_validate(character).model_copy(update={"task_ids": task_ids})
 
 
-@app.get("/characters", response_model=list[CharacterRead])
+@router.get("/characters", response_model=list[CharacterRead])
 def get_characters(db: Session = Depends(get_db)):
     characters = db.query(Character).order_by(Character.position, Character.id).all()
 
@@ -80,7 +88,7 @@ def get_characters(db: Session = Depends(get_db)):
     return [to_character_read(c, task_ids_by_character.get(c.id, [])) for c in characters]
 
 
-@app.post("/characters", response_model=CharacterRead, status_code=201)
+@router.post("/characters", response_model=CharacterRead, status_code=201)
 def create_character(character_data: CharacterCreate, db: Session = Depends(get_db)):
     character = Character(
         **character_data.model_dump(),
@@ -107,7 +115,7 @@ def create_character(character_data: CharacterCreate, db: Session = Depends(get_
     return to_character_read(character, task_ids)
 
 
-@app.patch("/characters/{character_id}", response_model=CharacterRead)
+@router.patch("/characters/{character_id}", response_model=CharacterRead)
 def update_character(character_id: int, changes: CharacterUpdate, db: Session = Depends(get_db)):
     character = get_or_404(db, Character, character_id)
 
@@ -126,7 +134,7 @@ def update_character(character_id: int, changes: CharacterUpdate, db: Session = 
     return to_character_read(character, task_ids)
 
 
-@app.delete("/characters/{character_id}", status_code=204)
+@router.delete("/characters/{character_id}", status_code=204)
 def delete_character(character_id: int, db: Session = Depends(get_db)):
     character = get_or_404(db, Character, character_id)
 
@@ -140,7 +148,7 @@ def delete_character(character_id: int, db: Session = Depends(get_db)):
     return Response(status_code=204)
 
 
-@app.put("/characters/{character_id}/tasks/{task_id}", status_code=204)
+@router.put("/characters/{character_id}/tasks/{task_id}", status_code=204)
 def assign_task(character_id: int, task_id: int, db: Session = Depends(get_db)):
     get_or_404(db, Character, character_id)
     get_or_404(db, Task, task_id)
@@ -152,7 +160,7 @@ def assign_task(character_id: int, task_id: int, db: Session = Depends(get_db)):
     return Response(status_code=204)
 
 
-@app.delete("/characters/{character_id}/tasks/{task_id}", status_code=204)
+@router.delete("/characters/{character_id}/tasks/{task_id}", status_code=204)
 def unassign_task(character_id: int, task_id: int, db: Session = Depends(get_db)):
     assignment = db.get(CharacterTask, (character_id, task_id))
     if assignment is not None:
@@ -164,12 +172,12 @@ def unassign_task(character_id: int, task_id: int, db: Session = Depends(get_db)
 
 # ---------- Tasks ----------
 
-@app.get("/tasks", response_model=list[TaskRead])
+@router.get("/tasks", response_model=list[TaskRead])
 def get_tasks(db: Session = Depends(get_db)):
     return db.query(Task).order_by(Task.position, Task.id).all()
 
 
-@app.post("/tasks", response_model=TaskRead, status_code=201)
+@router.post("/tasks", response_model=TaskRead, status_code=201)
 def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
     task = Task(**task_data.model_dump(), position=next_position(db, Task))
     db.add(task)
@@ -185,7 +193,7 @@ def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
     return task
 
 
-@app.patch("/tasks/{task_id}", response_model=TaskRead)
+@router.patch("/tasks/{task_id}", response_model=TaskRead)
 def update_task(task_id: int, changes: TaskUpdate, db: Session = Depends(get_db)):
     task = get_or_404(db, Task, task_id)
 
@@ -197,7 +205,7 @@ def update_task(task_id: int, changes: TaskUpdate, db: Session = Depends(get_db)
     return task
 
 
-@app.delete("/tasks/{task_id}", status_code=204)
+@router.delete("/tasks/{task_id}", status_code=204)
 def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = get_or_404(db, Task, task_id)
 
@@ -211,7 +219,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
 
 # ---------- Tracker (check-offs) ----------
 
-@app.get("/tracker", response_model=TrackerState)
+@router.get("/tracker", response_model=TrackerState)
 def get_tracker(db: Session = Depends(get_db)):
     now = utc_now()
     daily_reset = daily_reset_before(now)
@@ -239,7 +247,7 @@ def get_tracker(db: Session = Depends(get_db)):
     )
 
 
-@app.put("/characters/{character_id}/tasks/{task_id}/completion", status_code=204)
+@router.put("/characters/{character_id}/tasks/{task_id}/completion", status_code=204)
 def complete_task(character_id: int, task_id: int, db: Session = Depends(get_db)):
     character = get_or_404(db, Character, character_id)
     task = get_or_404(db, Task, task_id)
@@ -266,7 +274,7 @@ def complete_task(character_id: int, task_id: int, db: Session = Depends(get_db)
     return Response(status_code=204)
 
 
-@app.delete("/characters/{character_id}/tasks/{task_id}/completion", status_code=204)
+@router.delete("/characters/{character_id}/tasks/{task_id}/completion", status_code=204)
 def uncomplete_task(character_id: int, task_id: int, db: Session = Depends(get_db)):
     task = get_or_404(db, Task, task_id)
     period = period_for(task.category, utc_now())
@@ -281,7 +289,7 @@ def uncomplete_task(character_id: int, task_id: int, db: Session = Depends(get_d
 
 # ---------- Gold ----------
 
-@app.get("/gold-entries", response_model=list[GoldEntryRead])
+@router.get("/gold-entries", response_model=list[GoldEntryRead])
 def get_gold_entries(limit: int = Query(default=100, le=1000), db: Session = Depends(get_db)):
     return (
         db.query(GoldEntry)
@@ -291,7 +299,7 @@ def get_gold_entries(limit: int = Query(default=100, le=1000), db: Session = Dep
     )
 
 
-@app.post("/gold-entries", response_model=GoldEntryRead, status_code=201)
+@router.post("/gold-entries", response_model=GoldEntryRead, status_code=201)
 def create_gold_entry(entry_data: GoldEntryCreate, db: Session = Depends(get_db)):
     if entry_data.character_id is not None:
         get_or_404(db, Character, entry_data.character_id)
@@ -310,7 +318,7 @@ def create_gold_entry(entry_data: GoldEntryCreate, db: Session = Depends(get_db)
     return entry
 
 
-@app.delete("/gold-entries/{entry_id}", status_code=204)
+@router.delete("/gold-entries/{entry_id}", status_code=204)
 def delete_gold_entry(entry_id: int, db: Session = Depends(get_db)):
     entry = get_or_404(db, GoldEntry, entry_id)
     db.delete(entry)
@@ -318,7 +326,7 @@ def delete_gold_entry(entry_id: int, db: Session = Depends(get_db)):
     return Response(status_code=204)
 
 
-@app.get("/gold/weekly", response_model=list[WeeklyGold])
+@router.get("/gold/weekly", response_model=list[WeeklyGold])
 def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = Depends(get_db)):
     """Gold per reset week, oldest first: raid clears plus manually logged gold."""
     current_week = week_of(utc_now())
@@ -351,3 +359,78 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
         bucket.total = bucket.raid_gold + bucket.other_gold
 
     return [totals[week] for week in week_starts]
+
+
+# ---------- Backup ----------
+
+# Restore order: parents before children. Deletes run in reverse.
+BACKUP_MODELS = {
+    "characters": Character,
+    "tasks": Task,
+    "character_tasks": CharacterTask,
+    "completions": Completion,
+    "gold_entries": GoldEntry,
+}
+BACKUP_FORMAT = 1
+
+
+def serialize_row(row) -> dict:
+    values = {}
+    for column in row.__table__.columns:
+        value = getattr(row, column.name)
+        values[column.name] = value.isoformat() if isinstance(value, (date, datetime)) else value
+    return values
+
+
+def deserialize_row(model, values: dict):
+    kwargs = {}
+    for column in model.__table__.columns:
+        if column.name not in values:
+            continue
+        value = values[column.name]
+        if value is not None and isinstance(column.type, DateTime):
+            value = datetime.fromisoformat(value)
+        elif value is not None and isinstance(column.type, Date):
+            value = date.fromisoformat(value)
+        kwargs[column.name] = value
+    return model(**kwargs)
+
+
+@router.get("/backup")
+def export_backup(db: Session = Depends(get_db)):
+    backup = {"app": APP_NAME, "format": BACKUP_FORMAT, "exported_at": utc_now().isoformat()}
+    for key, model in BACKUP_MODELS.items():
+        backup[key] = [serialize_row(row) for row in db.query(model).all()]
+    return backup
+
+
+@router.post("/backup", status_code=204)
+def restore_backup(backup: dict = Body(...), db: Session = Depends(get_db)):
+    """Replace all data with the contents of a backup file."""
+    if backup.get("app") != APP_NAME or backup.get("format") != BACKUP_FORMAT:
+        raise HTTPException(status_code=400, detail="This isn't a Lost Ark Tracker backup file.")
+
+    try:
+        for model in reversed(BACKUP_MODELS.values()):
+            db.query(model).delete()
+        for key, model in BACKUP_MODELS.items():
+            rows = backup.get(key, [])
+            if not isinstance(rows, list):
+                raise ValueError(f"'{key}' should be a list")
+            db.add_all(deserialize_row(model, values) for values in rows)
+            db.flush()
+        db.commit()
+    except (ValueError, TypeError, AttributeError, SQLAlchemyError) as error:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Backup file is invalid: {error}")
+
+    return Response(status_code=204)
+
+
+app.include_router(router)
+
+# In the packaged app, the exported Next.js frontend is served from the same
+# server. Mounted last so the /api routes above take priority.
+FRONTEND_DIR = os.environ.get("FRONTEND_DIR")
+if FRONTEND_DIR and Path(FRONTEND_DIR).is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
