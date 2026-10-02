@@ -26,6 +26,16 @@ export type Task = {
   category: TaskCategory;
   gold: number;
   position: number;
+  rest_max: number;
+  rest_gain: number;
+  rest_cost: number;
+};
+
+export type RestState = {
+  character_id: number;
+  task_id: number;
+  value: number;
+  rested_run_available: boolean;
 };
 
 export type TrackerState = {
@@ -34,6 +44,7 @@ export type TrackerState = {
   next_daily_reset: string;
   next_weekly_reset: string;
   completed: [number, number][];
+  rest: RestState[];
 };
 
 export type GoldEntry = {

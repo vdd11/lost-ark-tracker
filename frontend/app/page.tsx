@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import RestGauge from "@/components/RestGauge";
 import {
   api,
   byPosition,
@@ -11,6 +12,7 @@ import {
   Character,
   formatGold,
   parseUtc,
+  RestState,
   send,
   Task,
   TrackerState,
@@ -46,6 +48,13 @@ export default function TrackerPage() {
       .catch((e) => setError(describeError(e)));
   }, []);
 
+  // Rest values depend on check-offs, so re-read them after each change.
+  const refreshRest = useCallback(() => {
+    api<TrackerState>("/tracker")
+      .then(setTracker)
+      .catch((e) => setError(describeError(e)));
+  }, []);
+
   const loadAll = useCallback(() => {
     Promise.all([
       api<Character[]>("/characters"),
@@ -78,6 +87,12 @@ export default function TrackerPage() {
   useEffect(() => {
     if (nextDailyResetValue && now >= parseUtc(nextDailyResetValue)) loadAll();
   }, [now, nextDailyResetValue, loadAll]);
+
+  const restByCell = useMemo(
+    () => new Map<string, RestState>((tracker?.rest ?? []).map((r) => [cellKey(r.character_id, r.task_id), r])),
+    [tracker],
+  );
+  const restedRunsAvailable = tracker?.rest.filter((r) => r.rested_run_available).length ?? 0;
 
   const assigned = useMemo(
     () => new Set(characters.flatMap((c) => c.task_ids.map((t) => cellKey(c.id, t)))),
@@ -118,8 +133,18 @@ export default function TrackerPage() {
     try {
       await send(wasDone ? "DELETE" : "PUT", `/characters/${character.id}/tasks/${task.id}/completion`);
       loadWeeklyGold();
+      if (task.rest_max > 0) refreshRest();
     } catch (e) {
       update(wasDone);
+      setError(describeError(e));
+    }
+  }
+
+  async function setRest(character: Character, task: Task, value: number) {
+    try {
+      await send("PUT", `/characters/${character.id}/tasks/${task.id}/rest`, { value });
+      refreshRest();
+    } catch (e) {
       setError(describeError(e));
     }
   }
@@ -150,6 +175,14 @@ export default function TrackerPage() {
             <p className="mt-1 text-sm text-muted">
               Daily reset in {formatCountdown(nextDailyReset, now)} · Weekly reset in{" "}
               {formatCountdown(parseUtc(tracker.next_weekly_reset), now)}
+              {restedRunsAvailable > 0 && (
+                <>
+                  {" · "}
+                  <span className="text-accent">
+                    {restedRunsAvailable} rested {restedRunsAvailable === 1 ? "run" : "runs"} available
+                  </span>
+                </>
+              )}
             </p>
           )}
         </div>
@@ -261,6 +294,7 @@ export default function TrackerPage() {
                       const key = cellKey(character.id, task.id);
                       const isAssigned = assigned.has(key);
                       const isDone = completed.has(key);
+                      const rest = task.rest_max > 0 ? restByCell.get(key) : undefined;
                       const border =
                         index === 0 || visibleTasks[index - 1].category !== task.category ? "border-l border-border" : "";
 
@@ -281,15 +315,25 @@ export default function TrackerPage() {
                       return (
                         <td key={task.id} className={`p-0 text-center ${border}`}>
                           {isAssigned ? (
-                            <label className={`flex h-12 cursor-pointer items-center justify-center ${isDone ? "bg-done/15" : ""}`}>
-                              <input
-                                type="checkbox"
-                                checked={isDone}
-                                onChange={() => toggleCompletion(character, task)}
-                                aria-label={`${task.name} for ${character.name}`}
-                                className="h-4 w-4 cursor-pointer"
-                              />
-                            </label>
+                            <div className={isDone ? "bg-done/15" : ""}>
+                              <label className={`flex cursor-pointer items-center justify-center ${rest ? "h-8" : "h-12"}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={isDone}
+                                  onChange={() => toggleCompletion(character, task)}
+                                  aria-label={`${task.name} for ${character.name}`}
+                                  className="h-4 w-4 cursor-pointer"
+                                />
+                              </label>
+                              {rest && (
+                                <RestGauge
+                                  task={task}
+                                  state={rest}
+                                  characterName={character.name}
+                                  onSet={(value) => setRest(character, task, value)}
+                                />
+                              )}
+                            </div>
                           ) : (
                             <span className="text-muted/50">–</span>
                           )}

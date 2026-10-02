@@ -108,7 +108,8 @@ export default function SettingsPage() {
         <p className="mb-4 text-sm text-muted">
           These are the tracker columns. Dailies reset at 10:00 UTC; weeklies and raids reset Wednesday 10:00 UTC.
           Set each raid&apos;s gold to what it currently pays. Changing it later won&apos;t rewrite past weeks. New
-          dailies and weeklies go to every character. Pick raids per character on the Tracker page.
+          dailies and weeklies go to every character. Pick raids per character on the Tracker page. Dailies can
+          track a rest bonus. Set Max to 0 to turn it off, or adjust the numbers if a patch changes them.
         </p>
 
         <AddTaskForm onAdd={(data) => mutate(() => send("POST", "/tasks", data))} />
@@ -391,6 +392,44 @@ function TaskRow({
         g
       </label>
       <RowActions onMove={onMove} onDelete={onDelete} />
+      {task.category === "daily" && <RestRulesEditor task={task} onSave={onSave} />}
     </li>
+  );
+}
+
+const REST_FIELDS = [
+  { key: "rest_max", label: "Max", hint: "Gauge capacity. 0 turns rest tracking off" },
+  { key: "rest_gain", label: "+/day", hint: "Rest gained for each day the task is skipped" },
+  { key: "rest_cost", label: "−/run", hint: "Rest a run spends for bonus rewards" },
+] as const;
+
+function RestRulesEditor({ task, onSave }: { task: Task; onSave: (changes: Partial<Task>) => void }) {
+  const [draft, setDraft] = useState({
+    rest_max: String(task.rest_max),
+    rest_gain: String(task.rest_gain),
+    rest_cost: String(task.rest_cost),
+  });
+
+  return (
+    <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+      <span>Rest bonus</span>
+      {REST_FIELDS.map((field) => (
+        <label key={field.key} title={field.hint} className="flex items-center gap-1">
+          {field.label}
+          <input
+            type="number"
+            min="0"
+            value={draft[field.key]}
+            onChange={(e) => setDraft({ ...draft, [field.key]: e.target.value })}
+            onBlur={() => {
+              const value = Math.max(0, Math.round(Number(draft[field.key]) || 0));
+              if (value !== task[field.key]) onSave({ [field.key]: value });
+            }}
+            className="w-14 px-1 py-0.5 text-foreground"
+            aria-label={`${task.name} rest bonus ${field.label}`}
+          />
+        </label>
+      ))}
+    </div>
   );
 }

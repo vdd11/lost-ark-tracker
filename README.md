@@ -7,6 +7,10 @@ non-raid sources to see your weekly gold over time.
 - **Tracker**: characters × tasks grid. Cells reset on their own at the daily
   reset (10:00 UTC) and weekly reset (Wednesday 10:00 UTC). Use "Choose tasks
   per character" to pick which raids each character runs.
+- **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
+  rest gauge, highlighted in gold when a rested run is available today. The
+  gauge is worked out from your check-offs. Click the number to match it to
+  what the game shows.
 - **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly
   gold (raid clears + logged gold).
 - **Settings**: add/edit characters and task columns, set each raid's current

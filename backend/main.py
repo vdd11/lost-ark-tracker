@@ -19,13 +19,16 @@ from schemas import (
     CharacterUpdate,
     GoldEntryCreate,
     GoldEntryRead,
+    RestState,
+    RestUpdate,
     TaskCreate,
     TaskRead,
     TaskUpdate,
     TrackerState,
     WeeklyGold,
 )
-from seed import seed_default_tasks
+from rest import RestRules, rest_at_start_of, run_is_rested, start_value_for_shown
+from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
 
 
@@ -33,9 +36,12 @@ from version import APP_NAME, APP_VERSION
 async def lifespan(app: FastAPI):
     # Create any new tables, upgrade existing ones, and add the default tasks.
     Base.metadata.create_all(bind=engine)
-    add_missing_columns()
+    added_columns = add_missing_columns()
     with SessionLocal() as db:
         seed_default_tasks(db)
+        # Databases from before rest tracking get the default rules once.
+        if ("tasks", "rest_max") in added_columns:
+            apply_default_rest_rules(db)
     yield
 
 
@@ -244,7 +250,78 @@ def get_tracker(db: Session = Depends(get_db)):
         next_daily_reset=daily_reset + timedelta(days=1),
         next_weekly_reset=weekly_reset + timedelta(days=7),
         completed=completed,
+        rest=current_rest(db, daily_reset.date()),
     )
+
+
+def rules_for(task: Task) -> RestRules:
+    return RestRules(max=task.rest_max, gain=task.rest_gain, cost=task.rest_cost)
+
+
+def current_rest(db: Session, today) -> list[RestState]:
+    tasks = {task.id: task for task in db.query(Task).filter(Task.rest_max > 0)}
+    if not tasks:
+        return []
+
+    assignments = db.query(CharacterTask).filter(CharacterTask.task_id.in_(tasks)).all()
+    completed_days: dict[tuple[int, int], set] = {}
+    for character_id, task_id, period in (
+        db.query(Completion.character_id, Completion.task_id, Completion.period)
+        .filter(Completion.task_id.in_(tasks), Completion.character_id.is_not(None))
+    ):
+        completed_days.setdefault((character_id, task_id), set()).add(period)
+
+    states = []
+    for assignment in assignments:
+        rules = rules_for(tasks[assignment.task_id])
+        days = completed_days.get((assignment.character_id, assignment.task_id), set())
+
+        if assignment.rest_period is None:
+            # Nothing entered yet: start tracking from an empty gauge today.
+            start = 0
+        else:
+            start = rest_at_start_of(today, assignment.rest_value, assignment.rest_period, days, rules)
+        start = min(start, rules.max)  # in case the max was lowered
+        # Move the anchor up to today. Past days can't be unchecked anymore,
+        # so this loses nothing and keeps the replay short.
+        assignment.rest_value, assignment.rest_period = start, today
+
+        done_today = today in days
+        rested = run_is_rested(start, rules)
+        states.append(RestState(
+            character_id=assignment.character_id,
+            task_id=assignment.task_id,
+            value=start - rules.cost if done_today and rested else start,
+            rested_run_available=rested and not done_today,
+        ))
+
+    db.commit()
+    return states
+
+
+@router.put("/characters/{character_id}/tasks/{task_id}/rest", status_code=204)
+def set_rest(character_id: int, task_id: int, update: RestUpdate, db: Session = Depends(get_db)):
+    """Sync the gauge with the game: `value` is what the game shows right now."""
+    assignment = db.get(CharacterTask, (character_id, task_id))
+    if assignment is None:
+        raise HTTPException(status_code=404, detail="Character doesn't do this task")
+    task = get_or_404(db, Task, task_id)
+    rules = rules_for(task)
+    if not rules.enabled:
+        raise HTTPException(status_code=400, detail="This task has no rest bonus")
+
+    today = daily_reset_before(utc_now()).date()
+    done_today = (
+        db.query(Completion)
+        .filter_by(character_id=character_id, task_id=task_id, period=today)
+        .first()
+        is not None
+    )
+    assignment.rest_value = start_value_for_shown(update.value, done_today, rules)
+    assignment.rest_period = today
+    db.commit()
+
+    return Response(status_code=204)
 
 
 @router.put("/characters/{character_id}/tasks/{task_id}/completion", status_code=204)

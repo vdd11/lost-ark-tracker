@@ -40,6 +40,9 @@ class TaskCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     category: TaskCategory
     gold: int = Field(default=0, ge=0)
+    rest_max: int = Field(default=0, ge=0)
+    rest_gain: int = Field(default=0, ge=0)
+    rest_cost: int = Field(default=0, ge=0)
 
 
 class TaskUpdate(BaseModel):
@@ -47,6 +50,9 @@ class TaskUpdate(BaseModel):
     category: TaskCategory | None = None
     gold: int | None = Field(default=None, ge=0)
     position: int | None = None
+    rest_max: int | None = Field(default=None, ge=0)
+    rest_gain: int | None = Field(default=None, ge=0)
+    rest_cost: int | None = Field(default=None, ge=0)
 
 
 class TaskRead(BaseModel):
@@ -57,6 +63,22 @@ class TaskRead(BaseModel):
     category: TaskCategory
     gold: int
     position: int
+    rest_max: int
+    rest_gain: int
+    rest_cost: int
+
+
+class RestState(BaseModel):
+    character_id: int
+    task_id: int
+    # What the game should be showing right now (after today's run, if done).
+    value: int
+    # Today's run hasn't happened yet and will spend rest for bonus rewards.
+    rested_run_available: bool
+
+
+class RestUpdate(BaseModel):
+    value: int = Field(ge=0)
 
 
 class TrackerState(BaseModel):
@@ -68,6 +90,7 @@ class TrackerState(BaseModel):
     next_weekly_reset: datetime
     # [character_id, task_id] pairs completed in the current period.
     completed: list[tuple[int, int]]
+    rest: list[RestState] = []
 
 
 class GoldEntryCreate(BaseModel):

@@ -35,9 +35,11 @@ def add_missing_columns():
 
     create_all() only creates missing tables, so without this an existing
     database.db would break whenever a model gains a new column. New columns
-    need a server_default so existing rows get a value.
+    need a server_default so existing rows get a value. Returns the
+    (table, column) pairs that were added, for one-off data upgrades.
     """
     inspector = inspect(engine)
+    added = set()
 
     with engine.begin() as connection:
         for table in Base.metadata.sorted_tables:
@@ -57,3 +59,6 @@ def add_missing_columns():
                     statement += f" DEFAULT '{column.server_default.arg}'"
 
                 connection.execute(text(statement))
+                added.add((table.name, column.name))
+
+    return added

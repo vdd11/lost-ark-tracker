@@ -31,6 +31,10 @@ class Task(Base):
     category: Mapped[str] = mapped_column(String(20))
     gold: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Rest bonus rules for dailies; rest_max 0 means the task has no rest gauge.
+    rest_max: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    rest_gain: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    rest_cost: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class CharacterTask(Base):
@@ -40,6 +44,10 @@ class CharacterTask(Base):
 
     character_id: Mapped[int] = mapped_column(ForeignKey("characters.id"), primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), primary_key=True)
+    # Rest gauge anchor: its value at the start of rest_period. The current
+    # value is replayed from here using completions (see rest.py).
+    rest_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rest_period: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
 class Completion(Base):

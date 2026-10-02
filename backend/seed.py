@@ -19,6 +19,22 @@ DEFAULT_TASKS = [
 ]
 
 
+# Rest bonus rules: (max, gained per skipped day, spent per rested run).
+# Editable per task in Settings in case a patch changes them.
+DEFAULT_REST_RULES = {
+    "Chaos Dungeon": (200, 20, 40),
+    "Guardian Raid": (100, 10, 20),
+}
+
+
+def apply_default_rest_rules(db: Session):
+    """Give the default dailies their rest rules (new installs and upgrades)."""
+    for name, (rest_max, rest_gain, rest_cost) in DEFAULT_REST_RULES.items():
+        for task in db.query(Task).filter_by(name=name, category="daily", rest_max=0):
+            task.rest_max, task.rest_gain, task.rest_cost = rest_max, rest_gain, rest_cost
+    db.commit()
+
+
 def seed_default_tasks(db: Session):
     if db.query(Task).first() is not None:
         return
@@ -37,3 +53,4 @@ def seed_default_tasks(db: Session):
                 db.add(CharacterTask(character_id=character.id, task_id=task.id))
 
     db.commit()
+    apply_default_rest_rules(db)
