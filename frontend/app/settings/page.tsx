@@ -190,8 +190,9 @@ function BackupSection({ onError, onRestored }: { onError: (error: string) => vo
     <section>
       <h2 className="mb-1 text-2xl font-bold">Backup &amp; restore</h2>
       <p className="mb-4 text-sm text-muted">
-        Your data lives only on this computer. Download a backup now and then, or to move your roster to another
-        machine. Restoring replaces everything.
+        Your data lives only on this computer. The app also saves a copy each day you open it (the last 10 days),
+        in a backups folder next to database.db. Download a backup to move your roster to another machine.
+        Restoring replaces everything.
       </p>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <button onClick={download} className="rounded-md bg-accent px-3 py-1.5 font-medium text-background">

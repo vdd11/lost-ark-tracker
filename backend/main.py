@@ -10,7 +10,7 @@ from sqlalchemy import Date, DateTime, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from database import Base, SessionLocal, add_missing_columns, engine, get_db
+from database import Base, SessionLocal, add_missing_columns, backup_database, engine, get_db
 from gems import lv1_equivalent, run_gems
 from models import Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
 from resets import daily_reset_before, period_for, utc_now, week_of, weekly_reset_before
@@ -47,7 +47,9 @@ from version import APP_NAME, APP_VERSION
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create any new tables, upgrade existing ones, and add the default tasks.
+    # Back up first, then create any new tables, upgrade existing ones, and
+    # add the default tasks.
+    backup_database()
     Base.metadata.create_all(bind=engine)
     added_columns = add_missing_columns()
     with SessionLocal() as db:

@@ -54,8 +54,10 @@ Your data is saved here:
 | macOS   | `~/Library/Application Support/LostArkTracker/database.db` |
 | Linux   | `~/.local/share/lost-ark-tracker/database.db` |
 
-Use **Settings → Download backup** now and then. The same file restores your
-data on another computer, or after a reinstall.
+Each day you open the app it also saves a copy in a `backups` folder next to
+`database.db` (the last 10 days are kept). To restore one, close the app and
+copy it over `database.db`. **Settings → Download backup** gives you a file
+that restores your data on another computer, or after a reinstall.
 
 **First-run warnings.** The downloads aren't code-signed, so:
 - **Windows** SmartScreen may say "Windows protected your PC". Click

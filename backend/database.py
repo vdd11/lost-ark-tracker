@@ -1,4 +1,8 @@
 import os
+import sqlite3
+from contextlib import closing
+from datetime import date
+from pathlib import Path
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -62,3 +66,33 @@ def add_missing_columns():
                 added.add((table.name, column.name))
 
     return added
+
+
+BACKUPS_TO_KEEP = 10
+
+
+def backup_database(today: date | None = None) -> Path | None:
+    """Copy the database into a backups/ folder next to it, once per day.
+
+    Runs at startup before any upgrade touches the data, so a bad migration
+    or a mistaken restore can always be undone. Keeps the newest few copies.
+    """
+    if engine.url.get_backend_name() != "sqlite" or not engine.url.database:
+        return None
+    source = Path(engine.url.database)
+    if not source.is_file() or source.stat().st_size == 0:
+        return None
+
+    folder = source.parent / "backups"
+    folder.mkdir(exist_ok=True)
+    target = folder / f"{source.stem}-{(today or date.today()).isoformat()}.db"
+    if not target.exists():
+        # SQLite's backup API copies a consistent snapshot even mid-write.
+        # closing(): sqlite3's own context manager commits but doesn't close,
+        # which leaves the files locked on Windows.
+        with closing(sqlite3.connect(source)) as src, closing(sqlite3.connect(target)) as dst:
+            src.backup(dst)
+
+    for old in sorted(folder.glob(f"{source.stem}-*.db"))[:-BACKUPS_TO_KEEP]:
+        old.unlink()
+    return target

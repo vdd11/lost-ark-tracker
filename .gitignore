@@ -10,3 +10,4 @@ database.db
 /frontend/out/
 /build/
 /dist/
+/backend/backups/
