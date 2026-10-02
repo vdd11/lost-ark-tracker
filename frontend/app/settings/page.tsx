@@ -2,8 +2,12 @@
 
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 
+import Link from "next/link";
+
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import RaidPicker, { RaidSelection } from "@/components/RaidPicker";
 import { api, byPosition, CATEGORIES, Character, send, Task, TaskCategory } from "@/lib/api";
+import { isActiveRaid } from "@/lib/raids";
 
 type Positioned = { id: number; position: number };
 
@@ -65,7 +69,10 @@ export default function SettingsPage() {
           you keep for a friend&apos;s clears.
         </p>
 
-        <AddCharacterForm onAdd={(data) => mutate(() => send("POST", "/characters", data))} />
+        <AddCharacterForm
+          raids={tasks.filter((t) => isActiveRaid(t))}
+          onAdd={(data) => mutate(() => send("POST", "/characters", data))}
+        />
 
         <div className="overflow-x-auto rounded-md border border-border bg-surface">
           <table className="w-full text-sm">
@@ -106,16 +113,16 @@ export default function SettingsPage() {
       <section>
         <h2 className="mb-1 text-2xl font-bold">Tasks</h2>
         <p className="mb-4 text-sm text-muted">
-          These are the tracker columns. Dailies reset at 10:00 UTC; weeklies and raids reset Wednesday 10:00 UTC.
-          Set each raid&apos;s gold to what it currently pays. Changing it later won&apos;t rewrite past weeks. New
-          dailies and weeklies go to every character. Pick raids per character on the Tracker page. Dailies can
-          track a rest bonus. Set Max to 0 to turn it off, or adjust the numbers if a patch changes them.
+          Daily and weekly tracker columns. Dailies reset at 10:00 UTC, weeklies on Wednesday 10:00 UTC. New ones go
+          to every character. Dailies can track a rest bonus: set Max to 0 to turn it off, or adjust the numbers if a
+          patch changes them. Raids, with their gold and item levels, are on the{" "}
+          <Link href="/raids" className="underline">Raids page</Link>.
         </p>
 
         <AddTaskForm onAdd={(data) => mutate(() => send("POST", "/tasks", data))} />
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {CATEGORIES.map((category) => {
+        <div className="grid gap-4 md:grid-cols-2">
+          {CATEGORIES.filter((category) => category.value !== "raid").map((category) => {
             const group = tasks.filter((t) => t.category === category.value);
             return (
               <div key={category.value} className="rounded-md border border-border bg-surface">
@@ -200,12 +207,13 @@ function BackupSection({ onError, onRestored }: { onError: (error: string) => vo
   );
 }
 
-function AddCharacterForm({ onAdd }: { onAdd: (data: object) => Promise<void> }) {
+function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: object) => Promise<void> }) {
   const [name, setName] = useState("");
   const [className, setClassName] = useState("");
   const [itemLevel, setItemLevel] = useState("");
   const [isGoldEarner, setIsGoldEarner] = useState(true);
   const [reservedFor, setReservedFor] = useState("");
+  const [selectedRaids, setSelectedRaids] = useState<RaidSelection>({});
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -215,11 +223,16 @@ function AddCharacterForm({ onAdd }: { onAdd: (data: object) => Promise<void> })
       item_level: Number(itemLevel) || 0,
       is_gold_earner: isGoldEarner,
       reserved_for: reservedFor.trim() || null,
+      raids: Object.entries(selectedRaids).map(([taskId, difficultyId]) => ({
+        task_id: Number(taskId),
+        difficulty_id: difficultyId || null,
+      })),
     });
     setName("");
     setClassName("");
     setItemLevel("");
     setReservedFor("");
+    setSelectedRaids({});
   }
 
   return (
@@ -240,6 +253,13 @@ function AddCharacterForm({ onAdd }: { onAdd: (data: object) => Promise<void> })
         <input type="checkbox" checked={isGoldEarner} onChange={(e) => setIsGoldEarner(e.target.checked)} />
         Gold earner
       </label>
+      <RaidPicker
+        raids={raids}
+        itemLevel={Number(itemLevel) || 0}
+        isGoldEarner={isGoldEarner}
+        value={selectedRaids}
+        onChange={setSelectedRaids}
+      />
       <button type="submit" className="rounded-md bg-accent px-3 py-1.5 font-medium text-background">
         Add character
       </button>
@@ -330,7 +350,7 @@ function CharacterRow({
 
 function AddTaskForm({ onAdd }: { onAdd: (data: object) => Promise<void> }) {
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<TaskCategory>("raid");
+  const [category, setCategory] = useState<TaskCategory>("daily");
   const [gold, setGold] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -342,9 +362,9 @@ function AddTaskForm({ onAdd }: { onAdd: (data: object) => Promise<void> }) {
 
   return (
     <form onSubmit={handleSubmit} className="mb-4 flex flex-wrap items-end gap-2 text-sm">
-      <input required placeholder="Task name, e.g. Act 4 Hard" value={name} onChange={(e) => setName(e.target.value)} className="w-56" />
+      <input required placeholder="Task name, e.g. Paradise" value={name} onChange={(e) => setName(e.target.value)} className="w-56" />
       <select value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)}>
-        {CATEGORIES.map((c) => (
+        {CATEGORIES.filter((c) => c.value !== "raid").map((c) => (
           <option key={c.value} value={c.value}>{c.label}</option>
         ))}
       </select>

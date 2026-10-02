@@ -6,10 +6,22 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RestGauge from "@/components/RestGauge";
 import {
+  difficultyOf,
+  formatItemLevel,
+  formatShortGold,
+  GOLD_RAIDS_PER_WEEK,
+  isActiveRaid,
+  paidRaids,
+  possibleRaidGold,
+  raidGold,
+  shortDifficulty,
+} from "@/lib/raids";
+import {
   api,
   byPosition,
   CATEGORIES,
   Character,
+  Difficulty,
   formatGold,
   parseUtc,
   RestState,
@@ -108,15 +120,16 @@ export default function TrackerPage() {
     ...category,
     tasks: tasks
       .filter((t) => t.category === category.value)
+      .filter((t) => t.category !== "raid" || isActiveRaid(t))
       .filter((t) => editMode || characters.some((c) => c.task_ids.includes(t.id)))
       .sort(byPosition),
   })).filter((group) => group.tasks.length > 0);
   const visibleTasks = columnGroups.flatMap((group) => group.tasks);
 
-  const possibleRaidGold = characters
-    .filter((c) => c.is_gold_earner)
-    .flatMap((c) => tasks.filter((t) => t.category === "raid" && c.task_ids.includes(t.id)))
-    .reduce((sum, t) => sum + t.gold, 0);
+  const possibleGold = possibleRaidGold(characters, tasks);
+  const hasUnknownGold = characters.some((c) =>
+    tasks.some((t) => isActiveRaid(t) && t.difficulties.length > 0 && c.task_ids.includes(t.id) && raidGold(c, t) === null),
+  );
 
   async function toggleCompletion(character: Character, task: Task) {
     const key = cellKey(character.id, task.id);
@@ -145,6 +158,28 @@ export default function TrackerPage() {
       await send("PUT", `/characters/${character.id}/tasks/${task.id}/rest`, { value });
       refreshRest();
     } catch (e) {
+      setError(describeError(e));
+    }
+  }
+
+  /** Pick a raid difficulty for a character, or null to stop running the raid. */
+  async function setRaidDifficulty(character: Character, task: Task, difficultyId: number | null) {
+    const taskIds = character.task_ids.filter((id) => id !== task.id);
+    const difficultyIds = { ...character.difficulty_ids };
+    delete difficultyIds[String(task.id)];
+    if (difficultyId !== null) {
+      taskIds.push(task.id);
+      difficultyIds[String(task.id)] = difficultyId;
+    }
+    const replaceCharacter = (updated: Character) =>
+      setCharacters((prev) => prev.map((c) => (c.id === character.id ? updated : c)));
+
+    replaceCharacter({ ...character, task_ids: taskIds, difficulty_ids: difficultyIds });
+    try {
+      const path = `/characters/${character.id}/tasks/${task.id}`;
+      await (difficultyId === null ? send("DELETE", path) : send("PUT", path, { difficulty_id: difficultyId }));
+    } catch (e) {
+      replaceCharacter(character);
       setError(describeError(e));
     }
   }
@@ -188,7 +223,7 @@ export default function TrackerPage() {
         </div>
 
         <div className="flex flex-wrap gap-3 text-sm">
-          <Stat label="Raid gold this week" value={thisWeek ? formatGold(thisWeek.raid_gold) : "–"} sub={`of ${formatGold(possibleRaidGold)} possible`} />
+          <Stat label="Raid gold this week" value={thisWeek ? formatGold(thisWeek.raid_gold) : "–"} sub={`of ${formatGold(possibleGold)} possible`} />
           <Stat label="Other gold this week" value={thisWeek ? formatGold(thisWeek.other_gold) : "–"} sub={<Link href="/gold" className="underline">log gold</Link>} />
           <Stat label="Total this week" value={thisWeek ? formatGold(thisWeek.total) : "–"} accent />
         </div>
@@ -196,10 +231,10 @@ export default function TrackerPage() {
 
       <ErrorBanner error={error} />
 
-      {characters.length > 0 && tasks.some((t) => t.category === "raid") && tasks.every((t) => t.category !== "raid" || t.gold === 0) && (
+      {hasUnknownGold && (
         <p className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
-          Raid gold values aren&apos;t set yet. Enter what each raid pays in{" "}
-          <Link href="/settings" className="underline">Settings</Link> so your weekly gold adds up.
+          Some raids your characters run don&apos;t have a gold value yet (shown as ?). Fill them in on the{" "}
+          <Link href="/raids" className="underline">Raids page</Link> so your weekly gold adds up.
         </p>
       )}
 
@@ -228,7 +263,8 @@ export default function TrackerPage() {
 
       {editMode && (
         <p className="mb-3 text-sm text-muted">
-          Click a cell to toggle whether that character does the task. Unassigned cells show as –.
+          Click a cell to toggle whether that character does the task, or pick a raid&apos;s difficulty. Unassigned
+          cells show as –. Raids nobody runs are listed here too.
         </p>
       )}
 
@@ -250,16 +286,23 @@ export default function TrackerPage() {
                 <th className="border-l border-border" />
               </tr>
               <tr className="border-b border-border">
-                <th className="sticky left-0 bg-surface px-3 py-2 text-left font-medium">Character</th>
+                <th className="sticky left-0 min-w-36 bg-surface px-3 py-2 text-left font-medium">Character</th>
                 {visibleTasks.map((task, index) => (
                   <th
                     key={task.id}
-                    className={`min-w-20 px-2 py-2 text-center align-bottom font-medium ${
+                    className={`${task.category === "raid" ? "min-w-24" : "min-w-20"} px-2 py-2 text-center align-bottom font-medium ${
                       index === 0 || visibleTasks[index - 1].category !== task.category ? "border-l border-border" : ""
                     }`}
                   >
                     <div className="leading-tight">{task.name}</div>
-                    {task.gold > 0 && <div className="text-xs font-normal text-accent">{formatGold(task.gold)}g</div>}
+                    {task.gold > 0 && task.difficulties.length === 0 && (
+                      <div className="text-xs font-normal text-accent">{formatGold(task.gold)}g</div>
+                    )}
+                    {task.ends_on && (
+                      <div className="text-xs font-normal text-muted">
+                        event, until {new Date(`${task.ends_on}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </div>
+                    )}
                   </th>
                 ))}
                 <th className="border-l border-border px-3 py-2 text-right font-medium">Done</th>
@@ -269,6 +312,7 @@ export default function TrackerPage() {
               {visibleCharacters.map((character) => {
                 const rowTasks = visibleTasks.filter((t) => assigned.has(cellKey(character.id, t.id)));
                 const rowDone = rowTasks.filter((t) => completed.has(cellKey(character.id, t.id))).length;
+                const paidRaidCount = paidRaids(character, tasks).length;
 
                 return (
                   <tr key={character.id} className="border-b border-border last:border-b-0 hover:bg-surface-2/50">
@@ -286,8 +330,13 @@ export default function TrackerPage() {
                       </div>
                       <div className="text-xs text-muted">
                         {character.class_name}
-                        {character.item_level > 0 && ` · ${character.item_level}`}
+                        {character.item_level > 0 && ` · ${formatItemLevel(character.item_level)}`}
                       </div>
+                      {paidRaidCount > GOLD_RAIDS_PER_WEEK && (
+                        <div className="text-xs text-accent" title="Only the first raids you clear each week pay gold">
+                          {paidRaidCount} gold raids, {GOLD_RAIDS_PER_WEEK} pay
+                        </div>
+                      )}
                     </td>
 
                     {visibleTasks.map((task, index) => {
@@ -297,6 +346,29 @@ export default function TrackerPage() {
                       const rest = task.rest_max > 0 ? restByCell.get(key) : undefined;
                       const border =
                         index === 0 || visibleTasks[index - 1].category !== task.category ? "border-l border-border" : "";
+
+                      const difficulty = task.difficulties.length > 0 ? difficultyOf(character, task) : undefined;
+
+                      if (editMode && task.difficulties.length > 0) {
+                        return (
+                          <td key={task.id} className={`px-1 text-center ${border}`}>
+                            <select
+                              value={isAssigned ? (difficulty?.id ?? "") : ""}
+                              onChange={(e) => setRaidDifficulty(character, task, e.target.value ? Number(e.target.value) : null)}
+                              aria-label={`${task.name} difficulty for ${character.name}`}
+                              className={`w-full py-1 text-xs ${isAssigned ? "border-accent! bg-accent/15 font-medium" : "text-muted"}`}
+                            >
+                              <option value="">–</option>
+                              {task.difficulties.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {shortDifficulty(d.name)} · {formatItemLevel(d.min_item_level)}
+                                  {d.min_item_level > character.item_level ? " ⚠" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        );
+                      }
 
                       if (editMode) {
                         return (
@@ -316,7 +388,7 @@ export default function TrackerPage() {
                         <td key={task.id} className={`p-0 text-center ${border}`}>
                           {isAssigned ? (
                             <div className={isDone ? "bg-done/15" : ""}>
-                              <label className={`flex cursor-pointer items-center justify-center ${rest ? "h-8" : "h-12"}`}>
+                              <label className={`flex cursor-pointer items-center justify-center ${rest || difficulty ? "h-8" : "h-12"}`}>
                                 <input
                                   type="checkbox"
                                   checked={isDone}
@@ -325,6 +397,7 @@ export default function TrackerPage() {
                                   className="h-4 w-4 cursor-pointer"
                                 />
                               </label>
+                              {difficulty && <RaidBadge difficulty={difficulty} itemLevel={character.item_level} />}
                               {rest && (
                                 <RestGauge
                                   task={task}
@@ -351,6 +424,23 @@ export default function TrackerPage() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function RaidBadge({ difficulty, itemLevel }: { difficulty: Difficulty; itemLevel: number }) {
+  const underLevel = difficulty.min_item_level > itemLevel;
+  return (
+    <div
+      className={`pb-1.5 text-[11px] leading-none ${underLevel ? "text-danger" : "text-muted"}`}
+      title={
+        underLevel
+          ? `${difficulty.name} needs item level ${formatItemLevel(difficulty.min_item_level)}`
+          : `${difficulty.name}: ${difficulty.gold === null ? "gold unknown" : `${formatGold(difficulty.gold)} gold`}`
+      }
+    >
+      {shortDifficulty(difficulty.name)} · {formatShortGold(difficulty.gold)}
+      {underLevel && " ⚠"}
     </div>
   );
 }

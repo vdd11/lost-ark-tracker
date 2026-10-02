@@ -18,6 +18,20 @@ export type Character = {
   reserved_for: string | null;
   position: number;
   task_ids: number[];
+  /** task_id -> difficulty_id for raids (JSON object keys are strings). */
+  difficulty_ids: Record<string, number>;
+};
+
+export type Difficulty = {
+  id: number;
+  task_id: number;
+  name: string;
+  position: number;
+  min_item_level: number;
+  /** Total gold for all gates; null when not known yet. */
+  gold: number | null;
+  catalog_item_level: number | null;
+  catalog_gold: number | null;
 };
 
 export type Task = {
@@ -29,6 +43,13 @@ export type Task = {
   rest_max: number;
   rest_gain: number;
   rest_cost: number;
+  catalog_key: string | null;
+  archived: boolean;
+  ends_on: string | null;
+  roster_limited: boolean;
+  gold_for_everyone: boolean;
+  note: string | null;
+  difficulties: Difficulty[];
 };
 
 export type RestState = {
