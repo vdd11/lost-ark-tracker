@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidPicker, { RaidSelection, suggestedRaids } from "@/components/RaidPicker";
-import { api, byPosition, CATEGORIES, Character, send, Task, TaskCategory } from "@/lib/api";
+import { api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task, TaskCategory } from "@/lib/api";
 import { isActiveRaid } from "@/lib/raids";
 
 type Positioned = { id: number; position: number };
@@ -50,6 +50,8 @@ export default function SettingsPage() {
     }
   }
 
+  const goldEarners = characters.filter((c) => c.is_gold_earner).length;
+
   function move<T extends Positioned>(items: T[], index: number, direction: -1 | 1, path: string) {
     const renumbered = reorder(items, index, direction);
     if (!renumbered) return;
@@ -65,9 +67,16 @@ export default function SettingsPage() {
       <section>
         <h1 className="mb-1 text-2xl font-bold">Characters</h1>
         <p className="mb-4 text-sm text-muted">
-          Gold earners get raid gold counted toward your weekly total. Fill in &quot;Saved for&quot; on characters
-          you keep for a friend&apos;s clears.
+          Gold earners get raid gold counted toward your weekly total (up to {MAX_GOLD_EARNERS} per roster). Fill in
+          &quot;Saved for&quot; on characters you keep for a friend&apos;s clears.
         </p>
+
+        {goldEarners > MAX_GOLD_EARNERS && (
+          <p className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
+            {goldEarners} characters are marked as gold earners, but only {MAX_GOLD_EARNERS} per roster earn raid gold.
+            Untick the ones you don&apos;t designate in game so your possible gold stays accurate.
+          </p>
+        )}
 
         <AddCharacterForm
           raids={tasks.filter((t) => isActiveRaid(t))}

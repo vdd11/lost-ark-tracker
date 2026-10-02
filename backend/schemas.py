@@ -220,6 +220,8 @@ class WeeklyGold(BaseModel):
     other_gold: int
     total: int
     by_source: dict[str, int]
+    # Character name -> gold (raid clears plus logged gold tied to them).
+    by_character: dict[str, int] = {}
 
 
 class GemEntryCreate(BaseModel):

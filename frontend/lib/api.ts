@@ -108,6 +108,7 @@ export type WeeklyGold = {
   other_gold: number;
   total: number;
   by_source: Record<string, number>;
+  by_character: Record<string, number>;
 };
 
 export async function api<T = void>(path: string, init?: RequestInit): Promise<T> {
@@ -132,6 +133,9 @@ export function send<T = void>(method: string, path: string, body?: unknown) {
 export function parseUtc(value: string) {
   return new Date(/[zZ]|[+-]\d\d:\d\d$/.test(value) ? value : `${value}Z`);
 }
+
+/** How many characters per roster can earn raid gold each week. */
+export const MAX_GOLD_EARNERS = 6;
 
 export function formatGold(amount: number) {
   return amount.toLocaleString();

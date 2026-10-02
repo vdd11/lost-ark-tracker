@@ -61,6 +61,15 @@ export default function GoldPage() {
   const thisWeek = weeks.at(-1);
   const lastWeek = weeks.at(-2);
   const average = weeks.length ? Math.round(weeks.reduce((sum, w) => sum + w.total, 0) / weeks.length) : 0;
+  // What each character brings in: this week and the weekly average over the range.
+  const characterRows = [...characters.map((c) => c.name), "Unassigned"]
+    .map((name) => ({
+      name,
+      thisWeek: thisWeek?.by_character[name] ?? 0,
+      average: Math.round(weeks.reduce((sum, w) => sum + (w.by_character[name] ?? 0), 0) / Math.max(1, weeks.length)),
+    }))
+    .filter((row) => row.thisWeek > 0 || row.average > 0)
+    .sort((a, b) => b.average - a.average);
 
   return (
     <div className="space-y-8">
@@ -125,6 +134,35 @@ export default function GoldPage() {
         ) : (
           <WeeklyGoldChart weeks={weeks} show={VIEWS[view].show} />
         )}
+      </section>
+
+      <section className="overflow-x-auto rounded-md border border-border bg-surface p-4">
+        <h2 className="mb-3 font-semibold">By character</h2>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-muted">
+              <th className="py-1.5 font-medium">Character</th>
+              <th className="py-1.5 text-right font-medium">This week</th>
+              <th className="py-1.5 text-right font-medium">Weekly average</th>
+            </tr>
+          </thead>
+          <tbody className="tabular-nums">
+            {characterRows.map((row) => (
+              <tr key={row.name} className="border-b border-border last:border-b-0">
+                <td className="py-1.5">{row.name}</td>
+                <td className="py-1.5 text-right">{formatGold(row.thisWeek)}</td>
+                <td className="py-1.5 text-right">{formatGold(row.average)}</td>
+              </tr>
+            ))}
+            {characterRows.length === 0 && (
+              <tr><td className="py-2 text-muted">No gold yet.</td></tr>
+            )}
+          </tbody>
+        </table>
+        <p className="mt-2 text-xs text-muted">
+          Raid clears plus gold you logged for a specific character. Gold logged for &quot;Any character&quot; shows
+          as Unassigned.
+        </p>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">

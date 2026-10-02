@@ -604,9 +604,14 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
     first_reset = weekly_reset_before(utc_now()) - timedelta(weeks=weeks - 1)
 
     totals = {
-        week: WeeklyGold(week=week, raid_gold=0, other_gold=0, total=0, by_source={})
+        week: WeeklyGold(week=week, raid_gold=0, other_gold=0, total=0, by_source={}, by_character={})
         for week in week_starts
     }
+    names = dict(db.query(Character.id, Character.name).all())
+
+    def credit(bucket: WeeklyGold, character_id: int | None, amount: int):
+        who = names.get(character_id, "Unassigned")
+        bucket.by_character[who] = bucket.by_character.get(who, 0) + amount
 
     completions = (
         db.query(Completion)
@@ -617,6 +622,7 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
         bucket = totals.get(week_of(completion.completed_at))
         if bucket is not None:
             bucket.raid_gold += completion.gold
+            credit(bucket, completion.character_id, completion.gold)
 
     entries = db.query(GoldEntry).filter(GoldEntry.earned_at >= first_reset).all()
     for entry in entries:
@@ -624,6 +630,7 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
         if bucket is not None:
             bucket.other_gold += entry.amount
             bucket.by_source[entry.source] = bucket.by_source.get(entry.source, 0) + entry.amount
+            credit(bucket, entry.character_id, entry.amount)
 
     for bucket in totals.values():
         bucket.total = bucket.raid_gold + bucket.other_gold
