@@ -119,10 +119,20 @@ export async function api<T = void>(path: string, init?: RequestInit): Promise<T
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.detail ? JSON.stringify(body.detail) : `Request failed: ${response.status}`);
+    throw new Error(errorMessage(body?.detail) ?? `Request failed: ${response.status}`);
   }
 
   return (response.status === 204 ? undefined : await response.json()) as T;
+}
+
+/** FastAPI errors: a string, or a list of validation problems with a `msg` each. */
+export function errorMessage(detail: unknown): string | null {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail.map((d) => (d && typeof d === "object" && "msg" in d ? String(d.msg) : String(d)));
+    return messages.join("; ") || null;
+  }
+  return null;
 }
 
 export function send<T = void>(method: string, path: string, body?: unknown) {

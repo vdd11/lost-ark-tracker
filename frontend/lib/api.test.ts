@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { gemsToLv1, parseUtc } from "./api";
+import { errorMessage, gemsToLv1, parseUtc } from "./api";
 import { isNewer } from "./version";
 
 describe("gemsToLv1", () => {
@@ -24,5 +24,15 @@ describe("isNewer", () => {
     expect(isNewer("1.4.0", "1.4.0")).toBe(false);
     expect(isNewer("1.3.9", "1.4.0")).toBe(false);
     expect(isNewer("2.0", "1.9.9")).toBe(true);
+  });
+});
+
+describe("errorMessage", () => {
+  it("reads FastAPI's string and validation-list details", () => {
+    expect(errorMessage("Task not found")).toBe("Task not found");
+    expect(errorMessage([{ msg: "Input should be greater than 0" }, { msg: "Field required" }])).toBe(
+      "Input should be greater than 0; Field required",
+    );
+    expect(errorMessage(undefined)).toBeNull();
   });
 });

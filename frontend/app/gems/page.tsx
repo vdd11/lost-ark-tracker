@@ -121,7 +121,7 @@ export default function GemsPage() {
           combine into one of the next, so a Lv2 counts as 3 and a Lv3 as 9.
         </p>
       </div>
-      <ErrorBanner error={error} />
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       <AddGemsForm characters={characters} onAdd={(data) => mutate(() => send("POST", "/gem-entries", data))} />
 

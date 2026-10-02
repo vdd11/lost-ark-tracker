@@ -67,7 +67,7 @@ export default function RaidsPage() {
         ))}
       </div>
 
-      <ErrorBanner error={error} />
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       {unknownGold.length > 0 && (
         <p className="rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">

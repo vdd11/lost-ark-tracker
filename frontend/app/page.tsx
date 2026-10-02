@@ -141,6 +141,22 @@ export default function TrackerPage() {
   const visibleTasks = columnGroups.flatMap((group) => group.tasks);
 
   const possibleGold = possibleRaidGold(characters, tasks);
+
+  // Done/total per category across the characters shown, counting only what
+  // each character usually does (and can enter).
+  const progress = CATEGORIES.map((category) => {
+    let done = 0;
+    let total = 0;
+    for (const character of visibleCharacters) {
+      for (const task of tasks) {
+        if (task.category !== category.value || !character.task_ids.includes(task.id)) continue;
+        if (task.category === "raid" ? !isActiveRaid(task) : isTiered(task) && !canRun(character, task)) continue;
+        total += 1;
+        if (completed.has(cellKey(character.id, task.id))) done += 1;
+      }
+    }
+    return { ...category, done, total };
+  }).filter((group) => group.total > 0);
   const hasUnknownGold = characters.some((c) =>
     tasks.some((t) => isActiveRaid(t) && t.difficulties.length > 0 && c.task_ids.includes(t.id) && raidGold(c, t) === null),
   );
@@ -263,6 +279,22 @@ export default function TrackerPage() {
               )}
             </p>
           )}
+          {progress.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
+              {progress.map((group) => (
+                <div key={group.value} className="flex items-center gap-2" title={`${group.label}: ${group.done} of ${group.total} done`}>
+                  <span>{group.label}</span>
+                  <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className={`h-full rounded-full ${group.done === group.total ? "bg-done" : "bg-accent"}`}
+                      style={{ width: `${(group.done / group.total) * 100}%` }}
+                    />
+                  </div>
+                  <span className="tabular-nums">{group.done}/{group.total}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-3 text-sm">
@@ -272,7 +304,7 @@ export default function TrackerPage() {
         </div>
       </div>
 
-      <ErrorBanner error={error} />
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       {hasUnknownGold && (
         <p className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">

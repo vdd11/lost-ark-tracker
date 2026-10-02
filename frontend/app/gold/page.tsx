@@ -74,7 +74,7 @@ export default function GoldPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Gold</h1>
-      <ErrorBanner error={error} />
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       <AddGoldForm characters={characters} onAdd={(data) => mutate(() => send("POST", "/gold-entries", data))} />
 

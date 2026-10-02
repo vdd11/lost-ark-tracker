@@ -62,7 +62,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-10">
-      <ErrorBanner error={error} />
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       <section>
         <h1 className="mb-1 text-2xl font-bold">Characters</h1>
