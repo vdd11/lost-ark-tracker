@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import UpdateNotice from "@/components/UpdateNotice";
+
 const LINKS = [
   { href: "/", label: "Tracker" },
   { href: "/raids", label: "Raids" },
@@ -17,9 +19,9 @@ export default function Nav() {
 
   return (
     <header className="border-b border-border bg-surface">
-      <nav className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3">
+      <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
         <span className="font-semibold text-accent">Lost Ark Tracker</span>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {LINKS.map((link) => (
             <Link
               key={link.href}
@@ -32,6 +34,7 @@ export default function Nav() {
             </Link>
           ))}
         </div>
+        <UpdateNotice />
       </nav>
     </header>
   );

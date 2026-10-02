@@ -45,7 +45,9 @@ non-raid sources to see your weekly gold over time.
 3. First time: add your characters in **Settings**. Their usual raids are
    picked from item level, and you can adjust them before adding.
 
-Everything stays on your computer. There are no accounts and nothing is sent anywhere.
+Everything stays on your computer. There are no accounts and none of your data is sent anywhere. The only
+network request is a check of this repo's latest GitHub release, which shows "Update available" in the menu
+when there's a newer version.
 Your data is saved here:
 
 | System  | Location |
