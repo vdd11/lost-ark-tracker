@@ -19,8 +19,12 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   be added to `BACKUP_MODELS` in `main.py`.
 - Never touch `backend/database.db` or the user's app-data database in tests;
   set `DATABASE_URL` (or `--data-dir` for the exe) instead.
-- Raids come from the catalog in `backend/raids.py`, synced on startup. Only
-  put numbers there that come from official NA patch notes. Use `None` for
-  unknown gold. Values a user edited are never overwritten.
+- Raids and Ebony Cube come from the catalog in `backend/raids.py`, synced on
+  startup. Only add numbers from official NA patch notes or the user. Use
+  `None` for unknown gold. Values a user edited are never overwritten. Keep
+  `legacy_names` when renaming so existing columns are adopted.
+- Event raids (Extreme) are user-created via `/api/event-raids`, not
+  cataloged: they're tasks with `ends_on`, `roster_limited` and
+  `gold_for_everyone`.
 - Version lives in `backend/version.py`; releases are cut by pushing a `v*` tag.
 - Commit style: conventional commits (`feat:`, `fix:`, `chore:`).

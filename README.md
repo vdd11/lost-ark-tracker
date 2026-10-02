@@ -4,23 +4,29 @@ A roster tracker for Lost Ark: check off dailies, weeklies, and raids per
 character, mark characters you're saving for friends, and log gold from
 non-raid sources to see your weekly gold over time.
 
-- **Tracker**: characters × tasks grid. Cells reset on their own at the daily
-  reset (10:00 UTC) and weekly reset (Wednesday 10:00 UTC). Raid cells show
-  the difficulty and gold. Use "Choose tasks per character" to change them.
-- **Raids**: current raids with each difficulty's item level and gold, and
-  which of your characters qualify. Built-in values update with the app.
-  Unknown gold shows as "?" until you fill it in. Each character is paid for
-  3 raids a week, and the tracker applies that limit.
+- **Tracker**: characters × tasks grid that resets on its own at the daily
+  reset (10:00 UTC) and weekly reset (Wednesday 10:00 UTC).
+  - Raid cells show the difficulty and gold, and you can change the difficulty
+    right in the cell.
+  - Raids a character qualifies for but doesn't usually run show faded, so you
+    can tick an extra clear.
+  - Ebony Cube has a run counter at each character's unlock tier.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
-  rest gauge, highlighted in gold when a rested run is available today. The
-  gauge is worked out from your check-offs. Click the number to match it to
-  what the game shows.
-- **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly
-  gold (raid clears + logged gold).
-- **Settings**: add characters and pick their raids in one go ("Pick top 3
-  by gold" does it for you), edit daily/weekly columns, and download/restore
-  backups. Only gold-earner characters count toward raid gold, except event
-  raids, which pay anyone.
+  rest gauge, highlighted in gold when a rested run is available today. Click
+  the number to match it to the game.
+- **Raids**: Act 4, The Final Day, Serca and Horizon Cathedral, with each
+  difficulty's item level and gold, and which of your characters qualify.
+  - Built-in values update with the app unless you've edited them.
+  - Each character is paid for 3 raids a week.
+  - The **Events** tab adds limited-time raids (e.g. "Act 3 Extreme"). Pick
+    the raid, check the pre-filled difficulties, done. Events are one clear
+    per roster, pay any character, and disappear when they end.
+- **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly gold
+  (raid clears + logged gold).
+- **Gems**: log gem drops by level from Ebony Cube, Guardian Raids and Field
+  Bosses, and chart weekly gems in level-1 equivalents (Lv2 = 3, Lv3 = 9).
+- **Settings**: add characters (their usual raids are pre-selected from item
+  level), edit daily/weekly columns, and download/restore backups.
 
 ## Using it
 
@@ -32,8 +38,8 @@ non-raid sources to see your weekly gold over time.
 2. Run it. A small window opens and the tracker appears in your browser at
    <http://127.0.0.1:8777>. Keep that window open while you use it; close it
    to stop. Running it again while it's open just reopens the browser tab.
-3. First time: add your characters in **Settings** and tick the raids each
-   one runs. Check the **Raids** page for any gold values marked "?".
+3. First time: add your characters in **Settings**. Their usual raids are
+   picked from item level, and you can adjust them before adding.
 
 Everything stays on your computer. There are no accounts and nothing is sent anywhere.
 Your data is saved here:
