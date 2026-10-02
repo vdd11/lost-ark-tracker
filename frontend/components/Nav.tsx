@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/", label: "Tracker" },
   { href: "/raids", label: "Raids" },
   { href: "/gold", label: "Gold" },
+  { href: "/gems", label: "Gems" },
   { href: "/settings", label: "Settings" },
 ];
 
