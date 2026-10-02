@@ -4,11 +4,20 @@ FastAPI + SQLAlchemy + SQLite backend in `backend/`, Next.js 16 + Tailwind 4
 frontend in `frontend/` (see `frontend/AGENTS.md`: read the bundled Next docs
 before using unfamiliar Next APIs).
 
+Shipped as one executable: the frontend is a static export (`output: "export"`,
+so no server components with dynamic data, rewrites, or route handlers), served
+by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
+`build.py` runs PyInstaller. All API routes live under `/api`.
+
 - Backend tests: `cd backend && .venv/Scripts/python -m pytest -q`
-- Frontend checks: `cd frontend && npx tsc --noEmit && npm run lint`
+- Frontend checks: `cd frontend && npx tsc --noEmit && npm run lint && npm run build`
+- Package: `backend/.venv/Scripts/python build.py` → `dist/LostArkTracker.exe`
 - Reset logic lives in `backend/resets.py` (naive UTC everywhere). Completions
   are stored per reset period, never cleared, and double as gold history.
 - Schema changes: add new model columns with a `server_default` so
-  `add_missing_columns()` can upgrade existing databases.
-- Never touch `backend/database.db` in tests; set `DATABASE_URL` instead.
+  `add_missing_columns()` can upgrade existing databases. New tables must also
+  be added to `BACKUP_MODELS` in `main.py`.
+- Never touch `backend/database.db` or the user's app-data database in tests;
+  set `DATABASE_URL` (or `--data-dir` for the exe) instead.
+- Version lives in `backend/version.py`; releases are cut by pushing a `v*` tag.
 - Commit style: conventional commits (`feat:`, `fix:`, `chore:`).
