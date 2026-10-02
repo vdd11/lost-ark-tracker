@@ -163,6 +163,13 @@ export default function TrackerPage() {
 
       <ErrorBanner error={error} />
 
+      {characters.length > 0 && tasks.some((t) => t.category === "raid") && tasks.every((t) => t.category !== "raid" || t.gold === 0) && (
+        <p className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
+          Raid gold values aren&apos;t set yet. Enter what each raid pays in{" "}
+          <Link href="/settings" className="underline">Settings</Link> so your weekly gold adds up.
+        </p>
+      )}
+
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex rounded-md border border-border bg-surface p-0.5 text-sm">
           {(["all", "mine", "friends"] as Filter[]).map((value) => (

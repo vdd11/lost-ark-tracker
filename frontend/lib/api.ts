@@ -1,4 +1,5 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+// Same-origin in the packaged app; .env.development points dev at uvicorn.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 export type TaskCategory = "daily" | "weekly" | "raid";
 

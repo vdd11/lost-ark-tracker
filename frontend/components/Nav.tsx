@@ -10,7 +10,8 @@ const LINKS = [
 ];
 
 export default function Nav() {
-  const pathname = usePathname();
+  // The static build uses trailing slashes (/gold/), so normalize before comparing.
+  const pathname = usePathname().replace(/(.)\/$/, "$1");
 
   return (
     <header className="border-b border-border bg-surface">
