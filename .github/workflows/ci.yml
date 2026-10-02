@@ -34,6 +34,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npx tsc --noEmit
       - run: npm run lint
+      # Build first: it generates the route types (e.g. LayoutProps) in .next/.
       - run: npm run build
+      - run: npx tsc --noEmit
