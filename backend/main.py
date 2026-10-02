@@ -11,12 +11,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, add_missing_columns, engine, get_db
-from models import Character, CharacterTask, Completion, GoldEntry, Task
+from models import Character, CharacterTask, Completion, GoldEntry, RaidDifficulty, Task
 from resets import daily_reset_before, period_for, utc_now, week_of, weekly_reset_before
 from schemas import (
+    AssignTask,
     CharacterCreate,
     CharacterRead,
     CharacterUpdate,
+    DifficultyCreate,
+    DifficultyRead,
+    DifficultyUpdate,
     GoldEntryCreate,
     GoldEntryRead,
     RestState,
@@ -27,6 +31,7 @@ from schemas import (
     TrackerState,
     WeeklyGold,
 )
+from raids import GOLD_RAIDS_PER_WEEK, best_difficulty, sync_raid_catalog
 from rest import RestRules, rest_at_start_of, run_is_rested, start_value_for_shown
 from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
@@ -42,6 +47,7 @@ async def lifespan(app: FastAPI):
         # Databases from before rest tracking get the default rules once.
         if ("tasks", "rest_max") in added_columns:
             apply_default_rest_rules(db)
+        sync_raid_catalog(db)
     yield
 
 
@@ -79,25 +85,43 @@ def root():
 
 # ---------- Characters ----------
 
-def to_character_read(character: Character, task_ids: list[int]) -> CharacterRead:
-    return CharacterRead.model_validate(character).model_copy(update={"task_ids": task_ids})
+def to_character_read(character: Character, assignments: list[CharacterTask]) -> CharacterRead:
+    return CharacterRead.model_validate(character).model_copy(update={
+        "task_ids": [a.task_id for a in assignments],
+        "difficulty_ids": {a.task_id: a.difficulty_id for a in assignments if a.difficulty_id is not None},
+    })
+
+
+def read_character(db: Session, character: Character) -> CharacterRead:
+    return to_character_read(character, db.query(CharacterTask).filter_by(character_id=character.id).all())
 
 
 @router.get("/characters", response_model=list[CharacterRead])
 def get_characters(db: Session = Depends(get_db)):
     characters = db.query(Character).order_by(Character.position, Character.id).all()
 
-    task_ids_by_character: dict[int, list[int]] = {}
+    assignments_by_character: dict[int, list[CharacterTask]] = {}
     for assignment in db.query(CharacterTask).all():
-        task_ids_by_character.setdefault(assignment.character_id, []).append(assignment.task_id)
+        assignments_by_character.setdefault(assignment.character_id, []).append(assignment)
 
-    return [to_character_read(c, task_ids_by_character.get(c.id, [])) for c in characters]
+    return [to_character_read(c, assignments_by_character.get(c.id, [])) for c in characters]
+
+
+def choose_difficulty(db: Session, task: Task, character: Character, difficulty_id: int | None) -> int | None:
+    """Validate a requested difficulty, or pick the best one for the character."""
+    difficulties = db.query(RaidDifficulty).filter_by(task_id=task.id).all()
+    if difficulty_id is not None:
+        if difficulty_id not in {d.id for d in difficulties}:
+            raise HTTPException(status_code=400, detail=f"That difficulty isn't part of {task.name}")
+        return difficulty_id
+    chosen = best_difficulty(difficulties, character.item_level)
+    return chosen.id if chosen else None
 
 
 @router.post("/characters", response_model=CharacterRead, status_code=201)
 def create_character(character_data: CharacterCreate, db: Session = Depends(get_db)):
     character = Character(
-        **character_data.model_dump(),
+        **character_data.model_dump(exclude={"raids"}),
         position=next_position(db, Character),
     )
     if not character.reserved_for:
@@ -108,17 +132,23 @@ def create_character(character_data: CharacterCreate, db: Session = Depends(get_
 
     # New characters start with every daily and weekly; raids are opted into
     # per character since they depend on item level.
-    task_ids = [
-        task.id
-        for task in db.query(Task).filter(Task.category.in_(["daily", "weekly"])).all()
-    ]
-    for task_id in task_ids:
-        db.add(CharacterTask(character_id=character.id, task_id=task_id))
+    for task in db.query(Task).filter(Task.category.in_(["daily", "weekly"]), Task.archived.is_(False)):
+        db.add(CharacterTask(character_id=character.id, task_id=task.id))
+
+    for choice in {c.task_id: c for c in character_data.raids}.values():
+        task = get_or_404(db, Task, choice.task_id)
+        if task.category != "raid":
+            raise HTTPException(status_code=400, detail=f"{task.name} isn't a raid")
+        db.add(CharacterTask(
+            character_id=character.id,
+            task_id=task.id,
+            difficulty_id=choose_difficulty(db, task, character, choice.difficulty_id),
+        ))
 
     db.commit()
     db.refresh(character)
 
-    return to_character_read(character, task_ids)
+    return read_character(db, character)
 
 
 @router.patch("/characters/{character_id}", response_model=CharacterRead)
@@ -133,11 +163,7 @@ def update_character(character_id: int, changes: CharacterUpdate, db: Session = 
     db.commit()
     db.refresh(character)
 
-    task_ids = [
-        a.task_id
-        for a in db.query(CharacterTask).filter(CharacterTask.character_id == character_id)
-    ]
-    return to_character_read(character, task_ids)
+    return read_character(db, character)
 
 
 @router.delete("/characters/{character_id}", status_code=204)
@@ -155,13 +181,18 @@ def delete_character(character_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/characters/{character_id}/tasks/{task_id}", status_code=204)
-def assign_task(character_id: int, task_id: int, db: Session = Depends(get_db)):
-    get_or_404(db, Character, character_id)
-    get_or_404(db, Task, task_id)
+def assign_task(character_id: int, task_id: int, body: AssignTask | None = None, db: Session = Depends(get_db)):
+    """Assign a task, or for a raid, change which difficulty the character runs."""
+    character = get_or_404(db, Character, character_id)
+    task = get_or_404(db, Task, task_id)
+    difficulty_id = choose_difficulty(db, task, character, body.difficulty_id if body else None)
 
-    if db.get(CharacterTask, (character_id, task_id)) is None:
-        db.add(CharacterTask(character_id=character_id, task_id=task_id))
-        db.commit()
+    assignment = db.get(CharacterTask, (character_id, task_id))
+    if assignment is None:
+        db.add(CharacterTask(character_id=character_id, task_id=task_id, difficulty_id=difficulty_id))
+    elif body is not None and body.difficulty_id is not None:
+        assignment.difficulty_id = difficulty_id
+    db.commit()
 
     return Response(status_code=204)
 
@@ -178,9 +209,32 @@ def unassign_task(character_id: int, task_id: int, db: Session = Depends(get_db)
 
 # ---------- Tasks ----------
 
+def read_task(db: Session, task: Task) -> TaskRead:
+    difficulties = (
+        db.query(RaidDifficulty)
+        .filter_by(task_id=task.id)
+        .order_by(RaidDifficulty.position, RaidDifficulty.id)
+    )
+    return TaskRead.model_validate(task).model_copy(
+        update={"difficulties": [DifficultyRead.model_validate(d) for d in difficulties]}
+    )
+
+
 @router.get("/tasks", response_model=list[TaskRead])
-def get_tasks(db: Session = Depends(get_db)):
-    return db.query(Task).order_by(Task.position, Task.id).all()
+def get_tasks(include_archived: bool = False, db: Session = Depends(get_db)):
+    query = db.query(Task)
+    if not include_archived:
+        query = query.filter(Task.archived.is_(False))
+    tasks = query.order_by(Task.position, Task.id).all()
+
+    difficulties_by_task: dict[int, list[DifficultyRead]] = {}
+    for d in db.query(RaidDifficulty).order_by(RaidDifficulty.position, RaidDifficulty.id):
+        difficulties_by_task.setdefault(d.task_id, []).append(DifficultyRead.model_validate(d))
+
+    return [
+        TaskRead.model_validate(t).model_copy(update={"difficulties": difficulties_by_task.get(t.id, [])})
+        for t in tasks
+    ]
 
 
 @router.post("/tasks", response_model=TaskRead, status_code=201)
@@ -196,7 +250,7 @@ def create_task(task_data: TaskCreate, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(task)
-    return task
+    return read_task(db, task)
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskRead)
@@ -208,7 +262,7 @@ def update_task(task_id: int, changes: TaskUpdate, db: Session = Depends(get_db)
 
     db.commit()
     db.refresh(task)
-    return task
+    return read_task(db, task)
 
 
 @router.delete("/tasks/{task_id}", status_code=204)
@@ -216,8 +270,13 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     task = get_or_404(db, Task, task_id)
 
     db.query(CharacterTask).filter(CharacterTask.task_id == task_id).delete()
-    db.query(Completion).filter(Completion.task_id == task_id).update({"task_id": None})
-    db.delete(task)
+    if task.catalog_key:
+        # Catalog raids come back on every sync, so hide them instead.
+        task.archived = True
+    else:
+        db.query(Completion).filter(Completion.task_id == task_id).update({"task_id": None})
+        db.query(RaidDifficulty).filter(RaidDifficulty.task_id == task_id).delete()
+        db.delete(task)
     db.commit()
 
     return Response(status_code=204)
@@ -343,12 +402,42 @@ def complete_task(character_id: int, task_id: int, db: Session = Depends(get_db)
             task_id=task_id,
             period=period,
             completed_at=now,
-            # Only gold-earning characters get gold from their clears.
-            gold=task.gold if character.is_gold_earner else 0,
+            gold=completion_gold(db, character, task, period),
         ))
         db.commit()
 
     return Response(status_code=204)
+
+
+def completion_gold(db: Session, character: Character, task: Task, period) -> int:
+    """Gold a clear pays right now, snapshotted onto the completion."""
+    gold = task.gold
+    assignment = db.get(CharacterTask, (character.id, task.id))
+    if assignment is not None and assignment.difficulty_id is not None:
+        difficulty = db.get(RaidDifficulty, assignment.difficulty_id)
+        gold = (difficulty.gold or 0) if difficulty else 0
+
+    if task.gold_for_everyone:
+        return gold
+    if not character.is_gold_earner:
+        return 0
+
+    if task.category == "raid":
+        paid_raids_this_week = (
+            db.query(Completion)
+            .join(Task, Task.id == Completion.task_id)
+            .filter(
+                Completion.character_id == character.id,
+                Completion.period == period,
+                Completion.gold > 0,
+                Task.category == "raid",
+                Task.gold_for_everyone.is_(False),
+            )
+            .count()
+        )
+        if paid_raids_this_week >= GOLD_RAIDS_PER_WEEK:
+            return 0
+    return gold
 
 
 @router.delete("/characters/{character_id}/tasks/{task_id}/completion", status_code=204)
@@ -438,12 +527,61 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
     return [totals[week] for week in week_starts]
 
 
+# ---------- Raid difficulties ----------
+
+@router.post("/tasks/{task_id}/difficulties", response_model=DifficultyRead, status_code=201)
+def create_difficulty(task_id: int, data: DifficultyCreate, db: Session = Depends(get_db)):
+    task = get_or_404(db, Task, task_id)
+    if task.category != "raid":
+        raise HTTPException(status_code=400, detail="Only raids have difficulties")
+    highest = db.query(func.max(RaidDifficulty.position)).filter_by(task_id=task_id).scalar()
+    difficulty = RaidDifficulty(task_id=task_id, position=0 if highest is None else highest + 1, **data.model_dump())
+    db.add(difficulty)
+    db.commit()
+    db.refresh(difficulty)
+    return difficulty
+
+
+@router.patch("/difficulties/{difficulty_id}", response_model=DifficultyRead)
+def update_difficulty(difficulty_id: int, changes: DifficultyUpdate, db: Session = Depends(get_db)):
+    difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
+    for field, value in changes.model_dump(exclude_unset=True).items():
+        setattr(difficulty, field, value)
+    db.commit()
+    db.refresh(difficulty)
+    return difficulty
+
+
+@router.post("/difficulties/{difficulty_id}/reset", response_model=DifficultyRead)
+def reset_difficulty(difficulty_id: int, db: Session = Depends(get_db)):
+    """Go back to the catalog's gold and item level."""
+    difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
+    difficulty.gold = difficulty.catalog_gold
+    if difficulty.catalog_item_level is not None:
+        difficulty.min_item_level = difficulty.catalog_item_level
+    db.commit()
+    db.refresh(difficulty)
+    return difficulty
+
+
+@router.delete("/difficulties/{difficulty_id}", status_code=204)
+def delete_difficulty(difficulty_id: int, db: Session = Depends(get_db)):
+    difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
+    if difficulty.catalog_item_level is not None:
+        raise HTTPException(status_code=400, detail="Built-in difficulties can't be deleted")
+    db.query(CharacterTask).filter_by(difficulty_id=difficulty_id).update({"difficulty_id": None})
+    db.delete(difficulty)
+    db.commit()
+    return Response(status_code=204)
+
+
 # ---------- Backup ----------
 
 # Restore order: parents before children. Deletes run in reverse.
 BACKUP_MODELS = {
     "characters": Character,
     "tasks": Task,
+    "raid_difficulties": RaidDifficulty,
     "character_tasks": CharacterTask,
     "completions": Completion,
     "gold_entries": GoldEntry,

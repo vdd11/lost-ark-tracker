@@ -6,12 +6,19 @@ from pydantic import BaseModel, ConfigDict, Field
 TaskCategory = Literal["daily", "weekly", "raid"]
 
 
+class RaidChoice(BaseModel):
+    task_id: int
+    # Omit to pick the hardest difficulty the character qualifies for.
+    difficulty_id: int | None = None
+
+
 class CharacterCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     class_name: str = Field(min_length=1, max_length=50)
     item_level: float = 0
     is_gold_earner: bool = True
     reserved_for: str | None = None
+    raids: list[RaidChoice] = []
 
 
 class CharacterUpdate(BaseModel):
@@ -34,6 +41,12 @@ class CharacterRead(BaseModel):
     reserved_for: str | None
     position: int
     task_ids: list[int] = []
+    # task_id -> difficulty_id for assigned raids that have difficulties.
+    difficulty_ids: dict[int, int] = {}
+
+
+class AssignTask(BaseModel):
+    difficulty_id: int | None = None
 
 
 class TaskCreate(BaseModel):
@@ -53,6 +66,32 @@ class TaskUpdate(BaseModel):
     rest_max: int | None = Field(default=None, ge=0)
     rest_gain: int | None = Field(default=None, ge=0)
     rest_cost: int | None = Field(default=None, ge=0)
+    archived: bool | None = None
+
+
+class DifficultyCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    min_item_level: float = Field(default=0, ge=0)
+    gold: int | None = Field(default=None, ge=0)
+
+
+class DifficultyUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    min_item_level: float | None = Field(default=None, ge=0)
+    gold: int | None = Field(default=None, ge=0)
+
+
+class DifficultyRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    task_id: int
+    name: str
+    position: int
+    min_item_level: float
+    gold: int | None
+    catalog_item_level: float | None
+    catalog_gold: int | None
 
 
 class TaskRead(BaseModel):
@@ -66,6 +105,13 @@ class TaskRead(BaseModel):
     rest_max: int
     rest_gain: int
     rest_cost: int
+    catalog_key: str | None
+    archived: bool
+    ends_on: date | None
+    roster_limited: bool
+    gold_for_everyone: bool
+    note: str | None
+    difficulties: list[DifficultyRead] = []
 
 
 class RestState(BaseModel):

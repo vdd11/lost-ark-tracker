@@ -5,6 +5,11 @@ def task_named(client, name):
     return next(t for t in client.get("/api/tasks").json() if t["name"] == name)
 
 
+def custom_raid(client):
+    """A user-added raid without difficulties, paying the task's own gold."""
+    return client.post("/api/tasks", json={"name": "Custom Raid", "category": "raid"}).json()
+
+
 def test_default_tasks_are_seeded(client):
     tasks = client.get("/api/tasks").json()
     assert {t["category"] for t in tasks} == {"daily", "weekly", "raid"}
@@ -30,7 +35,7 @@ def test_reserved_for_blank_is_stored_as_null(client):
 def test_completions_reset_on_schedule(client, set_now):
     character = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress"}).json()
     daily = task_named(client, "Chaos Dungeon")
-    raid = task_named(client, "Aegir")
+    raid = custom_raid(client)
 
     set_now(datetime(2026, 10, 2, 12))  # Friday
     for task in (daily, raid):
@@ -48,7 +53,7 @@ def test_completions_reset_on_schedule(client, set_now):
 def test_uncomplete(client, set_now):
     set_now(datetime(2026, 10, 2, 12))
     character = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress"}).json()
-    raid = task_named(client, "Aegir")
+    raid = custom_raid(client)
     url = f"/characters/{character['id']}/tasks/{raid['id']}/completion"
 
     client.put(url)
@@ -64,7 +69,7 @@ def test_weekly_gold_combines_raids_and_logged_gold(client, set_now):
         "/api/characters",
         json={"name": "Spare", "class_name": "Bard", "is_gold_earner": False, "reserved_for": "Sam"},
     ).json()
-    raid = task_named(client, "Aegir")
+    raid = custom_raid(client)
     client.patch(f"/api/tasks/{raid['id']}", json={"gold": 20000})
 
     for character in (earner, friend_alt):
@@ -93,7 +98,7 @@ def test_weekly_gold_combines_raids_and_logged_gold(client, set_now):
 def test_deleting_character_keeps_gold_history(client, set_now):
     set_now(datetime(2026, 10, 2, 12))
     character = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress"}).json()
-    raid = task_named(client, "Aegir")
+    raid = custom_raid(client)
     client.patch(f"/api/tasks/{raid['id']}", json={"gold": 5000})
     client.put(f"/api/characters/{character['id']}/tasks/{raid['id']}/completion")
 
@@ -106,7 +111,7 @@ def test_deleting_character_keeps_gold_history(client, set_now):
 def test_backup_round_trip(client, set_now):
     set_now(datetime(2026, 10, 2, 12))
     character = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress", "reserved_for": "Sam"}).json()
-    raid = task_named(client, "Aegir")
+    raid = custom_raid(client)
     client.patch(f"/api/tasks/{raid['id']}", json={"gold": 5000})
     client.put(f"/api/characters/{character['id']}/tasks/{raid['id']}")
     client.put(f"/api/characters/{character['id']}/tasks/{raid['id']}/completion")

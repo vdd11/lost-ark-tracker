@@ -35,6 +35,32 @@ class Task(Base):
     rest_max: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     rest_gain: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     rest_cost: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Raids from the built-in catalog (raids.py). Deleting one archives it so
+    # the next catalog sync doesn't bring it back.
+    catalog_key: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    # Limited-time raids disappear from the tracker on this date.
+    ends_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    roster_limited: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    gold_for_everyone: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+
+class RaidDifficulty(Base):
+    """One difficulty of a raid (Normal, Hard, ...), with its own gold and item level."""
+
+    __tablename__ = "raid_difficulties"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"))
+    name: Mapped[str] = mapped_column(String(50))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    min_item_level: Mapped[float] = mapped_column(Float, default=0)
+    # Total gold for all gates; None when not known yet.
+    gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # What the catalog last set, to tell user edits apart from catalog values.
+    catalog_item_level: Mapped[float | None] = mapped_column(Float, nullable=True)
+    catalog_gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class CharacterTask(Base):
@@ -48,6 +74,8 @@ class CharacterTask(Base):
     # value is replayed from here using completions (see rest.py).
     rest_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
     rest_period: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # For raids with difficulties: which one this character runs.
+    difficulty_id: Mapped[int | None] = mapped_column(ForeignKey("raid_difficulties.id"), nullable=True)
 
 
 class Completion(Base):

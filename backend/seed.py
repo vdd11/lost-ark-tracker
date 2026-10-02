@@ -2,20 +2,14 @@ from sqlalchemy.orm import Session
 
 from models import Character, CharacterTask, Task
 
-# A starting set of tracker columns, only added when there are no tasks yet.
-# Raid gold is left at 0 on purpose: rewards change between patches, so set
-# the current values (and add difficulties/gates) from the Settings page.
+# A starting set of daily and weekly columns, only added when there are no
+# tasks yet. Raids come from the catalog in raids.py.
 DEFAULT_TASKS = [
     ("Chaos Dungeon", "daily"),
     ("Guardian Raid", "daily"),
     ("Una's Dailies", "daily"),
     ("Una's Weeklies", "weekly"),
     ("Guild Weekly", "weekly"),
-    ("Aegir", "raid"),
-    ("Act 2: Brelshaza", "raid"),
-    ("Act 3: Mordum", "raid"),
-    ("Act 4: Armoche", "raid"),
-    ("Final Act: Kazeros", "raid"),
 ]
 
 
@@ -49,8 +43,7 @@ def seed_default_tasks(db: Session):
     # Characters made before tasks existed get the dailies and weeklies too.
     for character in db.query(Character).all():
         for task in tasks:
-            if task.category != "raid":
-                db.add(CharacterTask(character_id=character.id, task_id=task.id))
+            db.add(CharacterTask(character_id=character.id, task_id=task.id))
 
     db.commit()
     apply_default_rest_rules(db)
