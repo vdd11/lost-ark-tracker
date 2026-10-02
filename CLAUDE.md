@@ -10,7 +10,8 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 `build.py` runs PyInstaller. All API routes live under `/api`.
 
 - Backend tests: `cd backend && .venv/Scripts/python -m pytest -q`
-- Frontend checks: `cd frontend && npx tsc --noEmit && npm run lint && npm run build`
+- Frontend checks: `cd frontend && npm test && npx tsc --noEmit && npm run lint && npm run build`
+  (vitest covers the pure logic in `lib/`; keep component-free code there)
 - Package: `backend/.venv/Scripts/python build.py` → `dist/LostArkTracker.exe`
 - Reset logic lives in `backend/resets.py` (naive UTC everywhere). Completions
   are stored per reset period, never cleared, and double as gold history.

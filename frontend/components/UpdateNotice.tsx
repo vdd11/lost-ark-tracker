@@ -3,21 +3,12 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import { isNewer } from "@/lib/version";
 
 const RELEASES_API = "https://api.github.com/repos/vdd11/lost-ark-tracker/releases/latest";
 const CACHE_KEY = "latest-release";
 
 type Release = { version: string; url: string };
-
-/** "1.10.0" > "1.9.2": compare numerically, part by part. */
-export function isNewer(candidate: string, current: string) {
-  const a = candidate.split(".").map(Number);
-  const b = current.split(".").map(Number);
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
-  }
-  return false;
-}
 
 async function latestRelease(): Promise<Release | null> {
   // Once per browser session, to stay well inside GitHub's rate limit.
