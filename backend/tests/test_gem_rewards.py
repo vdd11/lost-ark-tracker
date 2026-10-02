@@ -13,6 +13,20 @@ def set_rewards(client, task, tier, **tables):
     return client.patch(f"/api/difficulties/{difficulty(task, tier)['id']}", json=tables).json()
 
 
+def test_cube_unlocks_are_seeded_with_gems_per_ticket(client, set_now):
+    set_now(NOW)
+    cube = task_named(client, "Ebony Cube")
+    assert [difficulty(cube, t)["reward_gems"] for t in ["1st", "2nd", "3rd", "4th"]] == [
+        {"2": 6}, {"2": 12}, {"2": 16}, {"2": 22},
+    ]
+
+    # Two 4th-unlock tickets: 44 Lv2 gems = 132 Lv1 equivalents.
+    main = add_character(client, 1775)
+    complete(client, main["id"], cube["id"], count=2)
+    assert weekly_gems(client)["by_level"] == {"2": 44}
+    assert weekly_gems(client)["by_character"] == {"Main": 132}
+
+
 def test_hourglass_is_seeded_with_its_levels(client):
     hourglass = task_named(client, "Haal's Hourglass")
     assert hourglass["sand_scaled"] is True
@@ -83,9 +97,9 @@ def test_rejects_bad_gem_tables(client):
 
 def test_runs_without_gems_dont_break_the_weekly_summary(client, set_now):
     set_now(NOW)
-    cube = task_named(client, "Ebony Cube")  # no reward table yet
+    hourglass = task_named(client, "Haal's Hourglass")  # Lv2 has no reward table yet
     main = add_character(client, 1775)
-    complete(client, main["id"], cube["id"], count=1)
+    complete(client, main["id"], hourglass["id"])
     act4 = task_named(client, "Act 4")
     complete(client, main["id"], act4["id"])
 

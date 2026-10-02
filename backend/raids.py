@@ -5,7 +5,8 @@ Gold is the total for all gates. `None` means we don't have a confirmed
 number: the app shows "?" and users can fill it in on the Raids page.
 Sources: official NA release notes on playlostark.com ("Dimensions Unbound",
 2026-09-16, for Act 4, Final Day and Serca Normal), guides for Horizon
-Cathedral (2026-07-22), and the user for Serca Hard/Nightmare.
+Cathedral (2026-07-22), the user for Serca Hard/Nightmare, and the Ebony Cube
+Loot Calculator spreadsheet by Ksfreaks for cube gems.
 
 Updating values here reaches existing users on their next launch, except
 for values a user has edited themselves (see sync_catalog).
@@ -101,11 +102,13 @@ CATALOG = [
         name="Ebony Cube",
         category="weekly",
         counted=True,
+        # Gems per ticket in Lv2 equivalents, from the "Ebony Cube Loot
+        # Calculator" sheet by Ksfreaks (Tier 4 unlocks only).
         difficulties=[
-            Difficulty("1st", 1640, 0),
-            Difficulty("2nd", 1680, 0),
-            Difficulty("3rd", 1700, 0),
-            Difficulty("4th", 1720, 0),
+            Difficulty("1st", 1640, 0, reward_gems={"2": 6}),
+            Difficulty("2nd", 1680, 0, reward_gems={"2": 12}),
+            Difficulty("3rd", 1700, 0, reward_gems={"2": 16}),
+            Difficulty("4th", 1720, 0, reward_gems={"2": 22}),
         ],
         note="Runs depend on tickets, so count them.",
     ),
