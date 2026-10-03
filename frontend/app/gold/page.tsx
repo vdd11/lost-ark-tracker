@@ -8,9 +8,9 @@ import GoldCheckIn from "@/components/GoldCheckIn";
 import NumberInput from "@/components/NumberInput";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
 import { api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
+import { GOLD_SOURCES } from "@/lib/goldSources";
 import { usePreference } from "@/lib/usePreference";
 
-const SOURCES = ["Field Boss", "Chaos Gate", "Fate Ember", "Paradise", "Auction House", "Trade"];
 const OTHER = "__other__";
 const RANGES = [8, 12, 26, 52];
 const VIEWS: { label: string; show: SeriesKey[] }[] = [
@@ -254,7 +254,7 @@ function Tile({ label, value, sub, accent }: { label: string; value: number; sub
 }
 
 function AddGoldForm({ characters, onAdd }: { characters: Character[]; onAdd: (data: object) => Promise<void> }) {
-  const [source, setSource] = useState(SOURCES[0]);
+  const [source, setSource] = useState(GOLD_SOURCES[0]);
   const [customSource, setCustomSource] = useState("");
   const [amount, setAmount] = useState("");
   const [characterId, setCharacterId] = useState("");
@@ -281,7 +281,7 @@ function AddGoldForm({ characters, onAdd }: { characters: Character[]; onAdd: (d
       <h2 className="mb-3 font-semibold">Log gold</h2>
       <div className="flex flex-wrap items-end gap-2 text-sm">
         <select value={source} onChange={(e) => setSource(e.target.value)} aria-label="Source">
-          {SOURCES.map((s) => (
+          {GOLD_SOURCES.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
           <option value={OTHER}>Other…</option>
