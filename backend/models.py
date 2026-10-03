@@ -63,9 +63,12 @@ class RaidDifficulty(Base):
     min_item_level: Mapped[float] = mapped_column(Float, default=0)
     # Total gold for all gates; None when not known yet.
     gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Share of that gold paid as bound (untradeable) gold, 0-100.
+    bound_percent: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # What the catalog last set, to tell user edits apart from catalog values.
     catalog_item_level: Mapped[float | None] = mapped_column(Float, nullable=True)
     catalog_gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    catalog_bound_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Expected gems as {level: count} (counts may be averages); None = unknown.
     # Per run, per lucky room, and per mega lucky room.
     reward_gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
@@ -109,6 +112,8 @@ class Completion(Base):
     period: Mapped[date] = mapped_column(Date)
     completed_at: Mapped[datetime] = mapped_column(DateTime)
     gold: Mapped[int] = mapped_column(Integer, default=0)
+    # The part of `gold` that was bound (character- or roster-bound).
+    bound_gold: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # The difficulty actually run, which can differ from the usual one.
     difficulty_id: Mapped[int | None] = mapped_column(ForeignKey("raid_difficulties.id"), nullable=True)
     # Runs this period, for counted tasks.

@@ -44,6 +44,8 @@ class Difficulty:
     reward_gems: Gems | None = None
     lucky_gems: Gems | None = None
     mega_gems: Gems | None = None
+    # Share of the gold that's bound (character- or roster-bound), 0-100.
+    bound_percent: int = 0
 
     def rewards(self) -> dict:
         return {"reward_gems": self.reward_gems, "lucky_gems": self.lucky_gems, "mega_gems": self.mega_gems}
@@ -67,7 +69,7 @@ CATALOG = [
         key="shadow-serca",
         name="Serca",
         difficulties=[
-            Difficulty("Normal", 1710, 32000),
+            Difficulty("Normal", 1710, 32000, bound_percent=50),
             Difficulty("Hard", 1730, 44000),
             Difficulty("Nightmare", 1740, 54000),
         ],
@@ -78,9 +80,9 @@ CATALOG = [
         key="abyss-cathedral",
         name="Horizon Cathedral",
         difficulties=[
-            Difficulty("Lv1", 1700, 30000),
-            Difficulty("Lv2", 1720, 40000),
-            Difficulty("Lv3", 1750, 50000),
+            Difficulty("Lv1", 1700, 30000, bound_percent=100),
+            Difficulty("Lv2", 1720, 40000, bound_percent=100),
+            Difficulty("Lv3", 1750, 50000, bound_percent=100),
         ],
         note="Abyssal Dungeon, 4 players. Gold is character-bound.",
     ),
@@ -217,6 +219,8 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
                 gold=spec.gold,
                 catalog_item_level=spec.item_level,
                 catalog_gold=spec.gold,
+                bound_percent=spec.bound_percent,
+                catalog_bound_percent=spec.bound_percent,
                 **spec.rewards(),
                 catalog_rewards=spec.rewards(),
             ))
@@ -226,7 +230,10 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
             difficulty.gold = spec.gold
         if difficulty.min_item_level == difficulty.catalog_item_level:
             difficulty.min_item_level = spec.item_level
+        if difficulty.bound_percent == (difficulty.catalog_bound_percent or 0):
+            difficulty.bound_percent = spec.bound_percent
         difficulty.catalog_gold = spec.gold
+        difficulty.catalog_bound_percent = spec.bound_percent
         difficulty.catalog_item_level = spec.item_level
         difficulty.position = position
 
@@ -251,6 +258,19 @@ def assign_missing_difficulties(db: Session):
     for assignment, character in rows:
         chosen = best_difficulty(difficulties_by_task[assignment.task_id], character.item_level)
         assignment.difficulty_id = chosen.id if chosen else None
+
+
+def backfill_bound_gold(db: Session):
+    """One-off for databases from before bound gold: clears that know their
+    difficulty get its bound share applied to the gold they recorded."""
+    rows = (
+        db.query(Completion, RaidDifficulty.bound_percent)
+        .join(RaidDifficulty, RaidDifficulty.id == Completion.difficulty_id)
+        .filter(Completion.gold > 0, RaidDifficulty.bound_percent > 0)
+    )
+    for completion, percent in rows:
+        completion.bound_gold = round(completion.gold * percent / 100)
+    db.commit()
 
 
 def is_active(task: Task, today: date) -> bool:

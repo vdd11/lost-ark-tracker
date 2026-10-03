@@ -32,6 +32,9 @@ export type Difficulty = {
   gold: number | null;
   catalog_item_level: number | null;
   catalog_gold: number | null;
+  /** Share of the gold that's bound (character- or roster-bound), 0-100. */
+  bound_percent: number;
+  catalog_bound_percent: number | null;
   /** Expected gems {level: count} per run / lucky room / mega lucky room; null = unknown. */
   reward_gems: GemTable | null;
   lucky_gems: GemTable | null;
@@ -107,6 +110,8 @@ export type WeeklyGold = {
   raid_gold: number;
   other_gold: number;
   total: number;
+  /** Part of raid_gold that's bound and can't be traded. */
+  bound_gold: number;
   by_source: Record<string, number>;
   by_character: Record<string, number>;
 };

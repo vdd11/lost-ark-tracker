@@ -25,6 +25,8 @@ function raid(name: string, tiers: [string, number, number | null][], extra: Par
     gold,
     catalog_item_level: itemLevel,
     catalog_gold: gold,
+    bound_percent: 0,
+    catalog_bound_percent: 0,
     reward_gems: null,
     lucky_gems: null,
     mega_gems: null,

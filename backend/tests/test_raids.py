@@ -245,3 +245,45 @@ def test_old_columns_are_adopted_and_renamed(client):
     act4 = task_named(client, "Act 4")
     assert act4["id"] == legacy_id
     assert character(client, alt["id"])["difficulty_ids"][str(legacy_id)] == difficulty(act4, "Hard")["id"]
+
+
+def test_bound_gold_is_tracked_separately(client, set_now):
+    set_now(NOW)
+    serca, cathedral, act4 = (task_named(client, n) for n in ["Serca", "Horizon Cathedral", "Act 4"])
+    assert difficulty(cathedral, "Lv3")["bound_percent"] == 100
+    assert difficulty(serca, "Normal")["bound_percent"] == 50
+
+    alt = add_character(client, 1755, [
+        {"task_id": serca["id"], "difficulty_id": difficulty(serca, "Normal")["id"]},
+        {"task_id": cathedral["id"]},
+        {"task_id": act4["id"]},
+    ])
+    for task in (serca, cathedral, act4):
+        complete(client, alt["id"], task["id"])
+
+    week = client.get("/api/gold/weekly?weeks=1").json()[0]
+    assert week["raid_gold"] == 32000 + 50000 + 38000
+    assert week["bound_gold"] == 16000 + 50000
+
+    rows = client.get("/api/export/gold.csv").text.splitlines()
+    assert rows[0].endswith("gold,bound_gold,note")
+
+
+def test_upgrade_backfills_bound_gold_on_past_clears(client, set_now):
+    from fastapi.testclient import TestClient
+    from sqlalchemy import text
+
+    import main
+    from database import engine
+
+    set_now(NOW)
+    cathedral = task_named(client, "Horizon Cathedral")
+    alt = add_character(client, 1755, [{"task_id": cathedral["id"]}])
+    complete(client, alt["id"], cathedral["id"])
+
+    # Simulate a database from before bound gold existed.
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE completions DROP COLUMN bound_gold"))
+
+    with TestClient(main.app) as restarted:
+        assert restarted.get("/api/gold/weekly?weeks=1").json()[0]["bound_gold"] == 50000

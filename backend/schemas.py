@@ -73,6 +73,7 @@ class DifficultyCreate(BaseModel):
     name: str = Field(min_length=1, max_length=50)
     min_item_level: float = Field(default=0, ge=0)
     gold: int | None = Field(default=None, ge=0)
+    bound_percent: int = Field(default=0, ge=0, le=100)
 
 
 GemTable = dict[int, float]
@@ -89,6 +90,7 @@ class DifficultyUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=50)
     min_item_level: float | None = Field(default=None, ge=0)
     gold: int | None = Field(default=None, ge=0)
+    bound_percent: int | None = Field(default=None, ge=0, le=100)
     reward_gems: GemTable | None = None
     lucky_gems: GemTable | None = None
     mega_gems: GemTable | None = None
@@ -107,6 +109,8 @@ class DifficultyRead(BaseModel):
     gold: int | None
     catalog_item_level: float | None
     catalog_gold: int | None
+    bound_percent: int = 0
+    catalog_bound_percent: int | None = None
     reward_gems: GemTable | None = None
     lucky_gems: GemTable | None = None
     mega_gems: GemTable | None = None
@@ -219,6 +223,8 @@ class WeeklyGold(BaseModel):
     raid_gold: int
     other_gold: int
     total: int
+    # Part of raid_gold that was bound (can't be traded).
+    bound_gold: int = 0
     by_source: dict[str, int]
     # Character name -> gold (raid clears plus logged gold tied to them).
     by_character: dict[str, int] = {}

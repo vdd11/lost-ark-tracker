@@ -285,6 +285,7 @@ function RaidCard({
               <th className="px-4 py-2 font-medium">Difficulty</th>
               <th className="px-2 py-2 font-medium">Item level</th>
               <th className="px-2 py-2 font-medium">Gold</th>
+              <th className="px-2 py-2 font-medium" title="Share of the gold that's character- or roster-bound">Bound %</th>
               <th className="px-2 py-2 font-medium">Your characters who qualify</th>
               <th className="px-4 py-2" />
             </tr>
@@ -292,7 +293,7 @@ function RaidCard({
           <tbody>
             {task.difficulties.map((difficulty) => (
               <DifficultyRow
-                key={`${difficulty.id}-${difficulty.gold}-${difficulty.min_item_level}`}
+                key={`${difficulty.id}-${difficulty.gold}-${difficulty.min_item_level}-${difficulty.bound_percent}`}
                 difficulty={difficulty}
                 characters={characters}
                 runners={runners.filter((c) => c.difficulty_ids[String(task.id)] === difficulty.id)}
@@ -328,9 +329,13 @@ function DifficultyRow({
 }) {
   const [itemLevel, setItemLevel] = useState(String(difficulty.min_item_level));
   const [gold, setGold] = useState(difficulty.gold === null ? "" : String(difficulty.gold));
+  const [bound, setBound] = useState(String(difficulty.bound_percent));
   const isBuiltIn = difficulty.catalog_item_level !== null;
   const customized =
-    isBuiltIn && (difficulty.gold !== difficulty.catalog_gold || difficulty.min_item_level !== difficulty.catalog_item_level);
+    isBuiltIn &&
+    (difficulty.gold !== difficulty.catalog_gold ||
+      difficulty.min_item_level !== difficulty.catalog_item_level ||
+      difficulty.bound_percent !== (difficulty.catalog_bound_percent ?? 0));
   const qualifying = characters.filter((c) => c.item_level >= difficulty.min_item_level);
   const path = `/difficulties/${difficulty.id}`;
 
@@ -346,6 +351,11 @@ function DifficultyRow({
     if (value !== difficulty.gold && (value === null || Number.isFinite(value))) {
       mutate(() => send("PATCH", path, { gold: value }));
     }
+  }
+
+  function saveBound() {
+    const value = Math.max(0, Math.min(100, Math.round(Number(bound) || 0)));
+    if (value !== difficulty.bound_percent) mutate(() => send("PATCH", path, { bound_percent: value }));
   }
 
   return (
@@ -376,6 +386,18 @@ function DifficultyRow({
         />
       </td>
       <td className="px-2 py-2">
+        <input
+          type="number"
+          min="0"
+          max="100"
+          value={bound}
+          onChange={(e) => setBound(e.target.value)}
+          onBlur={saveBound}
+          aria-label={`${difficulty.name} bound gold percent`}
+          className="w-16"
+        />
+      </td>
+      <td className="px-2 py-2">
         <div className="flex flex-wrap gap-1">
           {qualifying.map((c) => (
             <span
@@ -395,7 +417,7 @@ function DifficultyRow({
         {customized && (
           <button
             onClick={() => mutate(() => send("POST", `${path}/reset`))}
-            title={`Back to ${difficulty.catalog_gold ?? "?"} gold at ${difficulty.catalog_item_level}`}
+            title={`Back to ${difficulty.catalog_gold ?? "?"} gold (${difficulty.catalog_bound_percent ?? 0}% bound) at ${difficulty.catalog_item_level}`}
             className="rounded px-1.5 text-xs text-muted hover:bg-surface-2"
           >
             Reset

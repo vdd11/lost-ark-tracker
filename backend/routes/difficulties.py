@@ -47,6 +47,8 @@ def reset_difficulty(difficulty_id: int, db: Session = Depends(get_db)):
     """Go back to the catalog's gold and item level."""
     difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
     difficulty.gold = difficulty.catalog_gold
+    if difficulty.catalog_bound_percent is not None:
+        difficulty.bound_percent = difficulty.catalog_bound_percent
     if difficulty.catalog_item_level is not None:
         difficulty.min_item_level = difficulty.catalog_item_level
     for field, value in (difficulty.catalog_rewards or {}).items():

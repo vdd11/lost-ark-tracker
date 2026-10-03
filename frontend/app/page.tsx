@@ -300,7 +300,7 @@ export default function TrackerPage() {
         </div>
 
         <div className="flex flex-wrap gap-3 text-sm">
-          <Stat label="Raid gold this week" value={thisWeek ? formatGold(thisWeek.raid_gold) : "–"} sub={`of ${formatGold(possibleGold)} possible`} />
+          <Stat label="Raid gold this week" value={thisWeek ? formatGold(thisWeek.raid_gold) : "–"} sub={`of ${formatGold(possibleGold)} possible${thisWeek?.bound_gold ? ` · ${formatGold(thisWeek.bound_gold)} bound` : ""}`} />
           <Stat label="Other gold this week" value={thisWeek ? formatGold(thisWeek.other_gold) : "–"} sub={<Link href="/gold" className="underline">log gold</Link>} />
           <Stat label="Total this week" value={thisWeek ? formatGold(thisWeek.total) : "–"} accent />
         </div>

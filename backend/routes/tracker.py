@@ -186,7 +186,7 @@ def complete_task(
         )
         db.add(existing)
         db.flush()
-        existing.gold = completion_gold(db, character, task, existing)
+        price_completion(db, character, task, existing)
         existing.gems = completion_gems(db, task, existing)
     else:
         changed = bool(details) or body.count is not None
@@ -197,7 +197,7 @@ def complete_task(
         # Only a different difficulty re-prices a clear; history stays as recorded.
         if body.difficulty_id is not None and body.difficulty_id != existing.difficulty_id:
             existing.difficulty_id = run_difficulty(db, task, character, body.difficulty_id)
-            existing.gold = completion_gold(db, character, task, existing)
+            price_completion(db, character, task, existing)
             changed = True
         if changed:
             existing.gems = completion_gems(db, task, existing)
@@ -218,6 +218,14 @@ def run_difficulty(db: Session, task: Task, character: Character, requested: int
 def completion_gems(db: Session, task: Task, completion: Completion):
     difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
     return run_gems(task, difficulty, completion)
+
+
+def price_completion(db: Session, character: Character, task: Task, completion: Completion):
+    """Snapshot a clear's gold and how much of it is bound."""
+    completion.gold = completion_gold(db, character, task, completion)
+    difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
+    percent = difficulty.bound_percent if difficulty else 0
+    completion.bound_gold = round(completion.gold * percent / 100)
 
 
 def completion_gold(db: Session, character: Character, task: Task, completion: Completion) -> int:

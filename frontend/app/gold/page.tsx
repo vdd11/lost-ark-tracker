@@ -81,7 +81,12 @@ export default function GoldPage() {
       <AddGoldForm characters={characters} onAdd={(data) => mutate(() => send("POST", "/gold-entries", data))} />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Tile label="This week" value={thisWeek?.total ?? 0} accent />
+        <Tile
+          label="This week"
+          value={thisWeek?.total ?? 0}
+          sub={thisWeek?.bound_gold ? `${formatGold(thisWeek.total - thisWeek.bound_gold)} tradeable · ${formatGold(thisWeek.bound_gold)} bound` : undefined}
+          accent
+        />
         <Tile label="Last week" value={lastWeek?.total ?? 0} />
         <Tile label={`Average, last ${range} weeks`} value={average} />
       </div>
@@ -121,6 +126,7 @@ export default function GoldPage() {
               <tr className="border-b border-border text-left text-muted">
                 <th className="py-1.5 font-medium">Week of</th>
                 <th className="py-1.5 text-right font-medium">Raid gold</th>
+                <th className="py-1.5 text-right font-medium">of which bound</th>
                 <th className="py-1.5 text-right font-medium">Other gold</th>
                 <th className="py-1.5 text-right font-medium">Total</th>
               </tr>
@@ -130,6 +136,7 @@ export default function GoldPage() {
                 <tr key={week.week} className="border-b border-border last:border-b-0">
                   <td className="py-1.5">{week.week}</td>
                   <td className="py-1.5 text-right">{formatGold(week.raid_gold)}</td>
+                  <td className="py-1.5 text-right text-muted">{formatGold(week.bound_gold)}</td>
                   <td className="py-1.5 text-right">{formatGold(week.other_gold)}</td>
                   <td className="py-1.5 text-right font-medium">{formatGold(week.total)}</td>
                 </tr>
@@ -219,11 +226,12 @@ export default function GoldPage() {
   );
 }
 
-function Tile({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+function Tile({ label, value, sub, accent }: { label: string; value: number; sub?: string; accent?: boolean }) {
   return (
     <div className="rounded-md border border-border bg-surface px-4 py-3">
       <div className="text-xs text-muted">{label}</div>
       <div className={`text-2xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{formatGold(value)}</div>
+      {sub && <div className="text-xs text-muted">{sub}</div>}
     </div>
   );
 }

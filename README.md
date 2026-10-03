@@ -20,6 +20,8 @@ non-raid sources to see your weekly gold over time.
   difficulty's item level and gold, and which of your characters qualify.
   - Built-in values update with the app unless you've edited them.
   - Each character is paid for 3 raids a week.
+  - Bound gold (Cathedral's character-bound gold, half of Serca Normal) is
+    tracked separately, so you can see how much of your weekly gold is tradeable.
   - The **Events** tab adds limited-time raids (e.g. "Act 3 Extreme"). Pick
     the raid, check the pre-filled difficulties, done. Events are one clear
     per roster, pay any character, and disappear when they end.

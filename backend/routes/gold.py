@@ -76,6 +76,7 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
         bucket = totals.get(week_of(completion.completed_at))
         if bucket is not None:
             bucket.raid_gold += completion.gold
+            bucket.bound_gold += completion.bound_gold
             credit(bucket, completion.character_id, completion.gold)
 
     entries = db.query(GoldEntry).filter(GoldEntry.earned_at >= first_reset).all()
