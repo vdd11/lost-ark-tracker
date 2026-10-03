@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, CalendarDays, Check, Coins, Swords, Flame, Pencil, Settings2, Sun, TrendingUp, Wallet, X } from "lucide-react";
+import { Box, CalendarDays, Check, Coins, Swords, Flame, Pencil, Settings2, Sun, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -11,7 +11,6 @@ import QuickGold from "@/components/QuickGold";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
 import CustomizePanel from "@/components/tracker/CustomizePanel";
-import ItemLevelPanel from "@/components/tracker/ItemLevelPanel";
 import StyleChooser from "@/components/tracker/StyleChooser";
 import TaskTable, { ExtraColumn } from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
@@ -106,7 +105,6 @@ export default function TrackerPage() {
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
   const [customizing, setCustomizing] = useState(false);
-  const [updatingItemLevels, setUpdatingItemLevels] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
 
@@ -135,7 +133,8 @@ export default function TrackerPage() {
       .then((data) => {
         setLastCheckIn(data ? data.last_check_in : null);
         // Check-ins cover every account, so they only apply to the all-accounts view.
-        setBalance(data && !accountId ? data.expected.total : null);
+        // Character-bound gold can't go toward a shared goal.
+        setBalance(data && !accountId ? data.expected.tradeable + data.expected.roster_bound : null);
       })
       .catch(() => {});
   }, [accountId]);
@@ -300,16 +299,6 @@ export default function TrackerPage() {
     }
   }
 
-  async function updateItemLevels(changes: { character: Character; itemLevel: number }[]) {
-    try {
-      for (const { character, itemLevel } of changes) {
-        await send("PATCH", `/characters/${character.id}`, { item_level: itemLevel });
-      }
-    } catch (e) {
-      setError(describeError(e));
-    }
-    loadAll();
-  }
 
   async function setBonus(character: Character, task: Task, bought: boolean) {
     try {
@@ -627,9 +616,6 @@ export default function TrackerPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <ToolbarButton active={updatingItemLevels} onClick={() => setUpdatingItemLevels((v) => !v)} icon={<TrendingUp size={16} />}>
-            Update item levels
-          </ToolbarButton>
           <ToolbarButton active={customizing} onClick={() => setCustomizing((v) => !v)} icon={<Settings2 size={16} />}>
             Customize
           </ToolbarButton>
@@ -680,9 +666,6 @@ export default function TrackerPage() {
         </Notice>
       )}
 
-      {updatingItemLevels && characters.length > 0 && (
-        <ItemLevelPanel characters={roster} onSave={updateItemLevels} onClose={() => setUpdatingItemLevels(false)} />
-      )}
 
       {customizing && (
         <CustomizePanel
