@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, ChevronDown, Gift } from "lucide-react";
+import { Check, Gift } from "lucide-react";
 import { useState } from "react";
 
+import DifficultySelect from "@/components/DifficultySelect";
 import { Character, formatGold, Run, Task } from "@/lib/api";
-import { bestDifficulty, difficultyOf, formatItemLevel, formatShortGold } from "@/lib/raids";
+import { bestDifficulty, difficultyOf, formatShortGold } from "@/lib/raids";
 
 /**
  * A raid cell: a checkbox, the difficulty (a dropdown you can change right
@@ -46,7 +47,6 @@ export default function RaidCell({
   const usual = isAssigned ? difficultyOf(character, task) : undefined;
   const shownId = run?.difficulty_id ?? choice ?? usual?.id ?? bestDifficulty(task, character.item_level)?.id;
   const shown = task.difficulties.find((d) => d.id === shownId);
-  const underLevel = shown ? shown.min_item_level > character.item_level : false;
   const extra = !isAssigned;
 
   return (
@@ -64,28 +64,17 @@ export default function RaidCell({
         className="h-5 w-5 cursor-pointer"
       />
 
-      <label className="relative" title={underLevel && shown ? `${shown.name} needs item level ${formatItemLevel(shown.min_item_level)}` : "Change difficulty"}>
-        <select
-          value={shownId ?? ""}
-          onChange={(e) => {
-            const id = Number(e.target.value);
-            if (extra) setChoice(id);
-            onDifficulty(id, done);
-          }}
-          aria-label={`${task.name} difficulty for ${character.name}`}
-          className={`w-36 cursor-pointer appearance-none truncate rounded-md border py-0.5 pl-2 pr-6 text-xs ${
-            underLevel ? "border-danger/50 text-danger" : "border-border text-foreground"
-          } bg-surface hover:bg-surface-2`}
-        >
-          {task.difficulties.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name} · {formatShortGold(d.gold)}
-              {d.min_item_level > character.item_level ? ` (needs ${formatItemLevel(d.min_item_level)})` : ""}
-            </option>
-          ))}
-        </select>
-        <ChevronDown size={12} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted" />
-      </label>
+      <DifficultySelect
+        task={task}
+        character={character}
+        value={shownId ?? null}
+        label={`${task.name} difficulty for ${character.name}`}
+        onChange={(id) => {
+          if (id === null) return;
+          if (extra) setChoice(id);
+          onDifficulty(id, done);
+        }}
+      />
 
       {done && (
         <button

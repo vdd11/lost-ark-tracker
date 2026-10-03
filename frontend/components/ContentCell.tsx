@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, Minus, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Character, Difficulty, formatCombinedGems, formatGems, gemsToLv1, Run, Task } from "@/lib/api";
 import { formatItemLevel } from "@/lib/raids";
@@ -17,6 +17,7 @@ export type RunChanges = {
 };
 
 const MAX_SANDS = 5;
+const POPOVER_WIDTH = 288;
 
 /**
  * Weekly content with tiers and gem rewards: Ebony Cube (a run counter, since
@@ -39,7 +40,9 @@ export default function ContentCell({
   onChange: (changes: RunChanges) => void;
   onRemove: () => void;
 }) {
-  const [open, setOpen] = useState<{ top: number; left: number } | null>(null);
+  // Where the details popover sits; `below` is the trigger's bottom edge and
+  // `above` its top, so it can flip up when there's no room underneath.
+  const [open, setOpen] = useState<{ top: number; left: number; above: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const count = run?.count ?? 0;
@@ -76,8 +79,24 @@ export default function ContentCell({
   function toggleDetails() {
     if (open) return setOpen(null);
     const rect = buttonRef.current!.getBoundingClientRect();
-    setOpen({ top: rect.bottom + 4, left: Math.max(8, Math.min(rect.left + rect.width / 2 - 120, window.innerWidth - 248)) });
+    const width = Math.min(POPOVER_WIDTH, window.innerWidth - 16);
+    setOpen({
+      top: rect.bottom + 4,
+      above: rect.top - 4,
+      left: Math.max(8, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 8)),
+    });
   }
+
+  // Keep the whole popover on screen: flip above the button, or pin to the bottom.
+  useLayoutEffect(() => {
+    const popover = popoverRef.current;
+    if (!open || !popover) return;
+    const height = popover.offsetHeight;
+    const room = window.innerHeight - 8;
+    if (open.top + height <= room) return;
+    const top = open.above - height >= 8 ? open.above - height : Math.max(8, room - height);
+    if (top !== open.top) setOpen({ ...open, top });
+  }, [open]);
 
   const extras = [
     task.counted && otherRuns > 0 ? `+${otherRuns}` : null,
@@ -131,8 +150,8 @@ export default function ContentCell({
           ref={popoverRef}
           role="dialog"
           aria-label={`${label} details`}
-          style={{ top: open.top, left: open.left }}
-          className="fixed z-30 w-60 rounded-md border border-border bg-surface p-3 text-left text-sm shadow-lg"
+          style={{ top: open.top, left: open.left, width: `min(${POPOVER_WIDTH}px, calc(100vw - 16px))` }}
+          className="fixed z-30 max-h-[calc(100vh-16px)] overflow-y-auto rounded-md border border-border bg-surface p-3 text-left text-sm shadow-lg"
         >
           <div className="mb-2 font-medium">
             {task.name}
