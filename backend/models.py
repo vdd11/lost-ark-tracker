@@ -162,3 +162,19 @@ class GemEntry(Base):
     gems: Mapped[dict] = mapped_column(JSON)
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
     earned_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class BalanceCheck(Base):
+    """Gold on hand at a moment, entered by the user. Comparing it with what
+    tracked earnings and spending predict reveals untracked spending."""
+
+    __tablename__ = "balance_checks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    checked_at: Mapped[datetime] = mapped_column(DateTime)
+    tradeable: Mapped[int] = mapped_column(Integer)
+    roster_bound: Mapped[int] = mapped_column(Integer)
+    # character_id (string key) -> character-bound gold; characters left out
+    # weren't counted in this check-in.
+    character_bound: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)

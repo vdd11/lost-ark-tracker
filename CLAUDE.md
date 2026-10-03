@@ -20,7 +20,7 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   are stored per reset period, never cleared, and double as gold history.
 - Schema changes: add new model columns with a `server_default` so
   `add_missing_columns()` can upgrade existing databases. New tables must also
-  be added to `BACKUP_MODELS` in `main.py`.
+  be added to `BACKUP_MODELS` in `routes/backup.py`.
 - Never touch `backend/database.db` or the user's app-data database in tests;
   set `DATABASE_URL` (or `--data-dir` for the exe) instead.
 - Raids and Ebony Cube come from the catalog in `backend/raids.py`, synced on

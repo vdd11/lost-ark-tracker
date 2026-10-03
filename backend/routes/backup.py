@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
+from models import BalanceCheck, Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
 from resets import utc_now
 from version import APP_NAME
 
@@ -24,6 +24,7 @@ BACKUP_MODELS = {
     "completions": Completion,
     "gold_entries": GoldEntry,
     "gem_entries": GemEntry,
+    "balance_checks": BalanceCheck,
 }
 BACKUP_FORMAT = 1
 

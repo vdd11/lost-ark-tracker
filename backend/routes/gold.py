@@ -5,6 +5,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
+from balances import evaluate_checks
 from database import get_db
 from models import Character, Completion, GoldEntry
 from resets import utc_now, week_of, weekly_reset_before
@@ -120,6 +121,11 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
             entry = spending.setdefault(week, {}).setdefault(completion.character_id, [0, 0])
             entry[0] += completion.character_bound_gold
             entry[1] += completion.bonus_spent
+
+    for result in evaluate_checks(db):
+        bucket = totals.get(week_of(result.check.checked_at))
+        if bucket is not None and result.untracked_total is not None:
+            bucket.untracked_spent = (bucket.untracked_spent or 0) + result.untracked_total
 
     for week, bucket in totals.items():
         bucket.total = bucket.raid_gold + bucket.other_gold

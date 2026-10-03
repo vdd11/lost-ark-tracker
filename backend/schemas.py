@@ -239,6 +239,38 @@ class GoldEntryRead(BaseModel):
     earned_at: datetime
 
 
+class BalancesOut(BaseModel):
+    tradeable: int
+    roster_bound: int
+    # character_id -> gold
+    character_bound: dict[int, int] = {}
+    total: int
+
+
+class BalanceCheckCreate(BaseModel):
+    tradeable: int
+    roster_bound: int = Field(ge=0)
+    character_bound: dict[int, int] = {}
+    note: str | None = Field(default=None, max_length=200)
+    checked_at: datetime | None = None
+
+
+class BalanceCheckRead(BaseModel):
+    id: int
+    checked_at: datetime
+    actual: BalancesOut
+    note: str | None
+    # From the previous check-in plus tracked gold since; None for the first.
+    expected: BalancesOut | None = None
+    # expected - actual: positive means gold went to things the app doesn't track.
+    untracked: BalancesOut | None = None
+
+
+class ExpectedBalances(BaseModel):
+    last_check_in: datetime
+    expected: BalancesOut
+
+
 class CharacterBoundGold(BaseModel):
     """One character's character-bound gold for a week."""
 
@@ -271,6 +303,8 @@ class WeeklyGold(BaseModel):
     character_bound_left: int = 0
     # character_id -> that character's character-bound gold this week.
     character_bound: dict[int, CharacterBoundGold] = {}
+    # Gold spent on untracked things, from check-ins made this week.
+    untracked_spent: int | None = None
 
 
 class GemEntryCreate(BaseModel):
