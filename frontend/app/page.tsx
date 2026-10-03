@@ -642,7 +642,7 @@ export default function TrackerPage() {
 
   const showToday = isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
   const showAnytime = isShown(SECTION_KEYS.anytime) && (anytime.columns.length > 0 || editMode);
-  // Last week's recap: for the first few days of a week, until dismissed, if
+  // Last week's recap: through the weekend after the reset, until dismissed, if
   // anything happened last week.
   const lastGoldWeek = goldWeeks.at(-2);
   const lastGemWeek = gemWeeks.at(-2);
@@ -652,7 +652,7 @@ export default function TrackerPage() {
     recap &&
     isShown(SECTION_KEYS.recap) &&
     recapDismissed !== tracker.weekly_period &&
-    daysIntoWeek(tracker.weekly_period, now) < 3 &&
+    daysIntoWeek(tracker.weekly_period, now) < 5 &&
     ((lastGoldWeek?.total ?? 0) > 0 || (lastGemWeek?.total ?? 0) > 0 || Object.keys(recap.paid_raids).length > 0);
 
   // Check-ins are about spending, so they follow the "Left to use" box.
@@ -766,6 +766,7 @@ export default function TrackerPage() {
             total={week.total}
           >
             <TaskTable
+              applies={editMode ? undefined : appliesTo}
               characters={week.rows}
               columns={week.columns}
               extraColumns={isShown(CHARACTER_BOUND_KEY) ? [characterBoundColumn] : []}
@@ -797,6 +798,7 @@ export default function TrackerPage() {
                   }
                 >
                   <TaskTable
+                    applies={editMode ? undefined : appliesTo}
                     characters={today.rows}
                     columns={today.columns}
                     renderCell={renderCell}
@@ -809,7 +811,13 @@ export default function TrackerPage() {
               )}
               {showAnytime && (
                 <TrackerCard icon={Box} title="Any time" subtitle="Ebony Cube tickets · no reset, count runs this week">
-                  <TaskTable characters={anytime.rows} columns={anytime.columns} renderCell={renderCell} onItemLevel={updateItemLevel} />
+                  <TaskTable
+                    applies={editMode ? undefined : appliesTo}
+                    characters={anytime.rows}
+                    columns={anytime.columns}
+                    renderCell={renderCell}
+                    onItemLevel={updateItemLevel}
+                  />
                 </TrackerCard>
               )}
             </div>
