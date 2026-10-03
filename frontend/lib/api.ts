@@ -134,6 +134,8 @@ export type WeeklyGold = {
   character_bound_left: number;
   /** character_id -> that character's character-bound gold this week. */
   character_bound: Record<string, { earned: number; spent: number; left: number }>;
+  /** Gold spent on untracked things, from this week's check-ins (null if none). */
+  untracked_spent: number | null;
   by_source: Record<string, number>;
   by_character: Record<string, number>;
 };
@@ -245,3 +247,24 @@ export function formatCombinedGems(lv1Equivalent: number) {
 export function formatGems(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
+
+export type Balances = {
+  tradeable: number;
+  roster_bound: number;
+  /** character_id -> gold */
+  character_bound: Record<string, number>;
+  total: number;
+};
+
+export type BalanceCheck = {
+  id: number;
+  checked_at: string;
+  actual: Balances;
+  note: string | null;
+  /** From the previous check-in plus tracked gold since; null for the first. */
+  expected: Balances | null;
+  /** expected - actual: positive means gold went to untracked things. */
+  untracked: Balances | null;
+};
+
+export type ExpectedBalances = { last_check_in: string; expected: Balances };

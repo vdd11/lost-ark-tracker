@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import GoldCheckIn from "@/components/GoldCheckIn";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
 import { api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
 import { usePreference } from "@/lib/usePreference";
@@ -87,7 +88,8 @@ export default function GoldPage() {
           sub={
             thisWeek
               ? `${formatGold(thisWeek.tradeable_left)} tradeable · ${formatGold(thisWeek.roster_bound_left)} roster-bound · ${formatGold(thisWeek.character_bound_left)} character-bound` +
-                (thisWeek.bonus_spent ? ` (after ${formatGold(thisWeek.bonus_spent)} on bonus chests)` : "")
+                (thisWeek.bonus_spent ? ` (after ${formatGold(thisWeek.bonus_spent)} on bonus chests)` : "") +
+                (thisWeek.untracked_spent != null ? ` · ${formatGold(thisWeek.untracked_spent)} spent on untracked things` : "")
               : undefined
           }
           accent
@@ -95,6 +97,8 @@ export default function GoldPage() {
         <Tile label="Last week" value={lastWeek?.net ?? 0} />
         <Tile label={`Average, last ${range} weeks`} value={average} />
       </div>
+
+      <GoldCheckIn characters={characters} onChanged={load} onError={setError} />
 
       <section className="rounded-md border border-border bg-surface p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -136,6 +140,7 @@ export default function GoldPage() {
                 <th className="py-1.5 text-right font-medium">Other gold</th>
                 <th className="py-1.5 text-right font-medium">Bonus chests</th>
                 <th className="py-1.5 text-right font-medium">Net</th>
+                <th className="py-1.5 text-right font-medium" title="From that week's gold check-ins">Untracked spending</th>
               </tr>
             </thead>
             <tbody className="tabular-nums">
@@ -148,6 +153,7 @@ export default function GoldPage() {
                   <td className="py-1.5 text-right">{formatGold(week.other_gold)}</td>
                   <td className="py-1.5 text-right text-muted">{week.bonus_spent ? `−${formatGold(week.bonus_spent)}` : "0"}</td>
                   <td className="py-1.5 text-right font-medium">{formatGold(week.net)}</td>
+                  <td className="py-1.5 text-right text-muted">{week.untracked_spent == null ? "–" : formatGold(week.untracked_spent)}</td>
                 </tr>
               ))}
             </tbody>

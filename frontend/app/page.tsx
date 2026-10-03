@@ -7,6 +7,7 @@ import ContentCell, { RunChanges } from "@/components/ContentCell";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
+import { usePreference } from "@/lib/usePreference";
 import {
   canRun,
   difficultyOf,
@@ -31,6 +32,7 @@ import {
   Task,
   TrackerState,
   WeeklyGold,
+  ExpectedBalances,
 } from "@/lib/api";
 
 
@@ -49,6 +51,9 @@ export default function TrackerPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tracker, setTracker] = useState<TrackerState | null>(null);
   const [thisWeek, setThisWeek] = useState<WeeklyGold | null>(null);
+  // undefined until loaded, null if there has never been a gold check-in.
+  const [lastCheckIn, setLastCheckIn] = useState<string | null | undefined>(undefined);
+  const [checkInDismissed, setCheckInDismissed] = usePreference<string>("check-in-dismissed-week", "");
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -58,6 +63,9 @@ export default function TrackerPage() {
     api<WeeklyGold[]>("/gold/weekly?weeks=1")
       .then((weeks) => setThisWeek(weeks[0]))
       .catch((e) => setError(describeError(e)));
+    api<ExpectedBalances | null>("/balances/expected")
+      .then((data) => setLastCheckIn(data ? data.last_check_in : null))
+      .catch(() => {});
   }, []);
 
   // Rest, runs and roster limits depend on check-offs, so re-read after changes.
@@ -317,6 +325,25 @@ export default function TrackerPage() {
       </div>
 
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
+
+      {tracker && lastCheckIn !== undefined && checkInDismissed !== tracker.weekly_period &&
+        (lastCheckIn === null || parseUtc(lastCheckIn) < parseUtc(`${tracker.weekly_period}T10:00:00`)) && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
+            <span>
+              {lastCheckIn === null
+                ? "Want to see gold you spend outside the tracker? Enter how much you have once a week."
+                : "New week: check in how much gold you have to see what you spent on untracked things."}{" "}
+              <Link href="/gold/#check-in" className="underline">Check in</Link>
+            </span>
+            <button
+              onClick={() => setCheckInDismissed(tracker.weekly_period)}
+              aria-label="Dismiss until next week"
+              className="rounded px-1 text-muted hover:bg-surface-2"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
       {hasUnknownGold && (
         <p className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">

@@ -35,6 +35,11 @@ non-raid sources to see your weekly gold over time.
     per roster, pay any character, and disappear when they end.
 - **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly gold
   (raid clears + logged gold).
+  - **Gold on hand**: once a week (or whenever you like), enter how much
+    tradeable, roster-bound and character-bound gold you have. The app
+    compares it with your last check-in plus everything it tracked since, so
+    you see how much went to things it doesn't track (honing, the market, ...)
+    without logging each one. The tracker reminds you after the weekly reset.
 - **Gems**: Ebony Cube and Haal's Hourglass gems are counted from the tracker
   using each tier's reward table (editable on the Gems page). Log Guardian
   Raid and Field Boss drops by hand. Weekly chart and per-character totals in
