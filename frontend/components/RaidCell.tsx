@@ -22,6 +22,7 @@ export default function RaidCell({
   onToggle,
   onDifficulty,
   onBonus,
+  compact = false,
 }: {
   task: Task;
   character: Character;
@@ -31,6 +32,8 @@ export default function RaidCell({
   onToggle: (done: boolean, difficultyId: number | undefined) => void;
   onDifficulty: (difficultyId: number, done: boolean) => void;
   onBonus: (bought: boolean) => void;
+  /** Show a usual raid's difficulty as a plain label; change it in "Edit who does what". */
+  compact?: boolean;
 }) {
   // Difficulty picked for an extra (unassigned) run before it's checked.
   const [choice, setChoice] = useState<number | null>(null);
@@ -64,6 +67,14 @@ export default function RaidCell({
         className="h-5 w-5 cursor-pointer"
       />
 
+      {compact && !extra && shown ? (
+        <span
+          className={`flex h-[26px] items-center text-xs ${shown.min_item_level > character.item_level ? "text-danger" : "text-muted"}`}
+          title="Change the difficulty in Edit who does what, or turn the pickers back on in Customize"
+        >
+          {shown.name} · {formatShortGold(shown.gold)}
+        </span>
+      ) : (
       <DifficultySelect
         task={task}
         character={character}
@@ -75,6 +86,7 @@ export default function RaidCell({
           onDifficulty(id, done);
         }}
       />
+      )}
 
       {/* The bonus box slot is always there, so checking a raid never moves the checkbox. */}
       <div className="flex h-5 items-center">

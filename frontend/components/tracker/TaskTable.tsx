@@ -19,6 +19,7 @@ export default function TaskTable({
   columnNote,
   onItemLevel,
   characterNote,
+  characterAction,
   hideWhenEmpty = false,
 }: {
   characters: Character[];
@@ -28,6 +29,8 @@ export default function TaskTable({
   columnNote?: (task: Task) => ReactNode;
   onItemLevel: (character: Character, itemLevel: number) => void;
   characterNote?: (character: Character) => ReactNode;
+  /** A small button beside the name, e.g. "mark all done". */
+  characterAction?: (character: Character) => ReactNode;
   /** Render nothing, rather than "Nothing to show", when there are no rows. */
   hideWhenEmpty?: boolean;
 }) {
@@ -66,6 +69,7 @@ export default function TaskTable({
                       GOLD
                     </span>
                   )}
+                  {characterAction?.(character)}
                 </div>
                 <div className="text-xs text-muted">
                   {character.class_name} ·{" "}

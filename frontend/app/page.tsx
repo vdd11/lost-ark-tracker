@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, CalendarDays, Check, Coins, Swords, Flame, Pencil, Settings2, Sun, Wallet, X } from "lucide-react";
+import { Box, CalendarDays, Check, CheckCheck, Coins, Swords, Flame, Pencil, Settings2, Sun, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -56,6 +56,8 @@ import {
   HIDDEN_PREFERENCE,
   isFinished,
   parseHidden,
+  RAID_PICKERS_KEY,
+  remainingFor,
   Section,
   SECTION_KEYS,
   sectionOf,
@@ -308,6 +310,39 @@ export default function TrackerPage() {
   }
 
 
+  /** Tick off everything a character still has to do in a card, in one click. */
+  async function completeAll(character: Character, todo: Task[]) {
+    try {
+      for (const task of todo) {
+        // Raids clear at the character's usual difficulty; everything else is a plain check.
+        const body = task.category === "raid" && isTiered(task) ? { difficulty_id: difficultyOf(character, task)?.id ?? null } : {};
+        await send("PUT", `/characters/${character.id}/tasks/${task.id}/completion`, body);
+      }
+    } catch (e) {
+      setError(describeError(e));
+    }
+    refreshTracker();
+    loadWeeklyGold();
+  }
+
+  /** The "all done" button beside a character's name, while they have something left. */
+  function markAllButton(character: Character, columns: Task[], what: string) {
+    if (editMode) return null;
+    const todo = remainingFor(character, columns, (t) => completed.has(cellKey(character.id, t.id)));
+    if (todo.length === 0) return null;
+    const names = todo.map((t) => t.name).join(", ");
+    return (
+      <button
+        onClick={() => completeAll(character, todo)}
+        title={`Mark ${character.name}'s remaining ${what} done: ${names}`}
+        aria-label={`Mark ${character.name}'s remaining ${what} done`}
+        className="ml-auto flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted hover:border-done/60 hover:text-done"
+      >
+        <CheckCheck size={12} /> All
+      </button>
+    );
+  }
+
   async function setBonus(character: Character, task: Task, bought: boolean) {
     try {
       await send("PUT", `/characters/${character.id}/tasks/${task.id}/completion`, { bought_bonus: bought });
@@ -430,6 +465,7 @@ export default function TrackerPage() {
           onToggle={(done, difficultyId) => toggleRaid(character, task, done, difficultyId)}
           onDifficulty={(difficultyId, done) => chooseRaidDifficulty(character, task, difficultyId, done)}
           onBonus={(bought) => setBonus(character, task, bought)}
+          compact={!isShown(RAID_PICKERS_KEY)}
         />
       );
     }
@@ -737,6 +773,7 @@ export default function TrackerPage() {
               columnNote={eventNote}
               onItemLevel={updateItemLevel}
               characterNote={goldRaidNote}
+              characterAction={(c) => markAllButton(c, week.columns, "raids and weeklies")}
               hideWhenEmpty={week.finished.length > 0}
             />
             {finishedNote(week.finished, week.rows.length === 0, "this week")}
@@ -765,6 +802,7 @@ export default function TrackerPage() {
                     renderCell={renderCell}
                     onItemLevel={updateItemLevel}
                     hideWhenEmpty={today.finished.length > 0}
+                    characterAction={(c) => markAllButton(c, today.columns, "dailies")}
                   />
                   {finishedNote(today.finished, today.rows.length === 0, "today")}
                 </TrackerCard>

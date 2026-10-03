@@ -28,6 +28,8 @@ export const SECTION_KEYS = {
 export const CHARACTER_BOUND_KEY = "column:character-bound";
 /** Hiding this hides characters who've finished everything in a card. */
 export const FINISHED_ROWS_KEY = "rows:finished";
+/** Hiding this shows usual raids as a plain label instead of a difficulty dropdown. */
+export const RAID_PICKERS_KEY = "cells:raid-pickers";
 
 /** The boxes along the top of the tracker. */
 export const STAT_KEYS = {
@@ -92,6 +94,17 @@ export function styleHidden(style: Style, tasks: Task[]): Set<string> {
 export function matchingStyle(hidden: Set<string>, tasks: Task[]): Style | null {
   const current = serializeHidden(hidden);
   return STYLES.find((style) => serializeHidden(styleHidden(style.id, tasks)) === current)?.id ?? null;
+}
+
+/**
+ * What "mark all done" ticks off for a character in a card: their usual tasks
+ * not done yet. Run counters (Ebony Cube) need a count, and once-per-account
+ * events are a deliberate pick, so both are left to do by hand.
+ */
+export function remainingFor(character: Character, columns: Task[], isDone: (task: Task) => boolean) {
+  return columns.filter(
+    (task) => countsForProgress(character, task) && !isDone(task) && !task.counted && !task.roster_limited,
+  );
 }
 
 /**

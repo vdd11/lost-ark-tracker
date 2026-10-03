@@ -7,6 +7,7 @@ import {
   FINISHED_ROWS_KEY,
   matchingStyle,
   PAGE_KEYS,
+  RAID_PICKERS_KEY,
   SECTION_KEYS,
   sectionOf,
   STAT_KEYS,
@@ -45,7 +46,11 @@ export default function CustomizePanel({
     },
     {
       title: "This week",
-      items: [...taskItems("week"), { key: CHARACTER_BOUND_KEY, label: "Character-bound gold" }],
+      items: [
+        ...taskItems("week"),
+        { key: CHARACTER_BOUND_KEY, label: "Character-bound gold" },
+        { key: RAID_PICKERS_KEY, label: "Difficulty pickers on usual raids" },
+      ],
     },
     {
       title: "Today",

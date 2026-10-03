@@ -5,6 +5,7 @@ import { Character } from "./api";
 import {
   DEFAULT_HIDDEN,
   isFinished,
+  remainingFor,
   matchingStyle,
   PAGE_KEYS,
   parseHidden,
@@ -70,6 +71,19 @@ describe("play styles", () => {
     expect(matchingStyle(new Set(DEFAULT_HIDDEN), tasks)).toBe("regular");
     expect(matchingStyle(styleHidden("casual", tasks), tasks)).toBe("casual");
     expect(matchingStyle(new Set(["task:Serca"]), tasks)).toBeNull();
+  });
+});
+
+describe("mark all done", () => {
+  it("ticks only usual, unfinished, single-checkbox tasks", () => {
+    const raidA = task({ id: 1, category: "raid", name: "A" });
+    const raidB = task({ id: 2, category: "raid", name: "B" });
+    const event = task({ id: 3, category: "raid", name: "Extreme", roster_limited: true });
+    const cube = task({ id: 4, name: "Ebony Cube", counted: true });
+    const other = task({ id: 5, category: "raid", name: "Not theirs" });
+    const who = { task_ids: [1, 2, 3, 4], item_level: 1700 } as Character;
+    const left = remainingFor(who, [raidA, raidB, event, cube, other], (t) => t.id === 1);
+    expect(left.map((t) => t.name)).toEqual(["B"]);
   });
 });
 
