@@ -6,6 +6,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import ContentCell, { RunChanges } from "@/components/ContentCell";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
+import { usePreference } from "@/lib/usePreference";
 import RestGauge from "@/components/RestGauge";
 import {
   canRun,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/api";
 
 type Filter = "all" | "mine" | "friends";
+const FILTERS: readonly Filter[] = ["all", "mine", "friends"];
 
 const cellKey = (characterId: number, taskId: number) => `${characterId}:${taskId}`;
 
@@ -51,7 +53,7 @@ export default function TrackerPage() {
   const [tracker, setTracker] = useState<TrackerState | null>(null);
   const [thisWeek, setThisWeek] = useState<WeeklyGold | null>(null);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = usePreference<Filter>("tracker-filter", "all", FILTERS);
   const [editMode, setEditMode] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
@@ -315,7 +317,7 @@ export default function TrackerPage() {
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex rounded-md border border-border bg-surface p-0.5 text-sm">
-          {(["all", "mine", "friends"] as Filter[]).map((value) => (
+          {FILTERS.map((value) => (
             <button
               key={value}
               onClick={() => setFilter(value)}

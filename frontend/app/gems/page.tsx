@@ -20,6 +20,7 @@ import {
   WeeklyGems,
 } from "@/lib/api";
 import { formatItemLevel } from "@/lib/raids";
+import { usePreference } from "@/lib/usePreference";
 
 // Fixed order and colors; anything else folds into "Other". Ebony Cube and
 // Haal's Hourglass are filled in from the tracker, the rest are logged here.
@@ -64,8 +65,8 @@ export default function GemsPage() {
   const [entries, setEntries] = useState<GemEntry[]>([]);
   const [weeks, setWeeks] = useState<WeeklyGems[]>([]);
   const [rewardTasks, setRewardTasks] = useState<Task[]>([]);
-  const [range, setRange] = useState(12);
-  const [showTable, setShowTable] = useState(false);
+  const [range, setRange] = usePreference("gems-range", 12, RANGES);
+  const [showTable, setShowTable] = usePreference<boolean>("gems-table", false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -140,7 +141,7 @@ export default function GemsPage() {
                 <option key={r} value={r}>Last {r} weeks</option>
               ))}
             </select>
-            <button onClick={() => setShowTable((v) => !v)} className="rounded-md border border-border px-3 py-1.5">
+            <button onClick={() => setShowTable(!showTable)} className="rounded-md border border-border px-3 py-1.5">
               {showTable ? "Show chart" : "Show table"}
             </button>
           </div>

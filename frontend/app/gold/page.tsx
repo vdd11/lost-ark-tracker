@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
+import { usePreference } from "@/lib/usePreference";
 import { api, Character, formatGold, GoldEntry, parseUtc, send, WeeklyGold } from "@/lib/api";
 
 const SOURCES = ["Field Boss", "Chaos Gate", "Fate Ember", "Paradise", "Auction House", "Trade"];
@@ -14,6 +15,7 @@ const VIEWS: { label: string; show: SeriesKey[] }[] = [
   { label: "Raid gold", show: ["raid_gold"] },
   { label: "Other gold", show: ["other_gold"] },
 ];
+const VIEW_INDEXES = VIEWS.map((_, i) => i);
 
 function todayInputValue() {
   const now = new Date();
@@ -24,9 +26,9 @@ export default function GoldPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [entries, setEntries] = useState<GoldEntry[]>([]);
   const [weeks, setWeeks] = useState<WeeklyGold[]>([]);
-  const [range, setRange] = useState(12);
-  const [showTable, setShowTable] = useState(false);
-  const [view, setView] = useState(0);
+  const [range, setRange] = usePreference("gold-range", 12, RANGES);
+  const [showTable, setShowTable] = usePreference<boolean>("gold-table", false);
+  const [view, setView] = usePreference("gold-view", 0, VIEW_INDEXES);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -104,7 +106,7 @@ export default function GoldPage() {
                 <option key={r} value={r}>Last {r} weeks</option>
               ))}
             </select>
-            <button onClick={() => setShowTable((v) => !v)} className="rounded-md border border-border px-3 py-1.5">
+            <button onClick={() => setShowTable(!showTable)} className="rounded-md border border-border px-3 py-1.5">
               {showTable ? "Show chart" : "Show table"}
             </button>
           </div>
