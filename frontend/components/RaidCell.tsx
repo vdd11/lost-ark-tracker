@@ -76,26 +76,29 @@ export default function RaidCell({
         }}
       />
 
-      {done && (
-        <button
-          onClick={() => onBonus(!run!.bought_bonus)}
-          aria-pressed={run!.bought_bonus}
-          aria-label={`Bought the ${task.name} bonus box on ${character.name}`}
-          title={
-            shown?.bonus_cost == null
-              ? "Bonus box cost unknown for this difficulty: set it on the Raids page"
-              : `Bought the bonus ("View More") boxes for every gate: ${formatGold(shown.bonus_cost)} gold`
-          }
-          className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] ${
-            run!.bought_bonus
-              ? "bg-accent/20 font-medium text-accent"
-              : "border border-dashed border-border text-muted hover:border-accent/60 hover:text-foreground"
-          }`}
-        >
-          <Gift size={12} />
-          {run!.bought_bonus ? `Bought −${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)}` : "Bonus box"}
-        </button>
-      )}
+      {/* The bonus box slot is always there, so checking a raid never moves the checkbox. */}
+      <div className="flex h-5 items-center">
+        {done && (
+          <button
+            onClick={() => onBonus(!run!.bought_bonus)}
+            aria-pressed={run!.bought_bonus}
+            aria-label={`Bought the ${task.name} bonus box on ${character.name}`}
+            title={
+              shown?.bonus_cost == null
+                ? "Bonus box cost unknown for this difficulty: set it on the Raids page"
+                : `Bought the bonus ("View More") boxes for every gate: ${formatGold(shown.bonus_cost)} gold`
+            }
+            className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] ${
+              run!.bought_bonus
+                ? "bg-accent/20 font-medium text-accent"
+                : "border border-dashed border-border text-muted hover:border-accent/60 hover:text-foreground"
+            }`}
+          >
+            <Gift size={12} />
+            {run!.bought_bonus ? `Bought −${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)}` : "Bonus box"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

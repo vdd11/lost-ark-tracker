@@ -11,17 +11,15 @@ export const CLASS_GROUPS: { archetype: string; classes: string[] }[] = [
 export const LOST_ARK_CLASSES = CLASS_GROUPS.flatMap((group) => group.classes).sort();
 
 /**
- * The picker's list for what's typed: classes containing it, or every class
- * when it's empty or already a full class name (so reopening shows all).
+ * The picker's list for what's typed: classes whose name contains it, never
+ * matching the archetype, so "artist" finds Artist and not every Martial
+ * Artist. An empty query lists every class.
  */
 export function classOptions(query: string) {
   const typed = query.trim().toLowerCase();
-  const exact = LOST_ARK_CLASSES.some((c) => c.toLowerCase() === typed);
   return CLASS_GROUPS.map((group) => ({
     archetype: group.archetype,
-    classes: [...group.classes]
-      .sort()
-      .filter((c) => !typed || exact || c.toLowerCase().includes(typed) || group.archetype.toLowerCase().includes(typed)),
+    classes: [...group.classes].sort().filter((c) => c.toLowerCase().includes(typed)),
   })).filter((group) => group.classes.length > 0);
 }
 

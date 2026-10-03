@@ -32,16 +32,19 @@ export default function ClassInput({
   // Fixed position under the input, so table overflow can't clip the list.
   const [open, setOpen] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
   const [active, setActive] = useState(0);
+  // Opening shows every class (current one highlighted); typing narrows it.
+  const [typing, setTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const listId = useId();
-  const groups = classOptions(value);
+  const groups = classOptions(typing ? value : "");
   const flat = groups.flatMap((g) => g.classes);
 
   function show() {
+    setTyping(false);
     const rect = inputRef.current!.getBoundingClientRect();
     const below = window.innerHeight - rect.bottom - 12;
-    const current = flat.findIndex((name) => name.toLowerCase() === value.trim().toLowerCase());
+    const current = classOptions("").flatMap((g) => g.classes).findIndex((name) => name.toLowerCase() === value.trim().toLowerCase());
     setActive(Math.max(0, current));
     setOpen({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 208), maxHeight: Math.min(320, Math.max(160, below)) });
   }
@@ -102,9 +105,10 @@ export default function ClassInput({
         onFocus={show}
         onClick={() => !open && show()}
         onChange={(e) => {
-          onChange(e.target.value);
-          setActive(0);
           if (!open) show();
+          onChange(e.target.value);
+          setTyping(true);
+          setActive(0);
         }}
         onKeyDown={handleKey}
         onBlur={() => {
