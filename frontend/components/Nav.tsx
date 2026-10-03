@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import ThemeToggle from "@/components/ThemeToggle";
 import UpdateNotice from "@/components/UpdateNotice";
 
 const LINKS = [
@@ -34,7 +35,10 @@ export default function Nav() {
             </Link>
           ))}
         </div>
-        <UpdateNotice />
+        <div className="ml-auto flex items-center gap-2">
+          <UpdateNotice />
+          <ThemeToggle />
+        </div>
       </nav>
     </header>
   );

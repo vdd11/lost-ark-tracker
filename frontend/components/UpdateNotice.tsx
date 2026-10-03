@@ -46,7 +46,7 @@ export default function UpdateNotice() {
       href={update.url}
       target="_blank"
       rel="noreferrer"
-      className="ml-auto rounded-md border border-accent/50 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/20"
+      className="rounded-md border border-accent/50 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/20"
     >
       Update available: v{update.version}
     </a>
