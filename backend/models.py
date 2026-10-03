@@ -180,3 +180,12 @@ class BalanceCheck(Base):
     # weren't counted in this check-in.
     character_bound: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+
+class AppliedMigration(Base):
+    """One-off data upgrades that already ran, so each runs only once."""
+
+    __tablename__ = "applied_migrations"
+
+    name: Mapped[str] = mapped_column(String(100), primary_key=True)
+    applied_at: Mapped[datetime] = mapped_column(DateTime)

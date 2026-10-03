@@ -7,7 +7,6 @@ from models import Character, CharacterTask, Task
 DEFAULT_TASKS = [
     ("Chaos Dungeon", "daily"),
     ("Guardian Raid", "daily"),
-    ("Guild Weekly", "weekly"),
 ]
 
 

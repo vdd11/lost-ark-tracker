@@ -138,3 +138,25 @@ def test_restore_rejects_other_files_without_touching_data(client):
     assert client.post("/api/backup", json=bad).status_code == 400
 
     assert [c["name"] for c in client.get("/api/characters").json()] == ["Main"]
+
+
+def test_guild_weekly_is_removed_once_on_upgrade(client):
+    from fastapi.testclient import TestClient
+    from sqlalchemy import text
+
+    import main
+    from database import engine
+
+    assert all(t["name"] != "Guild Weekly" for t in client.get("/api/tasks").json())
+
+    # A database from before the removal still has it...
+    client.post("/api/tasks", json={"name": "Guild Weekly", "category": "weekly"})
+    with engine.begin() as connection:
+        connection.execute(text("DELETE FROM applied_migrations"))
+    with TestClient(main.app) as restarted:
+        assert all(t["name"] != "Guild Weekly" for t in restarted.get("/api/tasks").json())
+
+    # ...but one added back afterwards on purpose stays.
+    client.post("/api/tasks", json={"name": "Guild Weekly", "category": "weekly"})
+    with TestClient(main.app) as restarted:
+        assert any(t["name"] == "Guild Weekly" for t in restarted.get("/api/tasks").json())

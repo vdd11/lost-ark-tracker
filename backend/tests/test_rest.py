@@ -45,7 +45,7 @@ def test_default_rest_rules_are_seeded(client):
     tasks = {t["name"]: t for t in client.get("/api/tasks").json()}
     assert (tasks["Chaos Dungeon"]["rest_max"], tasks["Chaos Dungeon"]["rest_gain"], tasks["Chaos Dungeon"]["rest_cost"]) == (200, 20, 40)
     assert tasks["Guardian Raid"]["rest_max"] == 100
-    assert tasks["Guild Weekly"]["rest_max"] == 0
+    assert tasks["Haal's Hourglass"]["rest_max"] == 0
 
 
 def test_gauge_builds_while_skipping_and_drops_after_rested_run(client, set_now):
@@ -89,8 +89,8 @@ def test_syncing_with_the_game(client, set_now):
     assert rest_for(client, character["id"], chaos["id"])["value"] == 80
 
     # Only assigned tasks with a gauge can be set.
-    guild = next(t for t in client.get("/api/tasks").json() if t["name"] == "Guild Weekly")
-    assert client.put(f"/api/characters/{character['id']}/tasks/{guild['id']}/rest", json={"value": 10}).status_code == 400
+    hourglass = next(t for t in client.get("/api/tasks").json() if t["name"] == "Haal's Hourglass")
+    assert client.put(f"/api/characters/{character['id']}/tasks/{hourglass['id']}/rest", json={"value": 10}).status_code == 400
     client.delete(url)
     assert client.put(f"{url}/rest", json={"value": 10}).status_code == 404
 

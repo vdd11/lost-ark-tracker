@@ -13,12 +13,12 @@ for values a user has edited themselves (see sync_catalog).
 """
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, timezone
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from models import Character, CharacterTask, Completion, RaidDifficulty, Task
+from models import AppliedMigration, Character, CharacterTask, Completion, RaidDifficulty, Task
 
 # Gold is only paid for this many raids per character per week.
 GOLD_RAIDS_PER_WEEK = 3
@@ -299,11 +299,20 @@ def backfill_character_bound_gold(db: Session):
 RETIRED_TASKS = ["Una's Dailies", "Una's Weeklies"]
 
 
-def retire_old_tasks(db: Session):
-    """Hide tasks we used to add by default that aren't in the game."""
-    db.query(Task).filter(Task.catalog_key.is_(None), Task.name.in_(RETIRED_TASKS)).update(
+def retire_old_tasks(db: Session, names: list[str] = RETIRED_TASKS):
+    """Hide tasks we used to add by default that aren't in the game (or worth tracking)."""
+    db.query(Task).filter(Task.catalog_key.is_(None), Task.name.in_(names)).update(
         {"archived": True}, synchronize_session=False
     )
+    db.commit()
+
+
+def run_once(db: Session, name: str, upgrade):
+    """Run a one-off data upgrade unless it already ran on this database."""
+    if db.get(AppliedMigration, name) is not None:
+        return
+    upgrade(db)
+    db.add(AppliedMigration(name=name, applied_at=datetime.now(timezone.utc).replace(tzinfo=None)))
     db.commit()
 
 
