@@ -30,5 +30,11 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - Event raids (Extreme) are user-created via `/api/event-raids`, not
   cataloged: they're tasks with `ends_on`, `roster_limited` and
   `gold_for_everyone`.
+- Accounts (`accounts.py`): each character has an `account_id`; an account is
+  a roster, so "roster-limited" and the 6-gold-earner limit are per account.
+  `ensure_accounts()` runs on startup and after a restore.
+- `news.py` fetches server status (playlostark.com) and Steam announcements,
+  cached 10 minutes, using certifi's certificates. Tests never hit the network:
+  monkeypatch `news.fetch_text`.
 - Version lives in `backend/version.py`; releases are cut by pushing a `v*` tag.
 - Commit style: conventional commits (`feat:`, `fix:`, `chore:`).

@@ -38,6 +38,7 @@ export const WIDGET_KEYS = {
   goldMonth: "widget:gold-month",
   goldGoal: "widget:gold-goal",
   gems: "widget:gems",
+  news: "widget:news",
 } as const;
 
 /** Pages that can be dropped from the menu. */

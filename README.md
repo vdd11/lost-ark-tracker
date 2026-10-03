@@ -1,8 +1,8 @@
 # Lost Ark Tracker
 
 A roster tracker for Lost Ark: check off dailies, weeklies, and raids per
-character, mark characters you're saving for friends, and log gold from
-non-raid sources to see your weekly gold over time.
+character, across one or more game accounts, and log gold from non-raid
+sources to see your weekly gold over time.
 
 - **Tracker**: three cards, by how often things reset.
   - **This week**: raids and Haal's Hourglass (1730+), reset Wednesday 10:00
@@ -20,8 +20,14 @@ non-raid sources to see your weekly gold over time.
     browser). The top boxes count gold raids left and log other gold in one
     step. Optional widgets chart the past month of gold, project a gold goal
     (from your last check-in) and show when your tracked gems add up to the
-    next Lv9 / Lv10. **Edit who does what** sets each character's usual raids and tasks. Click
+    next Lv9 / Lv10. A **Lost Ark updates** widget shows live NA/EU server
+    status and official announcements, with the official X accounts
+    (@LAGameStatus, @playlostark) a tab away. **Edit who does what** sets each character's usual raids and tasks. Click
     an item level to update it.
+- **Accounts**: play more than one account? Add accounts in Settings and put
+  each character on one. Each account is its own roster (up to 6 gold earners,
+  its own event clears), and the tracker gets a switcher to view one account
+  or all of them.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
   rest gauge, highlighted in gold when a rested run is available today. Click
   the number to match it to the game.
@@ -39,7 +45,7 @@ non-raid sources to see your weekly gold over time.
     costs are built in; enter Serca's and Cathedral's on the Raids page.
   - The **Events** tab adds limited-time raids (e.g. "Act 3 Extreme"). Pick
     the raid, check the pre-filled difficulties, done. Events are one clear
-    per roster, pay any character, and disappear when they end.
+    per account, pay any character, and disappear when they end.
 - **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly gold
   (raid clears + logged gold).
   - **Gold on hand**: once a week (or whenever you like), enter how much

@@ -61,6 +61,7 @@ export default function CustomizePanel({
         { key: WIDGET_KEYS.goldMonth, label: "Gold, past month" },
         { key: WIDGET_KEYS.goldGoal, label: "Gold goal" },
         { key: WIDGET_KEYS.gems, label: "Gem progress (Lv9 / Lv10)" },
+        { key: WIDGET_KEYS.news, label: "Lost Ark news & servers" },
       ],
     },
     {
