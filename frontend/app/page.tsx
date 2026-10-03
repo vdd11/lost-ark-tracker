@@ -6,6 +6,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import ContentCell, { RunChanges } from "@/components/ContentCell";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
+import ItemLevelEdit from "@/components/ItemLevelEdit";
 import RestGauge from "@/components/RestGauge";
 import { usePreference } from "@/lib/usePreference";
 import {
@@ -211,6 +212,16 @@ export default function TrackerPage() {
       const path = `/characters/${character.id}/tasks/${task.id}/completion`;
       await (changes === null ? send("DELETE", path) : send("PUT", path, changes));
       refreshTracker();
+    } catch (e) {
+      setError(describeError(e));
+    }
+  }
+
+  /** Raids that followed the old item level move up a tier, so reload everything. */
+  async function updateItemLevel(character: Character, itemLevel: number) {
+    try {
+      await send("PATCH", `/characters/${character.id}`, { item_level: itemLevel });
+      loadAll();
     } catch (e) {
       setError(describeError(e));
     }
@@ -436,8 +447,12 @@ export default function TrackerPage() {
                         )}
                       </div>
                       <div className="text-xs text-muted">
-                        {character.class_name}
-                        {character.item_level > 0 && ` · ${formatItemLevel(character.item_level)}`}
+                        {character.class_name} ·{" "}
+                        <ItemLevelEdit
+                          value={character.item_level}
+                          characterName={character.name}
+                          onSave={(value) => updateItemLevel(character, value)}
+                        />
                       </div>
                       {paidRaidCount > GOLD_RAIDS_PER_WEEK && (
                         <div className="text-xs text-accent" title="Only the first raids you clear each week pay gold">
