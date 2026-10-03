@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
-import { api, API_URL, Character, formatGold, GoldEntry, parseUtc, send, WeeklyGold } from "@/lib/api";
+import { api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
 import { usePreference } from "@/lib/usePreference";
 
 const SOURCES = ["Field Boss", "Chaos Gate", "Fate Ember", "Paradise", "Auction House", "Trade"];
@@ -62,7 +62,8 @@ export default function GoldPage() {
   const characterName = (id: number | null) => characters.find((c) => c.id === id)?.name ?? "";
   const thisWeek = weeks.at(-1);
   const lastWeek = weeks.at(-2);
-  const average = weeks.length ? Math.round(weeks.reduce((sum, w) => sum + w.total, 0) / weeks.length) : 0;
+  const average = weeks.length ? Math.round(weeks.reduce((sum, w) => sum + w.net, 0) / weeks.length) : 0;
+  const split = thisWeek ? goldSplit(thisWeek) : null;
   // What each character brings in: this week and the weekly average over the range.
   const characterRows = [...characters.map((c) => c.name), "Unassigned"]
     .map((name) => ({
@@ -83,11 +84,16 @@ export default function GoldPage() {
       <div className="grid gap-3 sm:grid-cols-3">
         <Tile
           label="This week"
-          value={thisWeek?.total ?? 0}
-          sub={thisWeek?.bound_gold ? `${formatGold(thisWeek.total - thisWeek.bound_gold)} tradeable · ${formatGold(thisWeek.bound_gold)} bound` : undefined}
+          value={thisWeek?.net ?? 0}
+          sub={
+            split
+              ? `${formatGold(split.tradeable)} tradeable · ${formatGold(split.roster)} roster-bound · ${formatGold(split.character)} character-bound` +
+                (thisWeek!.bonus_spent ? ` · −${formatGold(thisWeek!.bonus_spent)} bonus chests` : "")
+              : undefined
+          }
           accent
         />
-        <Tile label="Last week" value={lastWeek?.total ?? 0} />
+        <Tile label="Last week" value={lastWeek?.net ?? 0} />
         <Tile label={`Average, last ${range} weeks`} value={average} />
       </div>
 
@@ -126,9 +132,11 @@ export default function GoldPage() {
               <tr className="border-b border-border text-left text-muted">
                 <th className="py-1.5 font-medium">Week of</th>
                 <th className="py-1.5 text-right font-medium">Raid gold</th>
-                <th className="py-1.5 text-right font-medium">of which bound</th>
+                <th className="py-1.5 text-right font-medium">Roster-bound</th>
+                <th className="py-1.5 text-right font-medium">Character-bound</th>
                 <th className="py-1.5 text-right font-medium">Other gold</th>
-                <th className="py-1.5 text-right font-medium">Total</th>
+                <th className="py-1.5 text-right font-medium">Bonus chests</th>
+                <th className="py-1.5 text-right font-medium">Net</th>
               </tr>
             </thead>
             <tbody className="tabular-nums">
@@ -136,9 +144,11 @@ export default function GoldPage() {
                 <tr key={week.week} className="border-b border-border last:border-b-0">
                   <td className="py-1.5">{week.week}</td>
                   <td className="py-1.5 text-right">{formatGold(week.raid_gold)}</td>
-                  <td className="py-1.5 text-right text-muted">{formatGold(week.bound_gold)}</td>
+                  <td className="py-1.5 text-right text-muted">{formatGold(goldSplit(week).roster)}</td>
+                  <td className="py-1.5 text-right text-muted">{formatGold(goldSplit(week).character)}</td>
                   <td className="py-1.5 text-right">{formatGold(week.other_gold)}</td>
-                  <td className="py-1.5 text-right font-medium">{formatGold(week.total)}</td>
+                  <td className="py-1.5 text-right text-muted">{week.bonus_spent ? `−${formatGold(week.bonus_spent)}` : "0"}</td>
+                  <td className="py-1.5 text-right font-medium">{formatGold(week.net)}</td>
                 </tr>
               ))}
             </tbody>
@@ -172,8 +182,8 @@ export default function GoldPage() {
           </tbody>
         </table>
         <p className="mt-2 text-xs text-muted">
-          Raid clears plus gold you logged for a specific character. Gold logged for &quot;Any character&quot; shows
-          as Unassigned.
+          Raid clears plus gold you logged for a specific character, minus bonus chests they bought. Gold logged for
+          &quot;Any character&quot; shows as Unassigned.
         </p>
       </section>
 

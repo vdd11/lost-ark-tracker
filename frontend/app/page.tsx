@@ -25,6 +25,7 @@ import {
   CATEGORIES,
   Character,
   formatGold,
+  goldSplit,
   parseUtc,
   RestState,
   Run,
@@ -214,6 +215,16 @@ export default function TrackerPage() {
     }
   }
 
+  async function setBonus(character: Character, task: Task, bought: boolean) {
+    try {
+      await send("PUT", `/characters/${character.id}/tasks/${task.id}/completion`, { bought_bonus: bought });
+      loadWeeklyGold();
+      refreshTracker();
+    } catch (e) {
+      setError(describeError(e));
+    }
+  }
+
   async function setRest(character: Character, task: Task, value: number) {
     try {
       await send("PUT", `/characters/${character.id}/tasks/${task.id}/rest`, { value });
@@ -300,9 +311,15 @@ export default function TrackerPage() {
         </div>
 
         <div className="flex flex-wrap gap-3 text-sm">
-          <Stat label="Raid gold this week" value={thisWeek ? formatGold(thisWeek.raid_gold) : "–"} sub={`of ${formatGold(possibleGold)} possible${thisWeek?.bound_gold ? ` · ${formatGold(thisWeek.bound_gold)} bound` : ""}`} />
+          <Stat label="Raid gold this week" value={thisWeek ? formatGold(thisWeek.raid_gold) : "–"} sub={`of ${formatGold(possibleGold)} possible`} />
           <Stat label="Other gold this week" value={thisWeek ? formatGold(thisWeek.other_gold) : "–"} sub={<Link href="/gold" className="underline">log gold</Link>} />
-          <Stat label="Total this week" value={thisWeek ? formatGold(thisWeek.total) : "–"} accent />
+          <Stat
+            label="Total this week"
+            value={thisWeek ? formatGold(thisWeek.net) : "–"}
+            sub={thisWeek && thisWeek.bonus_spent > 0 ? `after ${formatGold(thisWeek.bonus_spent)} on bonus chests` : undefined}
+            accent
+          />
+          {thisWeek && <GoldSplit week={thisWeek} />}
         </div>
       </div>
 
@@ -481,6 +498,7 @@ export default function TrackerPage() {
                                 clearedBy={otherClear ? namesById.get(otherClear.character_id) : undefined}
                                 onToggle={(done, difficultyId) => toggleRaid(character, task, done, difficultyId)}
                                 onDifficulty={(difficultyId, done) => chooseRaidDifficulty(character, task, difficultyId, done)}
+                                onBonus={(bought) => setBonus(character, task, bought)}
                               />
                             ) : (
                               <span className="text-muted/50">–</span>
@@ -554,6 +572,26 @@ export default function TrackerPage() {
 /** Tasks split into tiers: raid difficulties or cube unlocks. */
 function isTiered(task: Task) {
   return task.difficulties.length > 0;
+}
+
+/** Earned gold by what you can do with it. */
+function GoldSplit({ week }: { week: WeeklyGold }) {
+  const split = goldSplit(week);
+  const rows = [
+    { label: "Tradeable", value: split.tradeable },
+    { label: "Roster-bound", value: split.roster },
+    { label: "Character-bound", value: split.character },
+  ];
+  return (
+    <div className="min-w-44 rounded-md border border-border bg-surface px-3 py-2 text-xs">
+      {rows.map((row) => (
+        <div key={row.label} className="flex justify-between gap-3">
+          <span className="text-muted">{row.label}</span>
+          <span className="tabular-nums">{formatGold(row.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: ReactNode; accent?: boolean }) {

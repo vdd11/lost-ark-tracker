@@ -10,7 +10,9 @@ non-raid sources to see your weekly gold over time.
     right in the cell.
   - Raids a character qualifies for but doesn't usually run show faded, so you
     can tick an extra clear.
-  - Ebony Cube has a run counter at each character's unlock tier, and Haal's
+  - Ebony Cube has a run counter for the character's own unlock (Kurzan Front /
+    Chaos Rift tickets); the details popover counts lower unlocks from guild
+    shop boxes. Haal's
     Hourglass (1730+) a weekly checkbox at Lv1/Lv2. Click the tier label to
     log Sands of Trial, lucky rooms and mega lucky rooms.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
@@ -20,8 +22,11 @@ non-raid sources to see your weekly gold over time.
   difficulty's item level and gold, and which of your characters qualify.
   - Built-in values update with the app unless you've edited them.
   - Each character is paid for 3 raids a week.
-  - Bound gold (Cathedral's character-bound gold, half of Serca Normal) is
-    tracked separately, so you can see how much of your weekly gold is tradeable.
+  - Gold is split into tradeable, roster-bound (half of Serca Normal) and
+    character-bound (Cathedral), on the tracker and the Gold page.
+  - Tick "+ bonus" on a cleared raid when you buy its bonus ("View More")
+    chests. The cost comes off that character's gold. Act 4 and The Final Day
+    costs are built in; enter Serca's and Cathedral's on the Raids page.
   - The **Events** tab adds limited-time raids (e.g. "Act 3 Extreme"). Pick
     the raid, check the pre-filled difficulties, done. Events are one clear
     per roster, pay any character, and disappear when they end.
@@ -30,7 +35,8 @@ non-raid sources to see your weekly gold over time.
 - **Gems**: Ebony Cube and Haal's Hourglass gems are counted from the tracker
   using each tier's reward table (editable on the Gems page). Log Guardian
   Raid and Field Boss drops by hand. Weekly chart and per-character totals in
-  level-1 equivalents (Lv2 = 3, Lv3 = 9).
+  terms of what your gems combine into (3 of a level make the next, so 15 Lv1
+  gems are a Lv3 + 2× Lv2).
 - **Export**: "Export CSV" on the Gold and Gems pages downloads your full
   history for a spreadsheet.
 - **Settings**: add characters (their usual raids are pre-selected from item

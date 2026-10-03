@@ -35,6 +35,12 @@ export type Difficulty = {
   /** Share of the gold that's bound (character- or roster-bound), 0-100. */
   bound_percent: number;
   catalog_bound_percent: number | null;
+  /** Whether bound gold is roster- or character-bound. */
+  bound_kind: BoundKind;
+  catalog_bound_kind: BoundKind | null;
+  /** Gold to open every gate's bonus ("View More") chest; null = unknown. */
+  bonus_cost: number | null;
+  catalog_bonus_cost: number | null;
   /** Expected gems {level: count} per run / lucky room / mega lucky room; null = unknown. */
   reward_gems: GemTable | null;
   lucky_gems: GemTable | null;
@@ -43,6 +49,7 @@ export type Difficulty = {
 };
 
 export type GemTable = Record<string, number>;
+export type BoundKind = "roster" | "character";
 export type GemTableField = "reward_gems" | "lucky_gems" | "mega_gems";
 
 export type Task = {
@@ -75,6 +82,10 @@ export type Run = {
   lucky_rooms: number;
   mega_rooms: number;
   sands: number;
+  bought_bonus: boolean;
+  bonus_spent: number;
+  /** Counted tasks: runs per tier, {difficulty_id: runs}. */
+  tier_counts: Record<string, number> | null;
   /** Expected gems from this run. */
   gems: GemTable | null;
 };
@@ -110,8 +121,13 @@ export type WeeklyGold = {
   raid_gold: number;
   other_gold: number;
   total: number;
-  /** Part of raid_gold that's bound and can't be traded. */
+  /** Part of raid_gold that's bound and can't be traded; character_bound_gold is the
+   * character-bound share of it, the rest is roster-bound. */
   bound_gold: number;
+  character_bound_gold: number;
+  /** Gold spent on bonus chests; net = total - bonus_spent. */
+  bonus_spent: number;
+  net: number;
   by_source: Record<string, number>;
   by_character: Record<string, number>;
 };
@@ -187,6 +203,37 @@ export type EventTemplate = { bases: string[]; difficulties: DifficultyDraft[] }
 /** Level-1 equivalents: three gems of a level combine into one of the next. */
 export function gemsToLv1(gems: GemTable | null | undefined) {
   return Object.entries(gems ?? {}).reduce((sum, [level, count]) => sum + count * 3 ** (Number(level) - 1), 0);
+}
+
+/** How a week's gold splits by what you can do with it (logged gold counts as tradeable). */
+export function goldSplit(week: WeeklyGold) {
+  return {
+    tradeable: week.total - week.bound_gold,
+    roster: week.bound_gold - week.character_bound_gold,
+    character: week.character_bound_gold,
+  };
+}
+
+/**
+ * Express gems as what they'd combine into: three of a level make one of the
+ * next, so 15 Lv1 = one Lv3 and two Lv2. Fractions (from averages) stay at Lv1.
+ */
+export function combineGems(lv1Equivalent: number, maxLevel = 10): { level: number; count: number }[] {
+  const result: { level: number; count: number }[] = [];
+  let rest = lv1Equivalent;
+  for (let level = maxLevel; level >= 1; level--) {
+    const value = 3 ** (level - 1);
+    const count = level === 1 ? Math.round(rest * 10) / 10 : Math.floor(rest / value + 1e-9);
+    if (count > 0) result.push({ level, count });
+    rest -= count * value;
+  }
+  return result;
+}
+
+export function formatCombinedGems(lv1Equivalent: number) {
+  const parts = combineGems(lv1Equivalent);
+  if (parts.length === 0) return "None";
+  return parts.map(({ level, count }) => (count === 1 ? `Lv${level}` : `${formatGems(count)}× Lv${level}`)).join(" + ");
 }
 
 export function formatGems(value: number) {

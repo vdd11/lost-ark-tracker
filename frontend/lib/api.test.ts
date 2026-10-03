@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { errorMessage, gemsToLv1, parseUtc } from "./api";
+import { combineGems, errorMessage, formatCombinedGems, gemsToLv1, parseUtc } from "./api";
 import { isNewer } from "./version";
 
 describe("gemsToLv1", () => {
@@ -34,5 +34,21 @@ describe("errorMessage", () => {
       "Input should be greater than 0; Field required",
     );
     expect(errorMessage(undefined)).toBeNull();
+  });
+});
+
+describe("combineGems", () => {
+  it("combines three of a level into one of the next", () => {
+    expect(formatCombinedGems(3)).toBe("Lv2");
+    expect(formatCombinedGems(15)).toBe("Lv3 + 2× Lv2");
+    expect(formatCombinedGems(27 + 9 + 2)).toBe("Lv4 + Lv3 + 2× Lv1");
+    expect(formatCombinedGems(132)).toBe("Lv5 + Lv4 + 2× Lv3 + 2× Lv2"); // 81 + 27 + 18 + 6
+    expect(formatCombinedGems(4.5)).toBe("Lv2 + 1.5× Lv1");
+    expect(formatCombinedGems(0)).toBe("None");
+  });
+
+  it("matches the Lv1 equivalent it came from", () => {
+    const total = combineGems(1000).reduce((sum, { level, count }) => sum + count * 3 ** (level - 1), 0);
+    expect(total).toBe(1000);
   });
 });

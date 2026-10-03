@@ -10,6 +10,7 @@ import {
   byPosition,
   Character,
   Difficulty,
+  formatCombinedGems,
   formatGems,
   GemEntry,
   GemTable,
@@ -119,8 +120,8 @@ export default function GemsPage() {
         <h1 className="text-2xl font-bold">Gems</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted">
           Gems from Ebony Cube and Haal&apos;s Hourglass are added from the tracker using the reward table below. Log
-          everything else (Guardian Raids, Field Bosses) here. Totals are in level-1 equivalents: three of a level
-          combine into one of the next, so a Lv2 counts as 3 and a Lv3 as 9.
+          everything else (Guardian Raids, Field Bosses) here. Totals show what your gems combine into: three of a
+          level make one of the next, so 15 Lv1 gems are a Lv3 + 2× Lv2.
         </p>
       </div>
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
@@ -130,12 +131,14 @@ export default function GemsPage() {
       <div className="grid gap-3 sm:grid-cols-3">
         <Tile label="This week" value={thisWeek?.total ?? 0} accent />
         <Tile label="Last week" value={lastWeek?.total ?? 0} />
-        <Tile label={`Average, last ${range} weeks`} value={average} />
+        <Tile label={`Average a week, last ${range} weeks`} value={average} />
       </div>
 
       <section className="rounded-md border border-border bg-surface p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold">Weekly gems (Lv1 equivalents)</h2>
+          <h2 className="font-semibold" title="Bar height counts every gem as Lv1 gems (a Lv2 is 3, a Lv3 is 9)">
+            Weekly gems
+          </h2>
           <div className="flex items-center gap-2 text-sm">
             <select value={range} onChange={(e) => setRange(Number(e.target.value))} aria-label="Weeks shown">
               {RANGES.map((r) => (
@@ -169,9 +172,9 @@ export default function GemsPage() {
                   <tr key={week.week} className="border-b border-border last:border-b-0">
                     <td className="py-1.5">{week.week}</td>
                     {SERIES.map((s) => (
-                      <td key={s.key} className="py-1.5 text-right">{formatGems(values[s.key] ?? 0)}</td>
+                      <td key={s.key} className="py-1.5 text-right">{values[s.key] ? formatCombinedGems(values[s.key]) : "–"}</td>
                     ))}
-                    <td className="py-1.5 text-right font-medium">{formatGems(week.total)}</td>
+                    <td className="py-1.5 text-right font-medium">{formatCombinedGems(week.total)}</td>
                   </tr>
                 );
               })}
@@ -191,7 +194,7 @@ export default function GemsPage() {
       </section>
 
       <section className="overflow-x-auto rounded-md border border-border bg-surface p-4">
-        <h2 className="mb-3 font-semibold">By character (Lv1 equivalents)</h2>
+        <h2 className="mb-3 font-semibold">By character</h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-muted">
@@ -204,8 +207,8 @@ export default function GemsPage() {
             {characterRows.map((row) => (
               <tr key={row.name} className="border-b border-border last:border-b-0">
                 <td className="py-1.5">{row.name}</td>
-                <td className="py-1.5 text-right">{formatGems(row.thisWeek)}</td>
-                <td className="py-1.5 text-right">{formatGems(row.average)}</td>
+                <td className="py-1.5 text-right">{formatCombinedGems(row.thisWeek)}</td>
+                <td className="py-1.5 text-right">{formatCombinedGems(row.average)}</td>
               </tr>
             ))}
             {characterRows.length === 0 && (
@@ -249,11 +252,13 @@ export default function GemsPage() {
   );
 }
 
+/** A gem total shown as what it combines into, with the Lv1 count underneath. */
 function Tile({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
   return (
     <div className="rounded-md border border-border bg-surface px-4 py-3">
       <div className="text-xs text-muted">{label}</div>
-      <div className={`text-2xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{formatGems(value)}</div>
+      <div className={`text-xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{formatCombinedGems(value)}</div>
+      <div className="text-xs text-muted">{formatGems(value)} Lv1 gems&apos; worth</div>
     </div>
   );
 }
@@ -335,7 +340,7 @@ function AddGemsForm({ characters, onAdd }: { characters: Character[]; onAdd: (d
         <button type="submit" disabled={total === 0} className="rounded-md bg-accent px-3 py-1.5 font-medium text-background disabled:opacity-40">
           Add
         </button>
-        {total > 0 && <span className="pb-1.5 text-xs text-muted">= {formatGems(total)} Lv1 equivalents</span>}
+        {total > 0 && <span className="pb-1.5 text-xs text-muted">= {formatCombinedGems(total)}</span>}
       </div>
     </form>
   );
@@ -371,7 +376,7 @@ function RewardTables({ tasks, mutate }: { tasks: Task[]; mutate: (action: () =>
                 {TABLE_LEVELS.map((level) => (
                   <th key={level} className="py-1 pr-2 font-medium">Lv{level}</th>
                 ))}
-                <th className="py-1 pr-2 text-right font-medium">Lv1-eq</th>
+                <th className="py-1 pr-2 text-right font-medium">Combines into</th>
                 <th />
               </tr>
             </thead>
@@ -459,7 +464,7 @@ function GemTableRow({
           />
         </td>
       ))}
-      <td className="py-1 pr-2 text-right tabular-nums text-muted">{table ? formatGems(gemsToLv1(table)) : "?"}</td>
+      <td className="py-1 pr-2 text-right tabular-nums text-muted">{table ? formatCombinedGems(gemsToLv1(table)) : "?"}</td>
       <td className="py-1 text-right">
         {customized && (catalogTable || table) && (
           <button onClick={onReset} className="rounded px-1.5 text-xs text-muted hover:bg-surface-2" title="Back to built-in values for this tier">

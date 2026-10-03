@@ -285,7 +285,8 @@ function RaidCard({
               <th className="px-4 py-2 font-medium">Difficulty</th>
               <th className="px-2 py-2 font-medium">Item level</th>
               <th className="px-2 py-2 font-medium">Gold</th>
-              <th className="px-2 py-2 font-medium" title="Share of the gold that's character- or roster-bound">Bound %</th>
+              <th className="px-2 py-2 font-medium" title="Share of the gold that's bound, and to the roster or the character">Bound</th>
+              <th className="px-2 py-2 font-medium" title="Gold to open every gate's bonus (View More) chest">Bonus chests</th>
               <th className="px-2 py-2 font-medium">Your characters who qualify</th>
               <th className="px-4 py-2" />
             </tr>
@@ -293,7 +294,7 @@ function RaidCard({
           <tbody>
             {task.difficulties.map((difficulty) => (
               <DifficultyRow
-                key={`${difficulty.id}-${difficulty.gold}-${difficulty.min_item_level}-${difficulty.bound_percent}`}
+                key={`${difficulty.id}-${difficulty.gold}-${difficulty.min_item_level}-${difficulty.bound_percent}-${difficulty.bonus_cost}`}
                 difficulty={difficulty}
                 characters={characters}
                 runners={runners.filter((c) => c.difficulty_ids[String(task.id)] === difficulty.id)}
@@ -330,12 +331,15 @@ function DifficultyRow({
   const [itemLevel, setItemLevel] = useState(String(difficulty.min_item_level));
   const [gold, setGold] = useState(difficulty.gold === null ? "" : String(difficulty.gold));
   const [bound, setBound] = useState(String(difficulty.bound_percent));
+  const [bonus, setBonus] = useState(difficulty.bonus_cost === null ? "" : String(difficulty.bonus_cost));
   const isBuiltIn = difficulty.catalog_item_level !== null;
   const customized =
     isBuiltIn &&
     (difficulty.gold !== difficulty.catalog_gold ||
       difficulty.min_item_level !== difficulty.catalog_item_level ||
-      difficulty.bound_percent !== (difficulty.catalog_bound_percent ?? 0));
+      difficulty.bound_percent !== (difficulty.catalog_bound_percent ?? 0) ||
+      difficulty.bound_kind !== (difficulty.catalog_bound_kind ?? "roster") ||
+      difficulty.bonus_cost !== difficulty.catalog_bonus_cost);
   const qualifying = characters.filter((c) => c.item_level >= difficulty.min_item_level);
   const path = `/difficulties/${difficulty.id}`;
 
@@ -350,6 +354,13 @@ function DifficultyRow({
     const value = gold.trim() === "" ? null : Math.max(0, Math.round(Number(gold)));
     if (value !== difficulty.gold && (value === null || Number.isFinite(value))) {
       mutate(() => send("PATCH", path, { gold: value }));
+    }
+  }
+
+  function saveBonus() {
+    const value = bonus.trim() === "" ? null : Math.max(0, Math.round(Number(bonus)));
+    if (value !== difficulty.bonus_cost && (value === null || Number.isFinite(value))) {
+      mutate(() => send("PATCH", path, { bonus_cost: value }));
     }
   }
 
@@ -395,6 +406,28 @@ function DifficultyRow({
           onBlur={saveBound}
           aria-label={`${difficulty.name} bound gold percent`}
           className="w-16"
+        />
+        <span className="px-1 text-xs text-muted">%</span>
+        <select
+          value={difficulty.bound_kind}
+          onChange={(e) => mutate(() => send("PATCH", path, { bound_kind: e.target.value }))}
+          aria-label={`${difficulty.name} bound to`}
+          className="py-1 text-xs"
+        >
+          <option value="roster">roster</option>
+          <option value="character">character</option>
+        </select>
+      </td>
+      <td className="px-2 py-2">
+        <input
+          type="number"
+          min="0"
+          placeholder="?"
+          value={bonus}
+          onChange={(e) => setBonus(e.target.value)}
+          onBlur={saveBonus}
+          aria-label={`${difficulty.name} bonus chest cost`}
+          className="w-24"
         />
       </td>
       <td className="px-2 py-2">

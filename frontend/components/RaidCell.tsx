@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Character, Run, Task } from "@/lib/api";
+import { Character, formatGold, Run, Task } from "@/lib/api";
 import { bestDifficulty, difficultyOf, formatItemLevel, formatShortGold, shortDifficulty } from "@/lib/raids";
 
 /**
@@ -18,6 +18,7 @@ export default function RaidCell({
   clearedBy,
   onToggle,
   onDifficulty,
+  onBonus,
 }: {
   task: Task;
   character: Character;
@@ -26,6 +27,7 @@ export default function RaidCell({
   clearedBy: string | undefined;
   onToggle: (done: boolean, difficultyId: number | undefined) => void;
   onDifficulty: (difficultyId: number, done: boolean) => void;
+  onBonus: (bought: boolean) => void;
 }) {
   // Difficulty picked for an extra (unassigned) run before it's checked.
   const [choice, setChoice] = useState<number | null>(null);
@@ -79,6 +81,23 @@ export default function RaidCell({
           </option>
         ))}
       </select>
+      {done && (
+        <button
+          onClick={() => onBonus(!run!.bought_bonus)}
+          aria-pressed={run!.bought_bonus}
+          aria-label={`Bought the ${task.name} bonus chests for ${character.name}`}
+          title={
+            shown?.bonus_cost == null
+              ? "Bonus chest cost unknown for this difficulty: set it on the Raids page"
+              : `Bonus ("View More") chests for every gate: ${formatGold(shown.bonus_cost)} gold`
+          }
+          className={`mx-auto mb-1 block rounded px-1 text-[10px] leading-tight ${
+            run!.bought_bonus ? "bg-accent/15 font-medium text-accent" : "text-muted/70 hover:bg-surface-2 hover:text-muted"
+          }`}
+        >
+          {run!.bought_bonus ? `−${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)} bonus` : "+ bonus"}
+        </button>
+      )}
     </div>
   );
 }

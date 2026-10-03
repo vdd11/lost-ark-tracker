@@ -2,17 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { Character, Difficulty, formatGems, gemsToLv1, Run, Task } from "@/lib/api";
+import { Character, Difficulty, formatCombinedGems, formatGems, gemsToLv1, Run, Task } from "@/lib/api";
 import { formatItemLevel } from "@/lib/raids";
 
-export type RunChanges = { count?: number; lucky_rooms?: number; mega_rooms?: number; sands?: number };
+export type RunChanges = {
+  /** Runs at the character's own tier. */
+  count?: number;
+  /** Runs at any tier, {difficulty_id: runs}. */
+  tier_counts?: Record<number, number>;
+  lucky_rooms?: number;
+  mega_rooms?: number;
+  sands?: number;
+};
 
 const MAX_SANDS = 5;
 
 /**
  * Weekly content with tiers and gem rewards: Ebony Cube (a run counter, since
  * runs depend on tickets) and Haal's Hourglass (once a week, scaled by Sands
- * of Trial). The tier label opens the week's details: sands and lucky rooms.
+ * of Trial). The cell's +/- counts the character's own tier; the tier label
+ * opens the week's details: other tiers' tickets, sands and lucky rooms.
  */
 export default function ContentCell({
   task,
@@ -34,6 +43,14 @@ export default function ContentCell({
   const popoverRef = useRef<HTMLDivElement>(null);
   const count = run?.count ?? 0;
   const done = task.counted ? count > 0 : Boolean(run);
+  const runsAt = (difficulty: Difficulty) =>
+    run?.tier_counts ? (run.tier_counts[String(difficulty.id)] ?? 0) : difficulty.id === tier?.id ? count : 0;
+  // Own-tier tickets (Kurzan Front / Chaos Rift); the rest are lower unlocks (guild shop).
+  const ownCount = tier ? runsAt(tier) : count;
+  const otherRuns = count - ownCount;
+  const enterable = task.difficulties
+    .filter((d) => d.min_item_level <= character.item_level || d.id === tier?.id)
+    .sort((a, b) => a.min_item_level - b.min_item_level);
   const label = `${task.name} for ${character.name}`;
 
   // Close on outside click, Escape, or scroll (the popover is fixed-positioned).
@@ -62,6 +79,7 @@ export default function ContentCell({
   }
 
   const extras = [
+    task.counted && otherRuns > 0 ? `+${otherRuns}` : null,
     task.sand_scaled && run?.sands ? `×${run.sands + 1}` : null,
     run?.lucky_rooms ? `L${run.lucky_rooms}` : null,
     run?.mega_rooms ? `M${run.mega_rooms}` : null,
@@ -73,11 +91,13 @@ export default function ContentCell({
       <div className="flex h-7 items-end justify-center gap-1">
         {task.counted ? (
           <>
-            <button onClick={() => onChange({ count: count - 1 })} disabled={count === 0} aria-label={`One fewer ${label} run`} className={stepper}>
+            <button onClick={() => onChange({ count: ownCount - 1 })} disabled={ownCount === 0} aria-label={`One fewer ${label} run`} className={stepper}>
               −
             </button>
-            <span className="min-w-4 pb-0.5 tabular-nums" aria-label={`${count} ${label} runs`}>{count}</span>
-            <button onClick={() => onChange({ count: count + 1 })} aria-label={`One more ${label} run`} className={stepper}>
+            <span className="min-w-4 pb-0.5 tabular-nums" aria-label={`${ownCount} ${label} runs at ${tier?.name ?? "their"} unlock`}>
+              {ownCount}
+            </span>
+            <button onClick={() => onChange({ count: ownCount + 1 })} aria-label={`One more ${label} run`} className={stepper}>
               +
             </button>
           </>
@@ -115,6 +135,25 @@ export default function ContentCell({
             {tier && <span className="font-normal text-muted"> · {tier.name} ({formatItemLevel(tier.min_item_level)})</span>}
           </div>
 
+          {task.counted && (
+            <div className="mb-3 space-y-1.5">
+              {enterable.map((difficulty) => (
+                <Stepper
+                  key={difficulty.id}
+                  label={`${difficulty.name} unlock${difficulty.id === tier?.id ? " (yours)" : ""}`}
+                  value={runsAt(difficulty)}
+                  onChange={(n) =>
+                    onChange(difficulty.id === tier?.id ? { count: n } : { tier_counts: { [difficulty.id]: n } })
+                  }
+                />
+              ))}
+              <p className="text-xs text-muted">
+                Your unlock&apos;s tickets come from Kurzan Front / Chaos Rift. Guild shop boxes can give any unlock up to
+                yours.
+              </p>
+            </div>
+          )}
+
           {!done ? (
             <p className="text-xs text-muted">
               {task.counted ? "Add a run first" : "Check it off first"}, then log Sands of Trial and lucky rooms here.
@@ -141,7 +180,7 @@ export default function ContentCell({
                 Expected gems:{" "}
                 {run?.gems ? (
                   <>
-                    <span className="font-medium text-foreground">{formatGems(gemsToLv1(run.gems))}</span> Lv1-eq (
+                    <span className="font-medium text-foreground">{formatCombinedGems(gemsToLv1(run.gems))}</span> (
                     {Object.entries(run.gems)
                       .map(([level, n]) => `${formatGems(n)}× Lv${level}`)
                       .join(", ")}
