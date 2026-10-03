@@ -195,6 +195,9 @@ class BalanceCheck(Base):
     # weren't counted in this check-in.
     character_bound: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Gold is per account in game, so each account checks in on its own.
+    # Check-ins from before accounts belong to the first one.
+    account_id: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
 
 class AppliedMigration(Base):

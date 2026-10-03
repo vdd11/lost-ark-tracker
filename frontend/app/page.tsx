@@ -4,6 +4,7 @@ import { Box, CalendarDays, Check, Coins, Swords, Flame, Pencil, Settings2, Sun,
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
+import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
 import ContentCell, { RunChanges } from "@/components/ContentCell";
 import DifficultySelect from "@/components/DifficultySelect";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
@@ -85,8 +86,7 @@ function isTiered(task: Task) {
 export default function TrackerPage() {
   const [allCharacters, setCharacters] = useState<Character[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  // Which account's roster to show; 0 is all of them.
-  const [chosenAccount, setChosenAccount] = usePreference<number>("tracker-account", 0);
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tracker, setTracker] = useState<TrackerState | null>(null);
   const [thisWeek, setThisWeek] = useState<WeeklyGold | null>(null);
@@ -110,8 +110,9 @@ export default function TrackerPage() {
 
   const hidden = useMemo(() => parseHidden(hiddenRaw), [hiddenRaw]);
   const isShown = (key: string) => !hidden.has(key);
-  // A remembered account that's since been removed falls back to all.
-  const accountId = accounts.length > 1 && accounts.some((a) => a.id === chosenAccount) ? chosenAccount : 0;
+  // Which account's roster to show; 0 is all of them.
+  const [accountId, setAccountId] = useAccountChoice(accounts);
+  const accountQuery = accountId ? `account_id=${accountId}` : "";
   const characters = useMemo(
     () => (accountId ? allCharacters.filter((c) => c.account_id === accountId) : allCharacters),
     [allCharacters, accountId],
@@ -119,25 +120,24 @@ export default function TrackerPage() {
 
   const loadWeeklyGold = useCallback(() => {
     // Nine weeks: this one, plus two runs of four finished weeks to compare.
-    api<WeeklyGold[]>(`/gold/weekly?weeks=9${accountId ? `&account_id=${accountId}` : ""}`)
+    api<WeeklyGold[]>(`/gold/weekly?weeks=9&${accountQuery}`)
       .then((weeks) => {
         setGoldWeeks(weeks);
         setThisWeek(weeks[weeks.length - 1]);
       })
       .catch((e) => setError(describeError(e)));
     // Everything tracked so far counts toward the next big gem.
-    api<WeeklyGems[]>("/gems/weekly?weeks=104")
+    api<WeeklyGems[]>(`/gems/weekly?weeks=104&${accountQuery}`)
       .then(setGemWeeks)
       .catch(() => {});
-    api<ExpectedBalances | null>("/balances/expected")
+    api<ExpectedBalances | null>(`/balances/expected?${accountQuery}`)
       .then((data) => {
         setLastCheckIn(data ? data.last_check_in : null);
-        // Check-ins cover every account, so they only apply to the all-accounts view.
         // Character-bound gold can't go toward a shared goal.
-        setBalance(data && !accountId ? data.expected.tradeable + data.expected.roster_bound : null);
+        setBalance(data ? data.expected.tradeable + data.expected.roster_bound : null);
       })
       .catch(() => {});
-  }, [accountId]);
+  }, [accountQuery]);
 
   // Rest, runs and roster limits depend on check-offs, so re-read after changes.
   const refreshTracker = useCallback(() => {
@@ -611,9 +611,7 @@ export default function TrackerPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">Roster</h1>
-          {accounts.length > 1 && (
-            <AccountTabs accounts={accounts} value={accountId} onChange={setChosenAccount} />
-          )}
+          <AccountTabs accounts={accounts} value={accountId} onChange={setAccountId} />
         </div>
         <div className="flex flex-wrap gap-2">
           <ToolbarButton active={customizing} onClick={() => setCustomizing((v) => !v)} icon={<Settings2 size={16} />}>
@@ -758,28 +756,6 @@ export default function TrackerPage() {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-/** Switch between accounts' rosters; only shown with more than one account. */
-function AccountTabs({ accounts, value, onChange }: { accounts: Account[]; value: number; onChange: (id: number) => void }) {
-  const options = [{ id: 0, name: "All accounts" }, ...accounts];
-  return (
-    <div role="tablist" aria-label="Account" className="flex flex-wrap gap-0.5 rounded-lg border border-border bg-surface p-0.5 text-sm">
-      {options.map((account) => (
-        <button
-          key={account.id}
-          role="tab"
-          aria-selected={value === account.id}
-          onClick={() => onChange(account.id)}
-          className={`rounded-md px-3 py-1 ${
-            value === account.id ? "bg-accent/15 font-medium text-foreground" : "text-muted hover:bg-surface-2 hover:text-foreground"
-          }`}
-        >
-          {account.name}
-        </button>
-      ))}
     </div>
   );
 }

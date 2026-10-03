@@ -3,9 +3,11 @@
 import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
+import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import StackedWeeklyChart, { ChartSeries } from "@/components/StackedWeeklyChart";
 import {
+  Account,
   api,
   API_URL,
   byPosition,
@@ -64,7 +66,11 @@ function describeGems(gems: Record<string, number>) {
 }
 
 export default function GemsPage() {
-  const [characters, setCharacters] = useState<Character[]>([]);
+  const [allCharacters, setCharacters] = useState<Character[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountId, setAccountId] = useAccountChoice(accounts);
+  const accountQuery = accountId ? `&account_id=${accountId}` : "";
+  const characters = accountId ? allCharacters.filter((c) => c.account_id === accountId) : allCharacters;
   const [entries, setEntries] = useState<GemEntry[]>([]);
   const [weeks, setWeeks] = useState<WeeklyGems[]>([]);
   const [rewardTasks, setRewardTasks] = useState<Task[]>([]);
@@ -75,19 +81,21 @@ export default function GemsPage() {
   const load = useCallback(() => {
     Promise.all([
       api<Character[]>("/characters"),
-      api<GemEntry[]>("/gem-entries?limit=50"),
-      api<WeeklyGems[]>(`/gems/weekly?weeks=${range}`),
+      api<GemEntry[]>(`/gem-entries?limit=50${accountQuery}`),
+      api<WeeklyGems[]>(`/gems/weekly?weeks=${range}${accountQuery}`),
       api<Task[]>("/tasks"),
+      api<Account[]>("/accounts"),
     ])
-      .then(([characterData, entryData, weekData, taskData]) => {
+      .then(([characterData, entryData, weekData, taskData, accountData]) => {
         setCharacters(characterData.sort(byPosition));
+        setAccounts(accountData);
         setEntries(entryData);
         setWeeks(weekData);
         setRewardTasks(taskData.filter((t) => t.category !== "raid" && t.difficulties.length > 0).sort(byPosition));
         setError(null);
       })
       .catch((e) => setError(describeError(e)));
-  }, [range]);
+  }, [range, accountQuery]);
 
   useEffect(() => {
     load();
@@ -118,7 +126,10 @@ export default function GemsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Gems</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold">Gems</h1>
+          <AccountTabs accounts={accounts} value={accountId} onChange={setAccountId} />
+        </div>
         <p className="mt-1 max-w-3xl text-sm text-muted">
           Gems from Ebony Cube and Haal&apos;s Hourglass are added from the tracker using the reward table below. Log
           everything else (Guardian Raids, Field Bosses) here. Totals show what your gems combine into: three of a

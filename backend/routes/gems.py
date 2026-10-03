@@ -5,6 +5,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
+from accounts import account_owner
 from database import get_db
 from gems import lv1_equivalent
 from models import Character, Completion, GemEntry, Task
@@ -20,13 +21,16 @@ router = APIRouter(prefix="/api")
 
 
 @router.get("/gem-entries", response_model=list[GemEntryRead])
-def get_gem_entries(limit: int = Query(default=100, le=1000), db: Session = Depends(get_db)):
-    return (
-        db.query(GemEntry)
-        .order_by(GemEntry.earned_at.desc(), GemEntry.id.desc())
-        .limit(limit)
-        .all()
-    )
+def get_gem_entries(
+    limit: int = Query(default=100, le=1000),
+    account_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    entries = db.query(GemEntry).order_by(GemEntry.earned_at.desc(), GemEntry.id.desc())
+    if account_id is None:
+        return entries.limit(limit).all()
+    owner = account_owner(db)
+    return [e for e in entries if owner(e.character_id) == account_id][:limit]
 
 
 @router.post("/gem-entries", response_model=GemEntryRead, status_code=201)
@@ -58,8 +62,12 @@ def delete_gem_entry(entry_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/gems/weekly", response_model=list[WeeklyGems])
-def get_weekly_gems(weeks: int = Query(default=12, ge=1, le=104), db: Session = Depends(get_db)):
-    """Gems per reset week, oldest first, in level-1 equivalents."""
+def get_weekly_gems(
+    weeks: int = Query(default=12, ge=1, le=104),
+    account_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """Gems per reset week, oldest first, in level-1 equivalents; one account's with account_id."""
     current_week = week_of(utc_now())
     week_starts = [current_week - timedelta(weeks=i) for i in reversed(range(weeks))]
     first_reset = weekly_reset_before(utc_now()) - timedelta(weeks=weeks - 1)
@@ -68,10 +76,11 @@ def get_weekly_gems(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
         for week in week_starts
     }
     names = dict(db.query(Character.id, Character.name).all())
+    owner = account_owner(db)
 
     def add(week, source: str, character_id: int | None, gems: dict):
         bucket = totals.get(week)
-        if bucket is None:
+        if bucket is None or (account_id is not None and owner(character_id) != account_id):
             return
         who = names.get(character_id, "Unassigned")
         for level, count in gems.items():

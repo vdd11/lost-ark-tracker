@@ -277,6 +277,7 @@ export type Balances = {
 
 export type BalanceCheck = {
   id: number;
+  account_id: number;
   checked_at: string;
   actual: Balances;
   note: string | null;

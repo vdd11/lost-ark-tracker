@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Account, Character
+from models import Account, BalanceCheck, Character
 from routes.common import get_or_404, next_position
 from schemas import AccountCreate, AccountRead, AccountUpdate
 
@@ -49,6 +49,8 @@ def delete_account(account_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="You need at least one account")
     if db.query(Character).filter_by(account_id=account_id).count():
         raise HTTPException(status_code=409, detail=f"Move or delete {account.name}'s characters first")
+    if db.query(BalanceCheck).filter_by(account_id=account_id).count():
+        raise HTTPException(status_code=409, detail=f"{account.name} has gold check-ins; delete those first")
     db.delete(account)
     db.commit()
     return Response(status_code=204)

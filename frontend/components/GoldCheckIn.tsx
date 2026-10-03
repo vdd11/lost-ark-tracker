@@ -5,7 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
 import NumberInput from "@/components/NumberInput";
-import { api, BalanceCheck, Character, ExpectedBalances, formatGold, parseUtc, send } from "@/lib/api";
+import { Account, api, BalanceCheck, Character, ExpectedBalances, formatGold, parseUtc, send } from "@/lib/api";
 
 // Character-bound gold comes from Horizon Cathedral, which starts at 1700.
 const CHARACTER_BOUND_ITEM_LEVEL = 1700;
@@ -14,23 +14,38 @@ const CHARACTER_BOUND_ITEM_LEVEL = 1700;
  * Enter the gold you have now. Each check-in is compared with what the app
  * expected from the previous one plus tracked gold since; the difference is
  * gold spent on things the app doesn't track (honing, the market, ...).
+ * Gold is per account in game, so each account checks in on its own.
  */
 export default function GoldCheckIn({
-  characters,
+  characters: allCharacters,
+  accounts,
+  accountId,
   onChanged,
   onError,
 }: {
   characters: Character[];
+  accounts: Account[];
+  /** The account the page shows; 0 is all of them. */
+  accountId: number;
   onChanged: () => void;
   onError: (error: string) => void;
 }) {
+  const multiple = accounts.length > 1;
+  // Viewing all accounts, pick which one this check-in is for.
+  const [picked, setPicked] = useState<number | null>(null);
+  const target = accountId || picked || accounts[0]?.id || 0;
+  const characters = allCharacters.filter((c) => !multiple || c.account_id === target);
   const [checks, setChecks] = useState<BalanceCheck[]>([]);
   const [expected, setExpected] = useState<ExpectedBalances | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
 
   const load = useCallback(() => {
-    Promise.all([api<BalanceCheck[]>("/balances"), api<ExpectedBalances | null>("/balances/expected")])
+    if (!target) return;
+    Promise.all([
+      api<BalanceCheck[]>(`/balances${accountId ? `?account_id=${accountId}` : ""}`),
+      api<ExpectedBalances | null>(`/balances/expected?account_id=${target}`),
+    ])
       .then(([checkData, expectedData]) => {
         setChecks(checkData);
         setExpected(expectedData);
@@ -43,7 +58,7 @@ export default function GoldCheckIn({
         });
       })
       .catch((e) => onError(describeError(e)));
-  }, [onError]);
+  }, [onError, accountId, target]);
 
   useEffect(() => {
     load();
@@ -66,6 +81,7 @@ export default function GoldCheckIn({
         roster_bound: number("roster_bound"),
         character_bound: characterBound,
         note: note.trim() || null,
+        account_id: target,
       });
       setNote("");
       load();
@@ -97,13 +113,25 @@ export default function GoldCheckIn({
       />
     </label>
   );
-  const nameOf = (id: string) => characters.find((c) => String(c.id) === id)?.name ?? "Deleted character";
+  const nameOf = (id: string) => allCharacters.find((c) => String(c.id) === id)?.name ?? "Deleted character";
+  const accountName = (id: number) => accounts.find((a) => a.id === id)?.name ?? "";
 
   return (
     <section id="check-in" className="scroll-mt-4 rounded-md border border-border bg-surface p-4">
-      <h2 className="font-semibold">Gold on hand</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="font-semibold">Gold on hand</h2>
+        {multiple && !accountId && (
+          <select value={target} onChange={(e) => setPicked(Number(e.target.value))} aria-label="Account to check in" className="py-0.5 text-sm">
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>{account.name}</option>
+            ))}
+          </select>
+        )}
+        {multiple && accountId > 0 && <span className="text-sm text-muted">{accountName(accountId)}</span>}
+      </div>
       <p className="mt-1 mb-3 max-w-3xl text-xs text-muted">
-        Enter the gold you have now, at least once a week (right after the Wednesday reset works well). The app
+        Enter the gold you have now{multiple ? " on this account" : ""}, at least once a week (right after the
+        Wednesday reset works well). The app
         compares it with your last check-in plus the gold it tracked since, and the difference is what you spent
         on things it doesn&apos;t track. Check in more often to see where it went.
         {expected && (
@@ -142,6 +170,7 @@ export default function GoldCheckIn({
             <thead>
               <tr className="border-b border-border text-left text-muted">
                 <th className="py-1.5 font-medium">When</th>
+                {multiple && !accountId && <th className="py-1.5 pl-3 font-medium">Account</th>}
                 <th className="py-1.5 text-right font-medium">Tradeable</th>
                 <th className="py-1.5 text-right font-medium">Roster-bound</th>
                 <th className="py-1.5 text-right font-medium">Character-bound</th>
@@ -161,6 +190,7 @@ export default function GoldCheckIn({
                     <td className="py-1.5 text-muted">
                       {parseUtc(check.checked_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                     </td>
+                    {multiple && !accountId && <td className="py-1.5 pl-3 text-muted">{accountName(check.account_id)}</td>}
                     <td className="py-1.5 text-right">{formatGold(check.actual.tradeable)}</td>
                     <td className="py-1.5 text-right">{formatGold(check.actual.roster_bound)}</td>
                     <td

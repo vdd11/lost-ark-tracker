@@ -3,11 +3,12 @@
 import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
+import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import GoldCheckIn from "@/components/GoldCheckIn";
 import NumberInput from "@/components/NumberInput";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
-import { api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
+import { Account, api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
 import { GOLD_SOURCES } from "@/lib/goldSources";
 import { usePreference } from "@/lib/usePreference";
 
@@ -26,7 +27,11 @@ function todayInputValue() {
 }
 
 export default function GoldPage() {
-  const [characters, setCharacters] = useState<Character[]>([]);
+  const [allCharacters, setCharacters] = useState<Character[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountId, setAccountId] = useAccountChoice(accounts);
+  const accountQuery = accountId ? `&account_id=${accountId}` : "";
+  const characters = accountId ? allCharacters.filter((c) => c.account_id === accountId) : allCharacters;
   const [entries, setEntries] = useState<GoldEntry[]>([]);
   const [weeks, setWeeks] = useState<WeeklyGold[]>([]);
   const [range, setRange] = usePreference("gold-range", 12, RANGES);
@@ -37,17 +42,19 @@ export default function GoldPage() {
   const load = useCallback(() => {
     Promise.all([
       api<Character[]>("/characters"),
-      api<GoldEntry[]>("/gold-entries?limit=50"),
-      api<WeeklyGold[]>(`/gold/weekly?weeks=${range}`),
+      api<GoldEntry[]>(`/gold-entries?limit=50${accountQuery}`),
+      api<WeeklyGold[]>(`/gold/weekly?weeks=${range}${accountQuery}`),
+      api<Account[]>("/accounts"),
     ])
-      .then(([characterData, entryData, weekData]) => {
+      .then(([characterData, entryData, weekData, accountData]) => {
         setCharacters(characterData);
+        setAccounts(accountData);
         setEntries(entryData);
         setWeeks(weekData);
         setError(null);
       })
       .catch((e) => setError(describeError(e)));
-  }, [range]);
+  }, [range, accountQuery]);
 
   useEffect(() => {
     load();
@@ -78,10 +85,16 @@ export default function GoldPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Gold</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-bold">Gold</h1>
+        <AccountTabs accounts={accounts} value={accountId} onChange={setAccountId} />
+      </div>
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
-      <AddGoldForm characters={characters} onAdd={(data) => mutate(() => send("POST", "/gold-entries", data))} />
+      <AddGoldForm
+        characters={characters}
+        onAdd={(data) => mutate(() => send("POST", "/gold-entries", { ...data, account_id: accountId || null }))}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Tile
@@ -100,7 +113,7 @@ export default function GoldPage() {
         <Tile label={`Average, last ${range} weeks`} value={average} />
       </div>
 
-      <GoldCheckIn characters={characters} onChanged={load} onError={setError} />
+      <GoldCheckIn characters={allCharacters} accounts={accounts} accountId={accountId} onChanged={load} onError={setError} />
 
       <section className="rounded-md border border-border bg-surface p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

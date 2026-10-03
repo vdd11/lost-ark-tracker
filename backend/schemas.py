@@ -278,10 +278,13 @@ class BalanceCheckCreate(BaseModel):
     character_bound: dict[int, int] = {}
     note: str | None = Field(default=None, max_length=200)
     checked_at: datetime | None = None
+    # Defaults to the first account.
+    account_id: int | None = None
 
 
 class BalanceCheckRead(BaseModel):
     id: int
+    account_id: int
     checked_at: datetime
     actual: BalancesOut
     note: str | None

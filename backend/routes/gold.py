@@ -5,6 +5,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
+from accounts import account_owner
 from balances import evaluate_checks
 from database import get_db
 from models import Account, Character, Completion, GoldEntry
@@ -21,13 +22,16 @@ router = APIRouter(prefix="/api")
 
 
 @router.get("/gold-entries", response_model=list[GoldEntryRead])
-def get_gold_entries(limit: int = Query(default=100, le=1000), db: Session = Depends(get_db)):
-    return (
-        db.query(GoldEntry)
-        .order_by(GoldEntry.earned_at.desc(), GoldEntry.id.desc())
-        .limit(limit)
-        .all()
-    )
+def get_gold_entries(
+    limit: int = Query(default=100, le=1000),
+    account_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    entries = db.query(GoldEntry).order_by(GoldEntry.earned_at.desc(), GoldEntry.id.desc())
+    if account_id is None:
+        return entries.limit(limit).all()
+    owner = account_owner(db)
+    return [e for e in entries if owner(e.character_id, e.account_id) == account_id][:limit]
 
 
 @router.post("/gold-entries", response_model=GoldEntryRead, status_code=201)
@@ -94,12 +98,10 @@ def get_weekly_gold(
         for week in week_starts
     }
     names = dict(db.query(Character.id, Character.name).all())
-    account_of = dict(db.query(Character.id, Character.account_id).all())
+    owner = account_owner(db)
 
     def in_account(character_id: int | None, entry_account: int | None = None) -> bool:
-        if account_id is None:
-            return True
-        return (account_of.get(character_id) if character_id is not None else entry_account) == account_id
+        return account_id is None or owner(character_id, entry_account) == account_id
 
     def credit(bucket: WeeklyGold, character_id: int | None, amount: int):
         who = names.get(character_id, "Unassigned")
@@ -139,8 +141,7 @@ def get_weekly_gold(
             entry[0] += completion.character_bound_gold
             entry[1] += completion.bonus_spent
 
-    # Check-ins cover all accounts together.
-    for result in evaluate_checks(db) if account_id is None else []:
+    for result in evaluate_checks(db, account_id):
         bucket = totals.get(week_of(result.check.checked_at))
         if bucket is not None and result.untracked_total is not None:
             bucket.untracked_spent = (bucket.untracked_spent or 0) + result.untracked_total
