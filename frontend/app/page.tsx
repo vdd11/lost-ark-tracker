@@ -1,30 +1,21 @@
 "use client";
 
+import { Box, CalendarDays, Coins, Flame, Pencil, Settings2, Sun, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import ContentCell, { RunChanges } from "@/components/ContentCell";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
-import ItemLevelEdit from "@/components/ItemLevelEdit";
 import RestGauge from "@/components/RestGauge";
-import { usePreference } from "@/lib/usePreference";
-import {
-  canRun,
-  difficultyOf,
-  formatItemLevel,
-  GOLD_RAIDS_PER_WEEK,
-  isActiveRaid,
-  paidRaids,
-  possibleRaidGold,
-  raidGold,
-  shortDifficulty,
-} from "@/lib/raids";
+import CustomizePanel from "@/components/tracker/CustomizePanel";
+import TaskTable, { ExtraColumn } from "@/components/tracker/TaskTable";
+import TrackerCard from "@/components/tracker/TrackerCard";
 import {
   api,
   byPosition,
-  CATEGORIES,
   Character,
+  ExpectedBalances,
   formatGold,
   parseUtc,
   RestState,
@@ -33,9 +24,29 @@ import {
   Task,
   TrackerState,
   WeeklyGold,
-  ExpectedBalances,
 } from "@/lib/api";
-
+import {
+  difficultyOf,
+  formatItemLevel,
+  GOLD_RAIDS_PER_WEEK,
+  isActiveRaid,
+  paidRaids,
+  possibleRaidGold,
+  raidGold,
+} from "@/lib/raids";
+import {
+  appliesTo,
+  CHARACTER_BOUND_KEY,
+  countsForProgress,
+  DEFAULT_HIDDEN,
+  parseHidden,
+  Section,
+  SECTION_KEYS,
+  sectionOf,
+  serializeHidden,
+  viewKey,
+} from "@/lib/trackerView";
+import { usePreference } from "@/lib/usePreference";
 
 const cellKey = (characterId: number, taskId: number) => `${characterId}:${taskId}`;
 
@@ -47,6 +58,11 @@ function formatCountdown(target: Date, now: Date) {
   return `${hours}h ${minutes % 60}m`;
 }
 
+/** Tasks split into tiers: raid difficulties or cube unlocks. */
+function isTiered(task: Task) {
+  return task.difficulties.length > 0;
+}
+
 export default function TrackerPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -55,10 +71,15 @@ export default function TrackerPage() {
   // undefined until loaded, null if there has never been a gold check-in.
   const [lastCheckIn, setLastCheckIn] = useState<string | null | undefined>(undefined);
   const [checkInDismissed, setCheckInDismissed] = usePreference<string>("check-in-dismissed-week", "");
+  const [hiddenRaw, setHiddenRaw] = usePreference<string>("tracker-hidden", DEFAULT_HIDDEN.join("|"));
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
+  const [customizing, setCustomizing] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
+
+  const hidden = useMemo(() => parseHidden(hiddenRaw), [hiddenRaw]);
+  const isShown = (key: string) => !hidden.has(key);
 
   const loadWeeklyGold = useCallback(() => {
     api<WeeklyGold[]>("/gold/weekly?weeks=1")
@@ -80,11 +101,7 @@ export default function TrackerPage() {
   }, []);
 
   const loadAll = useCallback(() => {
-    Promise.all([
-      api<Character[]>("/characters"),
-      api<Task[]>("/tasks"),
-      api<TrackerState>("/tracker"),
-    ])
+    Promise.all([api<Character[]>("/characters"), api<Task[]>("/tasks"), api<TrackerState>("/tracker")])
       .then(([characterData, taskData, trackerData]) => {
         setCharacters(characterData);
         setTasks(taskData);
@@ -100,14 +117,13 @@ export default function TrackerPage() {
     loadAll();
   }, [loadAll]);
 
-  // Tick the reset countdowns, and reload once a reset passes so the grid clears.
+  // Tick the reset countdowns, and reload once a reset passes so the cards clear.
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
 
   const nextDailyResetValue = tracker?.next_daily_reset;
-  const nextDailyReset = nextDailyResetValue ? parseUtc(nextDailyResetValue) : null;
   useEffect(() => {
     if (nextDailyResetValue && now >= parseUtc(nextDailyResetValue)) loadAll();
   }, [now, nextDailyResetValue, loadAll]);
@@ -116,55 +132,46 @@ export default function TrackerPage() {
     () => new Map<string, RestState>((tracker?.rest ?? []).map((r) => [cellKey(r.character_id, r.task_id), r])),
     [tracker],
   );
-  const restedRunsAvailable = tracker?.rest.filter((r) => r.rested_run_available).length ?? 0;
   const runByCell = useMemo(
     () => new Map<string, Run>((tracker?.runs ?? []).map((r) => [cellKey(r.character_id, r.task_id), r])),
     [tracker],
   );
   const namesById = new Map(characters.map((c) => [c.id, c.name]));
+  const roster = [...characters].sort(byPosition);
 
-  const assigned = useMemo(
-    () => new Set(characters.flatMap((c) => c.task_ids.map((t) => cellKey(c.id, t)))),
-    [characters],
-  );
-
-  const visibleCharacters = [...characters].sort(byPosition);
-
-  // Outside edit mode, hide columns nobody is doing (e.g. raids out of reach).
-  const columnGroups = CATEGORIES.map((category) => ({
-    ...category,
-    tasks: tasks
-      .filter((t) => t.category === category.value)
+  /** A card's columns and rows. Outside edit mode, only what applies to someone. */
+  function sectionData(section: Section) {
+    const columns = tasks
+      .filter((t) => sectionOf(t) === section && isShown(viewKey(t)))
       .filter((t) => t.category !== "raid" || isActiveRaid(t))
-      .filter(
-        (t) =>
-          editMode ||
-          characters.some((c) => c.task_ids.includes(t.id) || (isTiered(t) && t.category === "raid" && canRun(c, t))),
-      )
-      .sort(byPosition),
-  })).filter((group) => group.tasks.length > 0);
-  const visibleTasks = columnGroups.flatMap((group) => group.tasks);
-
-  const possibleGold = possibleRaidGold(characters, tasks);
-
-  // Done/total per category across the characters shown, counting only what
-  // each character usually does (and can enter).
-  const progress = CATEGORIES.map((category) => {
+      .filter((t) => editMode || roster.some((c) => appliesTo(c, t)))
+      .sort(byPosition);
+    const rows = editMode ? roster : roster.filter((c) => columns.some((t) => appliesTo(c, t)));
     let done = 0;
     let total = 0;
-    for (const character of visibleCharacters) {
-      for (const task of tasks) {
-        if (task.category !== category.value || !character.task_ids.includes(task.id)) continue;
-        if (task.category === "raid" ? !isActiveRaid(task) : isTiered(task) && !canRun(character, task)) continue;
+    for (const character of rows) {
+      for (const task of columns) {
+        if (!countsForProgress(character, task)) continue;
         total += 1;
         if (completed.has(cellKey(character.id, task.id))) done += 1;
       }
     }
-    return { ...category, done, total };
-  }).filter((group) => group.total > 0);
+    return { columns, rows, done, total };
+  }
+
+  const week = sectionData("week");
+  const today = sectionData("today");
+  const anytime = sectionData("anytime");
+  const restedRunsAvailable = (tracker?.rest ?? []).filter(
+    (r) => r.rested_run_available && today.columns.some((t) => t.id === r.task_id),
+  ).length;
+
+  const possibleGold = possibleRaidGold(characters, tasks);
   const hasUnknownGold = characters.some((c) =>
-    tasks.some((t) => isActiveRaid(t) && t.difficulties.length > 0 && c.task_ids.includes(t.id) && raidGold(c, t) === null),
+    tasks.some((t) => isActiveRaid(t) && isTiered(t) && c.task_ids.includes(t.id) && raidGold(c, t) === null),
   );
+
+  // ---------- actions ----------
 
   async function toggleCompletion(character: Character, task: Task) {
     const key = cellKey(character.id, task.id);
@@ -206,7 +213,7 @@ export default function TrackerPage() {
     if (done) await toggleRaid(character, task, true, difficultyId);
   }
 
-  /** Update this week's run of tiered content: runs, sands, lucky rooms. */
+  /** Update this period's run of tiered content: runs, sands, lucky rooms. */
   async function updateRun(character: Character, task: Task, changes: RunChanges | null) {
     try {
       const path = `/characters/${character.id}/tasks/${task.id}/completion`;
@@ -246,7 +253,7 @@ export default function TrackerPage() {
     }
   }
 
-  /** Pick a raid difficulty for a character, or null to stop running the raid. */
+  /** Pick a tier for a character, or null to stop doing the task. */
   async function setRaidDifficulty(character: Character, task: Task, difficultyId: number | null) {
     const taskIds = character.task_ids.filter((id) => id !== task.id);
     const difficultyIds = { ...character.difficulty_ids };
@@ -270,9 +277,7 @@ export default function TrackerPage() {
 
   async function toggleAssignment(character: Character, task: Task) {
     const isAssigned = character.task_ids.includes(task.id);
-    const taskIds = isAssigned
-      ? character.task_ids.filter((id) => id !== task.id)
-      : [...character.task_ids, task.id];
+    const taskIds = isAssigned ? character.task_ids.filter((id) => id !== task.id) : [...character.task_ids, task.id];
     const setTaskIds = (ids: number[]) =>
       setCharacters((prev) => prev.map((c) => (c.id === character.id ? { ...c, task_ids: ids } : c)));
 
@@ -285,365 +290,336 @@ export default function TrackerPage() {
     }
   }
 
-  return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Roster</h1>
-          {tracker && nextDailyReset && (
-            <p className="mt-1 text-sm text-muted">
-              Daily reset in {formatCountdown(nextDailyReset, now)} · Weekly reset in{" "}
-              {formatCountdown(parseUtc(tracker.next_weekly_reset), now)}
-              {restedRunsAvailable > 0 && (
-                <>
-                  {" · "}
-                  <span className="text-accent">
-                    {restedRunsAvailable} rested {restedRunsAvailable === 1 ? "run" : "runs"} available
-                  </span>
-                </>
-              )}
-            </p>
-          )}
-          {progress.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
-              {progress.map((group) => (
-                <div key={group.value} className="flex items-center gap-2" title={`${group.label}: ${group.done} of ${group.total} done`}>
-                  <span>{group.label}</span>
-                  <div className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2">
-                    <div
-                      className={`h-full rounded-full ${group.done === group.total ? "bg-done" : "bg-accent"}`}
-                      style={{ width: `${(group.done / group.total) * 100}%` }}
-                    />
-                  </div>
-                  <span className="tabular-nums">{group.done}/{group.total}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+  function setVisible(key: string, visible: boolean) {
+    const next = new Set(hidden);
+    if (visible) next.delete(key);
+    else next.add(key);
+    setHiddenRaw(serializeHidden(next));
+  }
 
-        <div className="flex flex-wrap gap-3 text-sm">
-          <Stat label="Raid gold this week" value={thisWeek ? formatGold(thisWeek.raid_gold) : "–"} sub={`of ${formatGold(possibleGold)} possible`} />
-          <Stat label="Other gold this week" value={thisWeek ? formatGold(thisWeek.other_gold) : "–"} sub={<Link href="/gold" className="underline">log gold</Link>} />
-          <Stat
-            label="Total this week"
-            value={thisWeek ? formatGold(thisWeek.net) : "–"}
-            sub={thisWeek && thisWeek.bonus_spent > 0 ? `after ${formatGold(thisWeek.bonus_spent)} on bonus chests` : undefined}
-            accent
-          />
-          {thisWeek && <GoldSplit week={thisWeek} />}
+  // ---------- cells ----------
+
+  function renderCell(character: Character, task: Task): ReactNode {
+    const key = cellKey(character.id, task.id);
+    const isAssigned = character.task_ids.includes(task.id);
+    const run = runByCell.get(key);
+    const dash = <span className="text-muted/40">–</span>;
+
+    if (editMode) {
+      if (isTiered(task)) {
+        const difficulty = difficultyOf(character, task);
+        return (
+          <div className="px-1 py-2">
+            <select
+              value={isAssigned ? (difficulty?.id ?? "") : ""}
+              onChange={(e) => setRaidDifficulty(character, task, e.target.value ? Number(e.target.value) : null)}
+              aria-label={`${task.name} for ${character.name}`}
+              className={`w-full py-1 text-xs ${isAssigned ? "border-accent bg-accent/15 font-medium" : "text-muted"}`}
+            >
+              <option value="">Doesn&apos;t run</option>
+              {task.difficulties.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({formatItemLevel(d.min_item_level)})
+                  {d.min_item_level > character.item_level ? " – too low" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+      }
+      return (
+        <label className="flex cursor-pointer items-center justify-center gap-1.5 py-3 text-xs">
+          <input type="checkbox" checked={isAssigned} onChange={() => toggleAssignment(character, task)} className="h-4 w-4" />
+          {isAssigned ? "Does it" : "Doesn't"}
+        </label>
+      );
+    }
+
+    if (task.category === "raid" && isTiered(task)) {
+      if (!appliesTo(character, task)) return dash;
+      const otherClear = task.roster_limited
+        ? (tracker?.runs ?? []).find((r) => r.task_id === task.id && r.character_id !== character.id)
+        : undefined;
+      return (
+        <RaidCell
+          task={task}
+          character={character}
+          isAssigned={isAssigned}
+          run={run}
+          clearedBy={otherClear ? namesById.get(otherClear.character_id) : undefined}
+          onToggle={(done, difficultyId) => toggleRaid(character, task, done, difficultyId)}
+          onDifficulty={(difficultyId, done) => chooseRaidDifficulty(character, task, difficultyId, done)}
+          onBonus={(bought) => setBonus(character, task, bought)}
+        />
+      );
+    }
+
+    if (isTiered(task)) {
+      if (!appliesTo(character, task)) return dash;
+      return (
+        <ContentCell
+          task={task}
+          character={character}
+          tier={difficultyOf(character, task)}
+          run={run}
+          onChange={(changes) => updateRun(character, task, changes)}
+          onRemove={() => updateRun(character, task, null)}
+        />
+      );
+    }
+
+    if (!isAssigned) return dash;
+    const isDone = completed.has(key);
+    const rest = task.rest_max > 0 ? restByCell.get(key) : undefined;
+    return (
+      <div className={`flex flex-col items-center gap-1.5 pt-2 ${isDone ? "bg-done/15" : ""} ${rest ? "" : "pb-2"}`}>
+        <input
+          type="checkbox"
+          checked={isDone}
+          onChange={() => toggleCompletion(character, task)}
+          aria-label={`${task.name} done by ${character.name}`}
+          className="h-5 w-5 cursor-pointer"
+        />
+        {rest && (
+          <RestGauge task={task} state={rest} characterName={character.name} onSet={(value) => setRest(character, task, value)} />
+        )}
+      </div>
+    );
+  }
+
+  const eventNote = (task: Task) =>
+    task.ends_on ? (
+      <div className="text-[11px] font-normal text-muted">
+        event · until {new Date(`${task.ends_on}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+      </div>
+    ) : null;
+
+  const characterBoundColumn: ExtraColumn = {
+    key: "character-bound",
+    header: "Char-bound gold",
+    title: "Character-bound gold left this week, after bonus boxes bought on that character",
+    cell: (character) => {
+      const gold = thisWeek?.character_bound[String(character.id)];
+      if (!gold) return <span className="text-muted/40">–</span>;
+      return (
+        <span title={`Earned ${formatGold(gold.earned)}, ${formatGold(gold.spent)} spent on bonus boxes`}>
+          <span className="block">{formatGold(gold.left)}</span>
+          {gold.spent > 0 && <span className="block text-[11px] text-muted">of {formatGold(gold.earned)}</span>}
+        </span>
+      );
+    },
+  };
+
+  const goldRaidWarning = (character: Character) => {
+    const count = paidRaids(character, tasks).length;
+    return count > GOLD_RAIDS_PER_WEEK ? (
+      <div className="text-[11px] text-accent" title="Only the first raids you clear each week pay gold">
+        {count} gold raids, {GOLD_RAIDS_PER_WEEK} pay
+      </div>
+    ) : null;
+  };
+
+  const showToday = isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
+  const showAnytime = isShown(SECTION_KEYS.anytime) && (anytime.columns.length > 0 || editMode);
+  const needsCheckIn =
+    tracker &&
+    lastCheckIn !== undefined &&
+    checkInDismissed !== tracker.weekly_period &&
+    (lastCheckIn === null || parseUtc(lastCheckIn) < parseUtc(`${tracker.weekly_period}T10:00:00`));
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Roster</h1>
+        <div className="flex gap-2">
+          <ToolbarButton active={customizing} onClick={() => setCustomizing((v) => !v)} icon={<Settings2 size={16} />}>
+            Customize
+          </ToolbarButton>
+          <ToolbarButton active={editMode} onClick={() => setEditMode((v) => !v)} icon={<Pencil size={16} />}>
+            {editMode ? "Done editing" : "Edit who does what"}
+          </ToolbarButton>
         </div>
       </div>
+
+      {isShown(SECTION_KEYS.gold) && thisWeek && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat icon={<Coins size={16} />} label="Raid gold this week" value={formatGold(thisWeek.raid_gold)} sub={`of ${formatGold(possibleGold)} possible`} />
+          <Stat
+            icon={<Coins size={16} />}
+            label="Other gold this week"
+            value={formatGold(thisWeek.other_gold)}
+            sub={<Link href="/gold" className="underline">Log gold</Link>}
+          />
+          <Stat
+            icon={<Wallet size={16} />}
+            label="Total this week"
+            value={formatGold(thisWeek.net)}
+            sub={thisWeek.bonus_spent > 0 ? `after ${formatGold(thisWeek.bonus_spent)} on bonus boxes` : undefined}
+            accent
+          />
+          <Stat
+            icon={<Wallet size={16} />}
+            label="Left to use"
+            value={formatGold(thisWeek.tradeable_left)}
+            sub={`tradeable · ${formatGold(thisWeek.roster_bound_left)} roster-bound`}
+            title="After bonus boxes, which use character-bound gold first, then roster-bound, then tradeable"
+          />
+        </div>
+      )}
 
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
-      {tracker && lastCheckIn !== undefined && checkInDismissed !== tracker.weekly_period &&
-        (lastCheckIn === null || parseUtc(lastCheckIn) < parseUtc(`${tracker.weekly_period}T10:00:00`)) && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
-            <span>
-              {lastCheckIn === null
-                ? "Want to see gold you spend outside the tracker? Enter how much you have once a week."
-                : "New week: check in how much gold you have to see what you spent on untracked things."}{" "}
-              <Link href="/gold/#check-in" className="underline">Check in</Link>
-            </span>
-            <button
-              onClick={() => setCheckInDismissed(tracker.weekly_period)}
-              aria-label="Dismiss until next week"
-              className="rounded px-1 text-muted hover:bg-surface-2"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-      {hasUnknownGold && (
-        <p className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
-          Some raids your characters run don&apos;t have a gold value yet (shown as ?). Fill them in on the{" "}
-          <Link href="/raids" className="underline">Raids page</Link> so your weekly gold adds up.
-        </p>
+      {needsCheckIn && (
+        <Notice onDismiss={() => setCheckInDismissed(tracker!.weekly_period)}>
+          {lastCheckIn === null
+            ? "Want to see gold you spend outside the tracker? Enter how much you have once a week."
+            : "New week: check in how much gold you have to see what you spent on untracked things."}{" "}
+          <Link href="/gold/#check-in" className="font-medium underline">Check in</Link>
+        </Notice>
       )}
 
-      <div className="mb-3 flex justify-end">
-        <button
-          onClick={() => setEditMode((v) => !v)}
-          className={`rounded-md border px-3 py-1.5 text-sm ${
-            editMode ? "border-accent bg-accent/15 font-medium" : "border-border bg-surface"
-          }`}
-        >
-          {editMode ? "Done choosing tasks" : "Choose tasks per character"}
-        </button>
-      </div>
+      {hasUnknownGold && (
+        <Notice>
+          Some raids your characters run don&apos;t have a gold value yet (shown as ?). Fill them in on the{" "}
+          <Link href="/raids" className="font-medium underline">Raids page</Link>.
+        </Notice>
+      )}
+
+      {customizing && (
+        <CustomizePanel
+          tasks={tasks.filter((t) => t.category !== "raid" || isActiveRaid(t))}
+          hidden={hidden}
+          onChange={setVisible}
+          onReset={() => setHiddenRaw(DEFAULT_HIDDEN.join("|"))}
+          onClose={() => setCustomizing(false)}
+        />
+      )}
 
       {editMode && (
-        <p className="mb-3 text-sm text-muted">
-          Choose each character&apos;s usual tasks and raid difficulties. These count toward &quot;Done&quot; and
-          possible gold. Raids a character qualifies for but doesn&apos;t usually run still show faded on the tracker,
-          so you can tick an extra clear.
+        <p className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted">
+          Choose each character&apos;s usual raids, difficulties and tasks. These count toward progress and possible
+          gold. Raids a character can enter but doesn&apos;t usually run still show faded, so an extra clear can be
+          ticked any week.
         </p>
       )}
 
       {characters.length === 0 && !error ? (
-        <p className="rounded-md border border-border bg-surface p-6 text-center text-muted">
+        <p className="rounded-lg border border-border bg-surface p-8 text-center text-muted">
           No characters yet. <Link href="/settings" className="underline">Add your roster in Settings</Link>.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-border bg-surface">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
-                <th className="sticky left-0 bg-surface" />
-                {columnGroups.map((group) => (
-                  <th key={group.value} colSpan={group.tasks.length} className="border-l border-border px-2 py-1.5 font-medium">
-                    {group.label}
-                  </th>
-                ))}
-                <th className="border-l border-border" colSpan={2} />
-              </tr>
-              <tr className="border-b border-border">
-                <th className="sticky left-0 min-w-36 bg-surface px-3 py-2 text-left font-medium">Character</th>
-                {visibleTasks.map((task, index) => (
-                  <th
-                    key={task.id}
-                    className={`${task.category === "raid" ? "min-w-24" : "min-w-20"} px-2 py-2 text-center align-bottom font-medium ${
-                      index === 0 || visibleTasks[index - 1].category !== task.category ? "border-l border-border" : ""
-                    }`}
-                  >
-                    <div className="leading-tight">{task.name}</div>
-                    {task.gold > 0 && task.difficulties.length === 0 && (
-                      <div className="text-xs font-normal text-accent">{formatGold(task.gold)}g</div>
-                    )}
-                    {task.ends_on && (
-                      <div className="text-xs font-normal text-muted">
-                        event, until {new Date(`${task.ends_on}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                      </div>
-                    )}
-                  </th>
-                ))}
-                <th
-                  className="whitespace-nowrap border-l border-border px-3 py-2 text-right font-medium"
-                  title="Character-bound gold left this week, after bonus chests bought on that character"
-                >
-                  Char-bound
-                </th>
-                <th className="border-l border-border px-3 py-2 text-right font-medium">Done</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleCharacters.map((character) => {
-                // Tiered weeklies the character can't enter yet (e.g. Hourglass under 1730) don't count.
-                const rowTasks = visibleTasks.filter(
-                  (t) => assigned.has(cellKey(character.id, t.id)) && (t.category === "raid" || !isTiered(t) || canRun(character, t)),
-                );
-                const rowDone = rowTasks.filter((t) => completed.has(cellKey(character.id, t.id))).length;
-                const paidRaidCount = paidRaids(character, tasks).length;
-
-                return (
-                  <tr key={character.id} className="border-b border-border last:border-b-0 hover:bg-surface-2/50">
-                    <td className="sticky left-0 bg-surface px-3 py-2">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-medium">{character.name}</span>
-                        {character.is_gold_earner && (
-                          <span title="Gold earner" className="rounded bg-accent/15 px-1.5 text-xs font-medium text-accent">G</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted">
-                        {character.class_name} ·{" "}
-                        <ItemLevelEdit
-                          value={character.item_level}
-                          characterName={character.name}
-                          onSave={(value) => updateItemLevel(character, value)}
-                        />
-                      </div>
-                      {paidRaidCount > GOLD_RAIDS_PER_WEEK && (
-                        <div className="text-xs text-accent" title="Only the first raids you clear each week pay gold">
-                          {paidRaidCount} gold raids, {GOLD_RAIDS_PER_WEEK} pay
-                        </div>
-                      )}
-                    </td>
-
-                    {visibleTasks.map((task, index) => {
-                      const key = cellKey(character.id, task.id);
-                      const isAssigned = assigned.has(key);
-                      const isDone = completed.has(key);
-                      const rest = task.rest_max > 0 ? restByCell.get(key) : undefined;
-                      const border =
-                        index === 0 || visibleTasks[index - 1].category !== task.category ? "border-l border-border" : "";
-
-                      const difficulty = isTiered(task) ? difficultyOf(character, task) : undefined;
-                      const run = runByCell.get(key);
-
-                      if (editMode && isTiered(task)) {
-                        return (
-                          <td key={task.id} className={`px-1 text-center ${border}`}>
-                            <select
-                              value={isAssigned ? (difficulty?.id ?? "") : ""}
-                              onChange={(e) => setRaidDifficulty(character, task, e.target.value ? Number(e.target.value) : null)}
-                              aria-label={`${task.name} difficulty for ${character.name}`}
-                              className={`w-full py-1 text-xs ${isAssigned ? "border-accent bg-accent/15 font-medium" : "text-muted"}`}
-                            >
-                              <option value="">–</option>
-                              {task.difficulties.map((d) => (
-                                <option key={d.id} value={d.id}>
-                                  {shortDifficulty(d.name)} · {formatItemLevel(d.min_item_level)}
-                                  {d.min_item_level > character.item_level ? " ⚠" : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                        );
-                      }
-
-                      if (editMode) {
-                        return (
-                          <td key={task.id} className={`p-0 text-center ${border}`}>
-                            <button
-                              onClick={() => toggleAssignment(character, task)}
-                              aria-label={`${isAssigned ? "Unassign" : "Assign"} ${task.name} for ${character.name}`}
-                              className={`h-12 w-full ${isAssigned ? "bg-accent/15 font-medium text-accent" : "text-muted"}`}
-                            >
-                              {isAssigned ? "✓" : "–"}
-                            </button>
-                          </td>
-                        );
-                      }
-
-                      if (task.category === "raid" && isTiered(task)) {
-                        const otherClear = task.roster_limited
-                          ? (tracker?.runs ?? []).find((r) => r.task_id === task.id && r.character_id !== character.id)
-                          : undefined;
-                        return (
-                          <td key={task.id} className={`p-0 text-center ${border}`}>
-                            {isAssigned || canRun(character, task) ? (
-                              <RaidCell
-                                task={task}
-                                character={character}
-                                isAssigned={isAssigned}
-                                run={run}
-                                clearedBy={otherClear ? namesById.get(otherClear.character_id) : undefined}
-                                onToggle={(done, difficultyId) => toggleRaid(character, task, done, difficultyId)}
-                                onDifficulty={(difficultyId, done) => chooseRaidDifficulty(character, task, difficultyId, done)}
-                                onBonus={(bought) => setBonus(character, task, bought)}
-                              />
-                            ) : (
-                              <span className="text-muted/50">–</span>
-                            )}
-                          </td>
-                        );
-                      }
-
-                      if (isTiered(task)) {
-                        return (
-                          <td key={task.id} className={`p-0 text-center ${border}`}>
-                            {isAssigned && canRun(character, task) ? (
-                              <ContentCell
-                                task={task}
-                                character={character}
-                                tier={difficulty}
-                                run={run}
-                                onChange={(changes) => updateRun(character, task, changes)}
-                                onRemove={() => updateRun(character, task, null)}
-                              />
-                            ) : (
-                              <span className="text-muted/50" title={`${task.name} unlocks at a higher item level`}>–</span>
-                            )}
-                          </td>
-                        );
-                      }
-
-                      return (
-                        <td key={task.id} className={`p-0 text-center ${border}`}>
-                          {isAssigned ? (
-                            <div className={isDone ? "bg-done/15" : ""}>
-                              <label className={`flex cursor-pointer items-center justify-center ${rest ? "h-8" : "h-12"}`}>
-                                <input
-                                  type="checkbox"
-                                  checked={isDone}
-                                  onChange={() => toggleCompletion(character, task)}
-                                  aria-label={`${task.name} for ${character.name}`}
-                                  className="h-4 w-4 cursor-pointer"
-                                />
-                              </label>
-                              {rest && (
-                                <RestGauge
-                                  task={task}
-                                  state={rest}
-                                  characterName={character.name}
-                                  onSet={(value) => setRest(character, task, value)}
-                                />
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted/50">–</span>
-                          )}
-                        </td>
-                      );
-                    })}
-
-                    <CharacterBoundCell gold={thisWeek?.character_bound[String(character.id)]} />
-                    <td className={`border-l border-border px-3 py-2 text-right tabular-nums ${rowTasks.length > 0 && rowDone === rowTasks.length ? "text-done" : "text-muted"}`}>
-                      {rowDone}/{rowTasks.length}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Tasks split into tiers: raid difficulties or cube unlocks. */
-function isTiered(task: Task) {
-  return task.difficulties.length > 0;
-}
-
-/** Earned gold by what you can do with it. */
-function GoldSplit({ week }: { week: WeeklyGold }) {
-  // Character-bound gold is per character, so it's shown on each row instead.
-  const rows = [
-    { label: "Tradeable", value: week.tradeable_left },
-    { label: "Roster-bound", value: week.roster_bound_left },
-  ];
-  return (
-    <div
-      className="min-w-44 rounded-md border border-border bg-surface px-3 py-2 text-xs"
-      title="After bonus chests, which use character-bound gold first, then roster-bound, then tradeable"
-    >
-      {rows.map((row) => (
-        <div key={row.label} className="flex justify-between gap-3">
-          <span className="text-muted">{row.label}</span>
-          <span className="tabular-nums">{formatGold(row.value)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CharacterBoundCell({ gold }: { gold: { earned: number; spent: number; left: number } | undefined }) {
-  return (
-    <td
-      className="border-l border-border px-3 py-2 text-right tabular-nums"
-      title={gold ? `Earned ${formatGold(gold.earned)}, ${formatGold(gold.spent)} spent on bonus chests` : undefined}
-    >
-      {gold ? (
         <>
-          <div>{formatGold(gold.left)}</div>
-          {gold.spent > 0 && <div className="text-[11px] text-muted">of {formatGold(gold.earned)}</div>}
+          <TrackerCard
+            icon={CalendarDays}
+            title="This week"
+            subtitle={tracker ? `Raids and weeklies · resets in ${formatCountdown(parseUtc(tracker.next_weekly_reset), now)}` : "Raids and weeklies"}
+            done={week.done}
+            total={week.total}
+          >
+            <TaskTable
+              characters={week.rows}
+              columns={week.columns}
+              extraColumns={isShown(CHARACTER_BOUND_KEY) ? [characterBoundColumn] : []}
+              renderCell={renderCell}
+              columnNote={eventNote}
+              onItemLevel={updateItemLevel}
+              characterNote={goldRaidWarning}
+            />
+          </TrackerCard>
+
+          {(showToday || showAnytime) && (
+            <div className={`grid gap-4 ${showToday && showAnytime ? "lg:grid-cols-2" : ""}`}>
+              {showToday && (
+                <TrackerCard
+                  icon={Sun}
+                  title="Today"
+                  subtitle={tracker ? `Dailies · resets in ${formatCountdown(parseUtc(tracker.next_daily_reset), now)}` : "Dailies"}
+                  done={today.done}
+                  total={today.total}
+                  extra={
+                    restedRunsAvailable > 0 ? (
+                      <span className="flex items-center gap-1 font-medium text-accent">
+                        <Flame size={14} /> {restedRunsAvailable} rested
+                      </span>
+                    ) : undefined
+                  }
+                >
+                  <TaskTable characters={today.rows} columns={today.columns} renderCell={renderCell} onItemLevel={updateItemLevel} />
+                </TrackerCard>
+              )}
+              {showAnytime && (
+                <TrackerCard icon={Box} title="Any time" subtitle="Ebony Cube tickets · no reset, count runs this week">
+                  <TaskTable characters={anytime.rows} columns={anytime.columns} renderCell={renderCell} onItemLevel={updateItemLevel} />
+                </TrackerCard>
+              )}
+            </div>
+          )}
         </>
-      ) : (
-        <span className="text-muted/50">–</span>
       )}
-    </td>
+    </div>
   );
 }
 
-function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: ReactNode; accent?: boolean }) {
+function ToolbarButton({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="min-w-36 rounded-md border border-border bg-surface px-3 py-2">
-      <div className="text-xs text-muted">{label}</div>
-      <div className={`text-lg font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{value}</div>
+    <button
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
+        active ? "border-accent bg-accent/15 font-medium" : "border-border bg-surface hover:bg-surface-2"
+      }`}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+function Notice({ children, onDismiss }: { children: ReactNode; onDismiss?: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-sm">
+      <span>{children}</span>
+      {onDismiss && (
+        <button onClick={onDismiss} aria-label="Dismiss until next week" className="rounded p-1 text-muted hover:bg-surface-2">
+          <X size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Stat({
+  icon,
+  label,
+  value,
+  sub,
+  accent,
+  title,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  sub?: ReactNode;
+  accent?: boolean;
+  title?: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-surface px-4 py-3" title={title}>
+      <div className="flex items-center gap-1.5 text-xs text-muted">
+        {icon}
+        {label}
+      </div>
+      <div className={`text-xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{value}</div>
       {sub && <div className="text-xs text-muted">{sub}</div>}
     </div>
   );

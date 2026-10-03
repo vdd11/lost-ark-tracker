@@ -4,17 +4,19 @@ A roster tracker for Lost Ark: check off dailies, weeklies, and raids per
 character, mark characters you're saving for friends, and log gold from
 non-raid sources to see your weekly gold over time.
 
-- **Tracker**: characters × tasks grid that resets on its own at the daily
-  reset (10:00 UTC) and weekly reset (Wednesday 10:00 UTC).
-  - Raid cells show the difficulty and gold, and you can change the difficulty
-    right in the cell.
-  - Raids a character qualifies for but doesn't usually run show faded, so you
-    can tick an extra clear.
-  - Ebony Cube has a run counter for the character's own unlock (Kurzan Front /
-    Chaos Rift tickets); the details popover counts lower unlocks from guild
-    shop boxes. Haal's
-    Hourglass (1730+) a weekly checkbox at Lv1/Lv2. Click the tier label to
-    log Sands of Trial, lucky rooms and mega lucky rooms.
+- **Tracker**: three cards, by how often things reset.
+  - **This week**: raids and Haal's Hourglass (1730+), reset Wednesday 10:00
+    UTC. Each raid shows a checkbox, a difficulty dropdown, and once cleared a
+    "Bonus box" button. Raids a character can enter but doesn't usually run
+    show faded, so an extra clear can be ticked.
+  - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset
+    daily at 10:00 UTC.
+  - **Any time**: Ebony Cube run counters for the character's own unlock
+    (Kurzan Front / Chaos Rift tickets); the unlock button counts lower unlocks
+    from guild shop boxes and lucky rooms.
+  - **Customize** picks which cards and columns you see (saved per browser);
+    **Edit who does what** sets each character's usual raids and tasks. Click
+    an item level to update it.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
   rest gauge, highlighted in gold when a rested run is available today. Click
   the number to match it to the game.
