@@ -2,33 +2,28 @@
 
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import Link from "next/link";
 
-import ClassInput, { ClassSuggestions } from "@/components/ClassInput";
+import ClassInput from "@/components/ClassInput";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import NumberInput from "@/components/NumberInput";
 import RaidPicker, { RaidSelection, suggestedRaids } from "@/components/RaidPicker";
+import { useDragReorder } from "@/components/useDragReorder";
 import { api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task, TaskCategory } from "@/lib/api";
 import { normalizeClass } from "@/lib/classes";
+import { renumber } from "@/lib/order";
 import { isActiveRaid } from "@/lib/raids";
 
 type Positioned = { id: number; position: number };
-
-/** Move an item one slot and renumber the list (old rows may share position 0). */
-function reorder<T extends Positioned>(items: T[], index: number, direction: -1 | 1) {
-  const target = index + direction;
-  if (target < 0 || target >= items.length) return null;
-
-  const next = [...items];
-  [next[index], next[target]] = [next[target], next[index]];
-  return next.map((item, position) => ({ ...item, position }));
-}
+type DragHandleProps = ReturnType<ReturnType<typeof useDragReorder>["handleProps"]>;
 
 export default function SettingsPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Bumped after a restore so rows drop their drafts of the old data.
+  const [dataVersion, setDataVersion] = useState(0);
 
   const load = useCallback(() => {
     Promise.all([api<Character[]>("/characters"), api<Task[]>("/tasks")])
@@ -56,18 +51,18 @@ export default function SettingsPage() {
 
   const goldEarners = characters.filter((c) => c.is_gold_earner).length;
 
-  function move<T extends Positioned>(items: T[], index: number, direction: -1 | 1, path: string) {
-    const renumbered = reorder(items, index, direction);
-    if (!renumbered) return;
-    mutate(() =>
-      Promise.all(renumbered.map((item) => send("PATCH", `${path}/${item.id}`, { position: item.position }))),
-    );
+  /** Save a new order: show it right away, then store the positions that changed. */
+  function saveOrder<T extends Positioned>(ordered: T[], path: string, apply: (renumbered: T[]) => void) {
+    const { ordered: renumbered, changed } = renumber(ordered);
+    apply(renumbered);
+    mutate(() => Promise.all(changed.map((item) => send("PATCH", `${path}/${item.id}`, { position: item.position }))));
   }
+
+  const characterDrag = useDragReorder(characters, (ordered) => saveOrder(ordered, "/characters", setCharacters));
 
   return (
     <div className="space-y-10">
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
-      <ClassSuggestions />
 
       <section>
         <h1 className="mb-1 text-2xl font-bold">Characters</h1>
@@ -91,6 +86,7 @@ export default function SettingsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-muted">
+                <th className="w-8 py-2 pl-2" aria-label="Order" />
                 <th className="px-3 py-2 font-medium">Name</th>
                 <th className="px-3 py-2 font-medium">Class</th>
                 <th className="px-3 py-2 font-medium">Item level</th>
@@ -99,12 +95,14 @@ export default function SettingsPage() {
               </tr>
             </thead>
             <tbody>
-              {characters.map((character, index) => (
+              {characterDrag.order.map((character) => (
                 <CharacterRow
-                  key={`${character.id}-${character.position}`}
+                  key={`${character.id}-${dataVersion}`}
                   character={character}
+                  rowRef={characterDrag.rowRef(character.id)}
+                  dragging={characterDrag.draggingId === character.id}
+                  handle={characterDrag.handleProps(character, character.name)}
                   onSave={(changes) => mutate(() => send("PATCH", `/characters/${character.id}`, changes))}
-                  onMove={(direction) => move(characters, index, direction, "/characters")}
                   onDelete={() => {
                     if (confirm(`Delete ${character.name}? Their past gold stays in your history.`)) {
                       mutate(() => send("DELETE", `/characters/${character.id}`));
@@ -114,7 +112,7 @@ export default function SettingsPage() {
               ))}
               {characters.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-4 text-center text-muted">No characters yet.</td>
+                  <td colSpan={6} className="px-3 py-4 text-center text-muted">No characters yet.</td>
                 </tr>
               )}
             </tbody>
@@ -134,37 +132,90 @@ export default function SettingsPage() {
         <AddTaskForm onAdd={(data) => mutate(() => send("POST", "/tasks", data))} />
 
         <div className="grid gap-4 md:grid-cols-2">
-          {CATEGORIES.filter((category) => category.value !== "raid").map((category) => {
-            const group = tasks.filter((t) => t.category === category.value);
-            return (
-              <div key={category.value} className="rounded-md border border-border bg-surface">
-                <h3 className="border-b border-border px-3 py-2 font-semibold">{category.label}</h3>
-                <ul>
-                  {group.map((task, index) => (
-                    <TaskRow
-                      key={`${task.id}-${task.position}`}
-                      task={task}
-                      onSave={(changes) => mutate(() => send("PATCH", `/tasks/${task.id}`, changes))}
-                      onMove={(direction) => move(group, index, direction, "/tasks")}
-                      onDelete={() => {
-                        if (confirm(`Delete "${task.name}"? Gold already earned from it stays in your history.`)) {
-                          mutate(() => send("DELETE", `/tasks/${task.id}`));
-                        }
-                      }}
-                    />
-                  ))}
-                  {group.length === 0 && <li className="px-3 py-3 text-sm text-muted">None</li>}
-                </ul>
-              </div>
-            );
-          })}
+          {CATEGORIES.filter((category) => category.value !== "raid").map((category) => (
+            <TaskGroup
+              key={category.value}
+              title={category.label}
+              tasks={tasks.filter((t) => t.category === category.value)}
+              dataVersion={dataVersion}
+              onReorder={(ordered) =>
+                saveOrder(ordered, "/tasks", (renumbered) =>
+                  setTasks((prev) => prev.map((t) => renumbered.find((r) => r.id === t.id) ?? t).sort(byPosition)),
+                )
+              }
+              onSave={(task, changes) => mutate(() => send("PATCH", `/tasks/${task.id}`, changes))}
+              onDelete={(task) => {
+                if (confirm(`Delete "${task.name}"? Gold already earned from it stays in your history.`)) {
+                  mutate(() => send("DELETE", `/tasks/${task.id}`));
+                }
+              }}
+            />
+          ))}
         </div>
       </section>
 
-      <BackupSection onError={setError} onRestored={load} />
+      <BackupSection
+        onError={setError}
+        onRestored={() => {
+          setDataVersion((v) => v + 1);
+          load();
+        }}
+      />
     </div>
   );
 }
+
+function TaskGroup({
+  title,
+  tasks,
+  dataVersion,
+  onReorder,
+  onSave,
+  onDelete,
+}: {
+  title: string;
+  tasks: Task[];
+  dataVersion: number;
+  onReorder: (ordered: Task[]) => void;
+  onSave: (task: Task, changes: Partial<Task>) => void;
+  onDelete: (task: Task) => void;
+}) {
+  const drag = useDragReorder(tasks, onReorder);
+  return (
+    <div className="rounded-md border border-border bg-surface">
+      <h3 className="border-b border-border px-3 py-2 font-semibold">{title}</h3>
+      <ul>
+        {drag.order.map((task) => (
+          <TaskRow
+            key={`${task.id}-${dataVersion}`}
+            task={task}
+            rowRef={drag.rowRef(task.id)}
+            dragging={drag.draggingId === task.id}
+            handle={drag.handleProps(task, task.name)}
+            onSave={(changes) => onSave(task, changes)}
+            onDelete={() => onDelete(task)}
+          />
+        ))}
+        {tasks.length === 0 && <li className="px-3 py-3 text-sm text-muted">None</li>}
+      </ul>
+    </div>
+  );
+}
+
+/** The grip you drag a row by; arrow keys move it too. */
+function DragHandle({ handle }: { handle: DragHandleProps }) {
+  return (
+    <button
+      type="button"
+      {...handle}
+      className="flex h-7 w-6 cursor-grab touch-none items-center justify-center rounded text-muted hover:bg-surface-2 hover:text-foreground active:cursor-grabbing"
+    >
+      <GripVertical size={16} />
+    </button>
+  );
+}
+
+const draggingRow = "relative z-10 bg-accent/10 shadow-md ring-1 ring-accent/50";
 
 function BackupSection({ onError, onRestored }: { onError: (error: string) => void; onRestored: () => void }) {
   const [message, setMessage] = useState<string | null>(null);
@@ -256,7 +307,7 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
   return (
     <form onSubmit={handleSubmit} className="mb-4 flex flex-wrap items-end gap-2 text-sm">
       <input required placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-      <ClassInput required placeholder="Class (type to search)" value={className} onChange={(e) => setClassName(e.target.value)} />
+      <ClassInput required placeholder="Class" label="Class" value={className} onChange={setClassName} />
       <input
         type="number"
         step="0.01"
@@ -287,32 +338,28 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
   );
 }
 
-function RowActions({ onMove, onDelete }: { onMove: (direction: -1 | 1) => void; onDelete: () => void }) {
+function DeleteButton({ onDelete }: { onDelete: () => void }) {
   return (
-    <div className="flex justify-end gap-1 text-muted">
-      <button onClick={() => onMove(-1)} aria-label="Move up" title="Move up" className="rounded-md p-1.5 hover:bg-surface-2">
-        <ArrowUp size={14} />
-      </button>
-      <button onClick={() => onMove(1)} aria-label="Move down" title="Move down" className="rounded-md p-1.5 hover:bg-surface-2">
-        <ArrowDown size={14} />
-      </button>
-      <button onClick={onDelete} aria-label="Delete" title="Delete" className="rounded-md p-1.5 text-danger hover:bg-danger/10">
-        <Trash2 size={14} />
-      </button>
-    </div>
+    <button onClick={onDelete} aria-label="Delete" title="Delete" className="rounded-md p-1.5 text-danger hover:bg-danger/10">
+      <Trash2 size={14} />
+    </button>
   );
 }
 
 // Rows keep a local draft and save a field when it loses focus.
 function CharacterRow({
   character,
+  rowRef,
+  dragging,
+  handle,
   onSave,
-  onMove,
   onDelete,
 }: {
   character: Character;
+  rowRef: (element: HTMLElement | null) => void;
+  dragging: boolean;
+  handle: DragHandleProps;
   onSave: (changes: Partial<Character>) => void;
-  onMove: (direction: -1 | 1) => void;
   onDelete: () => void;
 }) {
   const [draft, setDraft] = useState({
@@ -321,18 +368,27 @@ function CharacterRow({
     item_level: String(character.item_level || ""),
   });
 
-  function saveText(field: "name" | "class_name") {
-    const value = field === "class_name" ? normalizeClass(draft[field]) : draft[field].trim();
+  function saveText(field: "name" | "class_name", text = draft[field]) {
+    const value = field === "class_name" ? normalizeClass(text) : text.trim();
     if (value && value !== character[field]) onSave({ [field]: value });
   }
 
   return (
-    <tr className="border-b border-border last:border-b-0">
+    <tr ref={rowRef} className={`border-b border-border last:border-b-0 ${dragging ? draggingRow : ""}`}>
+      <td className="py-1.5 pl-2">
+        <DragHandle handle={handle} />
+      </td>
       <td className="px-3 py-1.5">
         <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} onBlur={() => saveText("name")} />
       </td>
       <td className="px-3 py-1.5">
-        <ClassInput value={draft.class_name} onChange={(e) => setDraft({ ...draft, class_name: e.target.value })} onBlur={() => saveText("class_name")} aria-label={`${character.name} class`} />
+        <ClassInput
+          value={draft.class_name}
+          onChange={(value) => setDraft((prev) => ({ ...prev, class_name: value }))}
+          onPick={(value) => saveText("class_name", value)}
+          onBlur={() => saveText("class_name")}
+          label={`${character.name} class`}
+        />
       </td>
       <td className="px-3 py-1.5">
         <input
@@ -356,8 +412,8 @@ function CharacterRow({
           aria-label={`${character.name} is a gold earner`}
         />
       </td>
-      <td className="px-3 py-1.5">
-        <RowActions onMove={onMove} onDelete={onDelete} />
+      <td className="px-3 py-1.5 text-right">
+        <DeleteButton onDelete={onDelete} />
       </td>
     </tr>
   );
@@ -393,20 +449,28 @@ function AddTaskForm({ onAdd }: { onAdd: (data: object) => Promise<void> }) {
 
 function TaskRow({
   task,
+  rowRef,
+  dragging,
+  handle,
   onSave,
-  onMove,
   onDelete,
 }: {
   task: Task;
+  rowRef: (element: HTMLElement | null) => void;
+  dragging: boolean;
+  handle: DragHandleProps;
   onSave: (changes: Partial<Task>) => void;
-  onMove: (direction: -1 | 1) => void;
   onDelete: () => void;
 }) {
   const [name, setName] = useState(task.name);
   const [gold, setGold] = useState(String(task.gold));
 
   return (
-    <li className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-sm last:border-b-0">
+    <li
+      ref={rowRef}
+      className={`flex flex-wrap items-center gap-2 border-b border-border py-2 pl-1.5 pr-3 text-sm last:border-b-0 ${dragging ? draggingRow : ""}`}
+    >
+      <DragHandle handle={handle} />
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -424,7 +488,7 @@ function TaskRow({
         />
         g
       </label>
-      <RowActions onMove={onMove} onDelete={onDelete} />
+      <DeleteButton onDelete={onDelete} />
       {task.category === "daily" && <RestRulesEditor task={task} onSave={onSave} />}
     </li>
   );

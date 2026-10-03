@@ -28,4 +28,13 @@ describe("class names", () => {
     expect(normalizeClass("New Class")).toBe("New Class");
     expect(new Set(LOST_ARK_CLASSES).size).toBe(LOST_ARK_CLASSES.length);
   });
+
+  it("filters the picker by class or archetype", async () => {
+    const { classOptions, LOST_ARK_CLASSES } = await import("./classes");
+    expect(classOptions("sor")).toEqual([{ archetype: "Mage", classes: ["Sorceress"] }]);
+    expect(classOptions("gunner").map((g) => g.archetype)).toEqual(["Gunner"]);
+    expect(classOptions("Bard").flatMap((g) => g.classes)).toHaveLength(LOST_ARK_CLASSES.length);
+    expect(classOptions("")[0].classes).toEqual(["Berserker", "Destroyer", "Guardianknight", "Gunlancer", "Paladin", "Slayer", "Valkyrie"]);
+    expect(classOptions("zzz")).toEqual([]);
+  });
 });
