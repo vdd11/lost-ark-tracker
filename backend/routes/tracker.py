@@ -48,6 +48,9 @@ def get_tracker(db: Session = Depends(get_db)):
             lucky_rooms=c.lucky_rooms,
             mega_rooms=c.mega_rooms,
             sands=c.sands,
+            bought_bonus=c.bought_bonus,
+            bonus_spent=c.bonus_spent,
+            tier_counts={int(k): v for k, v in c.tier_counts.items()} if c.tier_counts else None,
             gems=c.gems,
         )
         for c in current
@@ -157,7 +160,9 @@ def complete_task(
         .first()
     )
 
-    if body.count == 0:
+    tiers = counted_tiers(db, task, character, existing, body) if task.counted else None
+    # With tiers, the week's entry goes only when every tier is back to zero.
+    if (sum(tiers.values()) == 0) if tiers is not None else body.count == 0:
         if existing is not None:
             db.delete(existing)
             db.commit()
@@ -182,18 +187,26 @@ def complete_task(
             completed_at=now,
             difficulty_id=run_difficulty(db, task, character, body.difficulty_id),
             count=body.count or 1,
+            bought_bonus=bool(body.bought_bonus),
             **details,
         )
+        if tiers is not None:
+            existing.tier_counts, existing.count = tier_json(tiers), sum(tiers.values())
         db.add(existing)
         db.flush()
         price_completion(db, character, task, existing)
         existing.gems = completion_gems(db, task, existing)
     else:
-        changed = bool(details) or body.count is not None
-        if body.count is not None:
+        changed = bool(details) or body.count is not None or tiers is not None
+        if tiers is not None:
+            existing.tier_counts, existing.count = tier_json(tiers), sum(tiers.values())
+        elif body.count is not None:
             existing.count = body.count
         for field, value in details.items():
             setattr(existing, field, value)
+        if body.bought_bonus is not None and body.bought_bonus != existing.bought_bonus:
+            existing.bought_bonus = body.bought_bonus
+            existing.bonus_spent = bonus_spent(db, existing)
         # Only a different difficulty re-prices a clear; history stays as recorded.
         if body.difficulty_id is not None and body.difficulty_id != existing.difficulty_id:
             existing.difficulty_id = run_difficulty(db, task, character, body.difficulty_id)
@@ -204,6 +217,44 @@ def complete_task(
     db.commit()
 
     return Response(status_code=204)
+
+
+def counted_tiers(
+    db: Session, task: Task, character: Character, existing: Completion | None, body: CompletionUpdate
+) -> dict[int, int] | None:
+    """Runs per tier for counted tasks after this update, or None if untouched.
+
+    `count` sets the character's own tier (Kurzan Front / Chaos Rift tickets);
+    `tier_counts` sets any tier the character can enter (guild shop tickets).
+    """
+    if body.count is None and body.tier_counts is None:
+        return None
+    own = run_difficulty(db, task, character, None)
+    tiers = {int(k): v for k, v in ((existing.tier_counts or {}) if existing else {}).items()}
+    if existing is not None and not existing.tier_counts and own is not None:
+        tiers = {own: existing.count}  # runs recorded before tiers existed
+    if body.tier_counts is not None:
+        allowed = {
+            d.id for d in db.query(RaidDifficulty).filter_by(task_id=task.id)
+            if d.min_item_level <= character.item_level or d.id == own
+        }
+        if not set(body.tier_counts) <= allowed:
+            raise HTTPException(status_code=400, detail=f"{character.name} can't run that {task.name} tier")
+        tiers.update(body.tier_counts)
+    if body.count is not None and own is not None:
+        tiers[own] = body.count
+    return {tier: runs for tier, runs in tiers.items() if runs > 0}
+
+
+def tier_json(tiers: dict[int, int]) -> dict[str, int]:
+    return {str(tier): runs for tier, runs in sorted(tiers.items())}
+
+
+def bonus_spent(db: Session, completion: Completion) -> int:
+    if not completion.bought_bonus or completion.difficulty_id is None:
+        return 0
+    difficulty = db.get(RaidDifficulty, completion.difficulty_id)
+    return (difficulty.bonus_cost or 0) if difficulty else 0
 
 
 def run_difficulty(db: Session, task: Task, character: Character, requested: int | None) -> int | None:
@@ -217,15 +268,20 @@ def run_difficulty(db: Session, task: Task, character: Character, requested: int
 
 def completion_gems(db: Session, task: Task, completion: Completion):
     difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
-    return run_gems(task, difficulty, completion)
+    tiers = {d.id: d for d in db.query(RaidDifficulty).filter_by(task_id=task.id)} if task.counted else None
+    return run_gems(task, difficulty, completion, tiers)
 
 
 def price_completion(db: Session, character: Character, task: Task, completion: Completion):
-    """Snapshot a clear's gold and how much of it is bound."""
+    """Snapshot a clear's gold, how much of it is bound (and to what), and the
+    cost of any bonus chests bought."""
     completion.gold = completion_gold(db, character, task, completion)
     difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
     percent = difficulty.bound_percent if difficulty else 0
     completion.bound_gold = round(completion.gold * percent / 100)
+    character_bound = difficulty is not None and difficulty.bound_kind == "character"
+    completion.character_bound_gold = completion.bound_gold if character_bound else 0
+    completion.bonus_spent = bonus_spent(db, completion)
 
 
 def completion_gold(db: Session, character: Character, task: Task, completion: Completion) -> int:

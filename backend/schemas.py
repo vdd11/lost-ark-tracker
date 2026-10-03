@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 TaskCategory = Literal["daily", "weekly", "raid"]
+BoundKind = Literal["roster", "character"]
 
 
 class RaidChoice(BaseModel):
@@ -74,6 +75,8 @@ class DifficultyCreate(BaseModel):
     min_item_level: float = Field(default=0, ge=0)
     gold: int | None = Field(default=None, ge=0)
     bound_percent: int = Field(default=0, ge=0, le=100)
+    bound_kind: BoundKind = "roster"
+    bonus_cost: int | None = Field(default=None, ge=0)
 
 
 GemTable = dict[int, float]
@@ -91,6 +94,8 @@ class DifficultyUpdate(BaseModel):
     min_item_level: float | None = Field(default=None, ge=0)
     gold: int | None = Field(default=None, ge=0)
     bound_percent: int | None = Field(default=None, ge=0, le=100)
+    bound_kind: BoundKind | None = None
+    bonus_cost: int | None = Field(default=None, ge=0)
     reward_gems: GemTable | None = None
     lucky_gems: GemTable | None = None
     mega_gems: GemTable | None = None
@@ -111,6 +116,10 @@ class DifficultyRead(BaseModel):
     catalog_gold: int | None
     bound_percent: int = 0
     catalog_bound_percent: int | None = None
+    bound_kind: BoundKind = "roster"
+    catalog_bound_kind: BoundKind | None = None
+    bonus_cost: int | None = None
+    catalog_bonus_cost: int | None = None
     reward_gems: GemTable | None = None
     lucky_gems: GemTable | None = None
     mega_gems: GemTable | None = None
@@ -159,6 +168,18 @@ class CompletionUpdate(BaseModel):
     mega_rooms: int | None = Field(default=None, ge=0)
     # Sands of Trial spent (Haal's Hourglass), up to 5.
     sands: int | None = Field(default=None, ge=0, le=5)
+    # Bought the bonus ("View More") chests for this clear.
+    bought_bonus: bool | None = None
+    # Counted tasks: runs per tier {difficulty_id: runs}. `count` sets the
+    # runs at the character's own tier; this sets any tier.
+    tier_counts: dict[int, int] | None = None
+
+    @field_validator("tier_counts")
+    @classmethod
+    def check_tier_counts(cls, tiers: dict[int, int] | None) -> dict[int, int] | None:
+        if tiers and any(runs < 0 for runs in tiers.values()):
+            raise ValueError("Run counts can't be negative")
+        return tiers
 
 
 class Run(BaseModel):
@@ -169,6 +190,9 @@ class Run(BaseModel):
     lucky_rooms: int = 0
     mega_rooms: int = 0
     sands: int = 0
+    bought_bonus: bool = False
+    bonus_spent: int = 0
+    tier_counts: dict[int, int] | None = None
     # Expected gems from this run, {level: count}.
     gems: GemTable | None = None
 
@@ -223,10 +247,16 @@ class WeeklyGold(BaseModel):
     raid_gold: int
     other_gold: int
     total: int
-    # Part of raid_gold that was bound (can't be traded).
+    # Part of raid_gold that was bound (can't be traded), and of that the
+    # character-bound part; the rest of bound_gold is roster-bound.
     bound_gold: int = 0
+    character_bound_gold: int = 0
+    # Gold spent on bonus ("View More") chests; net = total - bonus_spent.
+    bonus_spent: int = 0
+    net: int = 0
     by_source: dict[str, int]
-    # Character name -> gold (raid clears plus logged gold tied to them).
+    # Character name -> net gold (raid clears plus logged gold tied to them,
+    # minus bonus chests they bought).
     by_character: dict[str, int] = {}
 
 

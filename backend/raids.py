@@ -44,8 +44,11 @@ class Difficulty:
     reward_gems: Gems | None = None
     lucky_gems: Gems | None = None
     mega_gems: Gems | None = None
-    # Share of the gold that's bound (character- or roster-bound), 0-100.
+    # Share of the gold that's bound, 0-100, and to what ("roster"/"character").
     bound_percent: int = 0
+    bound_kind: str = "roster"
+    # Gold to open every gate's bonus ("View More") chest; None = unknown.
+    bonus_cost: int | None = None
 
     def rewards(self) -> dict:
         return {"reward_gems": self.reward_gems, "lucky_gems": self.lucky_gems, "mega_gems": self.mega_gems}
@@ -80,22 +83,30 @@ CATALOG = [
         key="abyss-cathedral",
         name="Horizon Cathedral",
         difficulties=[
-            Difficulty("Lv1", 1700, 30000, bound_percent=100),
-            Difficulty("Lv2", 1720, 40000, bound_percent=100),
-            Difficulty("Lv3", 1750, 50000, bound_percent=100),
+            Difficulty("Lv1", 1700, 30000, bound_percent=100, bound_kind="character"),
+            Difficulty("Lv2", 1720, 40000, bound_percent=100, bound_kind="character"),
+            Difficulty("Lv3", 1750, 50000, bound_percent=100, bound_kind="character"),
         ],
         note="Abyssal Dungeon, 4 players. Gold is character-bound.",
     ),
     CatalogTask(
         key="kazeros-denouement",
         name="The Final Day",
-        difficulties=[Difficulty("Normal", 1710, 32000), Difficulty("Hard", 1730, 48000)],
+        # Bonus chest costs are per gate (3,520 + 6,720 and 5,120 + 10,240).
+        difficulties=[
+            Difficulty("Normal", 1710, 32000, bonus_cost=10240),
+            Difficulty("Hard", 1730, 48000, bonus_cost=15360),
+        ],
         legacy_names=["Final Act: Kazeros", "Denouement: The Final Day"],
     ),
     CatalogTask(
         key="kazeros-act-4",
         name="Act 4",
-        difficulties=[Difficulty("Normal", 1700, 27000), Difficulty("Hard", 1720, 38000)],
+        # Bonus chest costs are per gate (3,200 + 5,440 and 4,320 + 7,840).
+        difficulties=[
+            Difficulty("Normal", 1700, 27000, bonus_cost=8640),
+            Difficulty("Hard", 1720, 38000, bonus_cost=12160),
+        ],
         note="Fortress of Destruction.",
         legacy_names=["Act 4: Armoche", "Act 4: Fortress of Destruction"],
     ),
@@ -221,6 +232,10 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
                 catalog_gold=spec.gold,
                 bound_percent=spec.bound_percent,
                 catalog_bound_percent=spec.bound_percent,
+                bound_kind=spec.bound_kind,
+                catalog_bound_kind=spec.bound_kind,
+                bonus_cost=spec.bonus_cost,
+                catalog_bonus_cost=spec.bonus_cost,
                 **spec.rewards(),
                 catalog_rewards=spec.rewards(),
             ))
@@ -232,6 +247,12 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
             difficulty.min_item_level = spec.item_level
         if difficulty.bound_percent == (difficulty.catalog_bound_percent or 0):
             difficulty.bound_percent = spec.bound_percent
+        if difficulty.bound_kind == (difficulty.catalog_bound_kind or "roster"):
+            difficulty.bound_kind = spec.bound_kind
+        if difficulty.bonus_cost == difficulty.catalog_bonus_cost:
+            difficulty.bonus_cost = spec.bonus_cost
+        difficulty.catalog_bound_kind = spec.bound_kind
+        difficulty.catalog_bonus_cost = spec.bonus_cost
         difficulty.catalog_gold = spec.gold
         difficulty.catalog_bound_percent = spec.bound_percent
         difficulty.catalog_item_level = spec.item_level
@@ -258,6 +279,31 @@ def assign_missing_difficulties(db: Session):
     for assignment, character in rows:
         chosen = best_difficulty(difficulties_by_task[assignment.task_id], character.item_level)
         assignment.difficulty_id = chosen.id if chosen else None
+
+
+def backfill_character_bound_gold(db: Session):
+    """One-off for databases from before the roster/character split: bound
+    gold from character-bound difficulties moves to the character column."""
+    rows = (
+        db.query(Completion)
+        .join(RaidDifficulty, RaidDifficulty.id == Completion.difficulty_id)
+        .filter(Completion.bound_gold > 0, RaidDifficulty.bound_kind == "character")
+    )
+    for completion in rows:
+        completion.character_bound_gold = completion.bound_gold
+    db.commit()
+
+
+# Default tasks from early versions for content that doesn't exist.
+RETIRED_TASKS = ["Una's Dailies", "Una's Weeklies"]
+
+
+def retire_old_tasks(db: Session):
+    """Hide tasks we used to add by default that aren't in the game."""
+    db.query(Task).filter(Task.catalog_key.is_(None), Task.name.in_(RETIRED_TASKS)).update(
+        {"archived": True}, synchronize_session=False
+    )
+    db.commit()
 
 
 def backfill_bound_gold(db: Session):

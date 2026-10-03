@@ -49,6 +49,10 @@ def reset_difficulty(difficulty_id: int, db: Session = Depends(get_db)):
     difficulty.gold = difficulty.catalog_gold
     if difficulty.catalog_bound_percent is not None:
         difficulty.bound_percent = difficulty.catalog_bound_percent
+    if difficulty.catalog_bound_kind is not None:
+        difficulty.bound_kind = difficulty.catalog_bound_kind
+    if difficulty.catalog_item_level is not None:
+        difficulty.bonus_cost = difficulty.catalog_bonus_cost
     if difficulty.catalog_item_level is not None:
         difficulty.min_item_level = difficulty.catalog_item_level
     for field, value in (difficulty.catalog_rewards or {}).items():

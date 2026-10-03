@@ -264,9 +264,10 @@ def test_bound_gold_is_tracked_separately(client, set_now):
     week = client.get("/api/gold/weekly?weeks=1").json()[0]
     assert week["raid_gold"] == 32000 + 50000 + 38000
     assert week["bound_gold"] == 16000 + 50000
+    assert week["character_bound_gold"] == 50000  # Cathedral; Serca's half is roster-bound
 
     rows = client.get("/api/export/gold.csv").text.splitlines()
-    assert rows[0].endswith("gold,bound_gold,note")
+    assert rows[0].endswith("gold,roster_bound_gold,character_bound_gold,bonus_spent,note")
 
 
 def test_upgrade_backfills_bound_gold_on_past_clears(client, set_now):

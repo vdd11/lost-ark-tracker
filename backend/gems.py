@@ -22,19 +22,30 @@ def add_gems(total: Gems, gems: Gems | None, times: float = 1):
         total[str(level)] = round(total.get(str(level), 0) + count * times, 3)
 
 
-def run_gems(task: Task, difficulty: RaidDifficulty | None, completion: Completion) -> Gems | None:
-    """Expected gems for one period's run from the tier's reward tables.
+def run_gems(
+    task: Task,
+    difficulty: RaidDifficulty | None,
+    completion: Completion,
+    tiers: dict[int, RaidDifficulty] | None = None,
+) -> Gems | None:
+    """Expected gems for one period's run from the tier reward tables.
 
-    Runs (cube tickets) and Sands of Trial multiply the base reward; lucky
-    rooms are added per room and aren't multiplied by tickets.
+    Runs (cube tickets, per tier) and Sands of Trial multiply the base reward;
+    lucky rooms use the character's own tier and aren't multiplied by tickets.
     """
     if difficulty is None:
         return None
-    runs = completion.count if task.counted else 1
     multiplier = 1 + completion.sands if task.sand_scaled else 1
 
     gems: Gems = {}
-    add_gems(gems, difficulty.reward_gems, runs * multiplier)
+    if task.counted and completion.tier_counts and tiers:
+        for tier_id, runs in completion.tier_counts.items():
+            tier = tiers.get(int(tier_id))
+            if tier is not None:
+                add_gems(gems, tier.reward_gems, runs * multiplier)
+    else:
+        runs = completion.count if task.counted else 1
+        add_gems(gems, difficulty.reward_gems, runs * multiplier)
     add_gems(gems, difficulty.lucky_gems, completion.lucky_rooms)
     add_gems(gems, difficulty.mega_gems, completion.mega_rooms)
     return gems or None

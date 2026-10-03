@@ -38,20 +38,24 @@ def export_gold(db: Session = Depends(get_db)):
     clears = (
         db.query(Completion, Task.name)
         .outerjoin(Task, Task.id == Completion.task_id)
-        .filter(Completion.gold > 0)
+        .filter((Completion.gold > 0) | (Completion.bonus_spent > 0))
     )
     for completion, task_name in clears:
         rows.append([
             completion.completed_at.isoformat(timespec="minutes"), week_of(completion.completed_at).isoformat(),
             "raid", task_name or "", names.get(completion.character_id, ""), completion.gold,
-            completion.bound_gold, "",
+            completion.bound_gold - completion.character_bound_gold, completion.character_bound_gold,
+            completion.bonus_spent, "",
         ])
     for entry in db.query(GoldEntry):
         rows.append([
             entry.earned_at.isoformat(timespec="minutes"), week_of(entry.earned_at).isoformat(),
-            "logged", entry.source, names.get(entry.character_id, ""), entry.amount, 0, entry.note or "",
+            "logged", entry.source, names.get(entry.character_id, ""), entry.amount, 0, 0, 0, entry.note or "",
         ])
-    header = ["time_utc", "week", "kind", "source", "character", "gold", "bound_gold", "note"]
+    header = [
+        "time_utc", "week", "kind", "source", "character", "gold",
+        "roster_bound_gold", "character_bound_gold", "bonus_spent", "note",
+    ]
     return csv_response("lost-ark-gold.csv", header, rows)
 
 

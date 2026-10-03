@@ -63,12 +63,18 @@ class RaidDifficulty(Base):
     min_item_level: Mapped[float] = mapped_column(Float, default=0)
     # Total gold for all gates; None when not known yet.
     gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    # Share of that gold paid as bound (untradeable) gold, 0-100.
+    # Share of that gold paid as bound (untradeable) gold, 0-100, and whether
+    # it's bound to the roster or to the character.
     bound_percent: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    bound_kind: Mapped[str] = mapped_column(String(20), default="roster", server_default="roster")
+    # Gold to open the bonus ("View More") chests of every gate; None = unknown.
+    bonus_cost: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # What the catalog last set, to tell user edits apart from catalog values.
     catalog_item_level: Mapped[float | None] = mapped_column(Float, nullable=True)
     catalog_gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
     catalog_bound_percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    catalog_bound_kind: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    catalog_bonus_cost: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Expected gems as {level: count} (counts may be averages); None = unknown.
     # Per run, per lucky room, and per mega lucky room.
     reward_gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
@@ -112,12 +118,19 @@ class Completion(Base):
     period: Mapped[date] = mapped_column(Date)
     completed_at: Mapped[datetime] = mapped_column(DateTime)
     gold: Mapped[int] = mapped_column(Integer, default=0)
-    # The part of `gold` that was bound (character- or roster-bound).
+    # The part of `gold` that was bound, and of that, the character-bound part
+    # (the rest is roster-bound).
     bound_gold: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    character_bound_gold: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Bonus ("View More") chests bought for this clear, and what they cost.
+    bought_bonus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    bonus_spent: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # The difficulty actually run, which can differ from the usual one.
     difficulty_id: Mapped[int | None] = mapped_column(ForeignKey("raid_difficulties.id"), nullable=True)
-    # Runs this period, for counted tasks.
+    # Runs this period, for counted tasks, and how they split across tiers
+    # ({difficulty_id: runs}; Ebony Cube tickets can be for lower unlocks).
     count: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    tier_counts: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     lucky_rooms: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     mega_rooms: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     sands: Mapped[int] = mapped_column(Integer, default=0, server_default="0")

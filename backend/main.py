@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from database import Base, SessionLocal, add_missing_columns, backup_database, engine
-from raids import backfill_bound_gold, sync_catalog
+from raids import backfill_bound_gold, backfill_character_bound_gold, retire_old_tasks, sync_catalog
 from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
 from routes import backup, characters, difficulties, events, export, gems, gold, tasks, tracker
@@ -28,6 +28,9 @@ async def lifespan(app: FastAPI):
         sync_catalog(db)
         if ("completions", "bound_gold") in added_columns:
             backfill_bound_gold(db)
+        if ("completions", "character_bound_gold") in added_columns:
+            backfill_character_bound_gold(db)
+            retire_old_tasks(db)
     yield
 
 
