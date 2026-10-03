@@ -10,7 +10,7 @@ from database import Base, SessionLocal, add_missing_columns, backup_database, e
 from raids import sync_catalog
 from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
-from routes import backup, characters, difficulties, events, gems, gold, tasks, tracker
+from routes import backup, characters, difficulties, events, export, gems, gold, tasks, tracker
 
 
 @asynccontextmanager
@@ -50,7 +50,7 @@ def root():
 
 
 app.include_router(router)
-for module in (characters, tasks, tracker, gold, events, gems, difficulties, backup):
+for module in (characters, tasks, tracker, gold, events, gems, difficulties, backup, export):
     app.include_router(module.router)
 
 

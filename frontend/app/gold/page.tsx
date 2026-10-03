@@ -4,8 +4,8 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
+import { api, API_URL, Character, formatGold, GoldEntry, parseUtc, send, WeeklyGold } from "@/lib/api";
 import { usePreference } from "@/lib/usePreference";
-import { api, Character, formatGold, GoldEntry, parseUtc, send, WeeklyGold } from "@/lib/api";
 
 const SOURCES = ["Field Boss", "Chaos Gate", "Fate Ember", "Paradise", "Auction House", "Trade"];
 const OTHER = "__other__";
@@ -109,6 +109,9 @@ export default function GoldPage() {
             <button onClick={() => setShowTable(!showTable)} className="rounded-md border border-border px-3 py-1.5">
               {showTable ? "Show chart" : "Show table"}
             </button>
+            <a href={`${API_URL}/export/gold.csv`} download className="rounded-md border border-border px-3 py-1.5 hover:bg-surface-2">
+              Export CSV
+            </a>
           </div>
         </div>
 

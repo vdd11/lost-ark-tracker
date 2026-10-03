@@ -6,6 +6,7 @@ import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import StackedWeeklyChart, { ChartSeries } from "@/components/StackedWeeklyChart";
 import {
   api,
+  API_URL,
   byPosition,
   Character,
   Difficulty,
@@ -144,6 +145,9 @@ export default function GemsPage() {
             <button onClick={() => setShowTable(!showTable)} className="rounded-md border border-border px-3 py-1.5">
               {showTable ? "Show chart" : "Show table"}
             </button>
+            <a href={`${API_URL}/export/gems.csv`} download className="rounded-md border border-border px-3 py-1.5 hover:bg-surface-2">
+              Export CSV
+            </a>
           </div>
         </div>
 

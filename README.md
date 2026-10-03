@@ -29,6 +29,8 @@ non-raid sources to see your weekly gold over time.
   using each tier's reward table (editable on the Gems page). Log Guardian
   Raid and Field Boss drops by hand. Weekly chart and per-character totals in
   level-1 equivalents (Lv2 = 3, Lv3 = 9).
+- **Export**: "Export CSV" on the Gold and Gems pages downloads your full
+  history for a spreadsheet.
 - **Settings**: add characters (their usual raids are pre-selected from item
   level), edit daily/weekly columns, and download/restore backups.
 
