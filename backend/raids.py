@@ -94,7 +94,8 @@ CATALOG = [
         name="The Final Day",
         # Bonus chest costs are per gate (3,520 + 6,720 and 5,120 + 10,240).
         difficulties=[
-            Difficulty("Normal", 1710, 32000, bonus_cost=10240),
+            # Normal pays half its gold as roster-bound gold (per the user).
+            Difficulty("Normal", 1710, 32000, bonus_cost=10240, bound_percent=50),
             Difficulty("Hard", 1730, 48000, bonus_cost=15360),
         ],
         legacy_names=["Final Act: Kazeros", "Denouement: The Final Day"],

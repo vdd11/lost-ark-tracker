@@ -22,6 +22,8 @@ def test_bonus_chest_costs_come_from_the_patch_notes(client):
     assert (difficulty(final, "Normal")["bonus_cost"], difficulty(final, "Hard")["bonus_cost"]) == (10240, 15360)
     assert difficulty(task_named(client, "Serca"), "Hard")["bonus_cost"] is None
     assert difficulty(task_named(client, "Horizon Cathedral"), "Lv3")["bound_kind"] == "character"
+    assert (difficulty(final, "Normal")["bound_percent"], difficulty(final, "Normal")["bound_kind"]) == (50, "roster")
+    assert difficulty(final, "Hard")["bound_percent"] == 0
 
 
 def test_buying_the_bonus_chest_is_subtracted_from_that_character(client, set_now):
