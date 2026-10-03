@@ -97,7 +97,8 @@ def test_rejects_bad_gem_tables(client):
 
 def test_runs_without_gems_dont_break_the_weekly_summary(client, set_now):
     set_now(NOW)
-    hourglass = task_named(client, "Haal's Hourglass")  # Lv2 has no reward table yet
+    hourglass = task_named(client, "Haal's Hourglass")
+    set_rewards(client, hourglass, "Lv2", reward_gems=None)  # a tier with no reward table
     main = add_character(client, 1775)
     complete(client, main["id"], hourglass["id"])
     act4 = task_named(client, "Act 4")
@@ -106,3 +107,15 @@ def test_runs_without_gems_dont_break_the_weekly_summary(client, set_now):
     response = client.get("/api/gems/weekly?weeks=1")
     assert response.status_code == 200
     assert response.json()[0]["total"] == 0
+
+
+def test_hourglass_level_two_gives_level_three_gems(client, set_now):
+    set_now(NOW)
+    hourglass = task_named(client, "Haal's Hourglass")
+    assert difficulty(hourglass, "Lv2")["reward_gems"] == {"3": 6}
+    set_rewards(client, hourglass, "Lv2", lucky_gems={"3": 1})
+    main = add_character(client, 1775)  # Lv2
+
+    complete(client, main["id"], hourglass["id"], sands=5, lucky_rooms=1)
+    # 6 Lv3 x (1 + 5 sands) = 36 Lv3; the lucky monster's 1 Lv3 isn't multiplied.
+    assert weekly_gems(client)["by_level"] == {"3": 37}

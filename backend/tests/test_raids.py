@@ -288,3 +288,24 @@ def test_upgrade_backfills_bound_gold_on_past_clears(client, set_now):
 
     with TestClient(main.app) as restarted:
         assert restarted.get("/api/gold/weekly?weeks=1").json()[0]["bound_gold"] == 50000
+
+
+def test_item_level_up_keeps_this_weeks_runs_but_moves_future_ones(client, set_now):
+    set_now(NOW)
+    act4, cathedral = task_named(client, "Act 4"), task_named(client, "Horizon Cathedral")
+    alt = add_character(client, 1705, [{"task_id": act4["id"]}, {"task_id": cathedral["id"]}])
+    complete(client, alt["id"], act4["id"])  # Normal, 27,000 this week
+
+    client.patch(f"/api/characters/{alt['id']}", json={"item_level": 1722})
+    updated = character(client, alt["id"])
+    # Next clears use the new tiers...
+    assert updated["difficulty_ids"][str(act4["id"])] == difficulty(act4, "Hard")["id"]
+    assert updated["difficulty_ids"][str(cathedral["id"])] == difficulty(cathedral, "Lv2")["id"]
+    # ...but the clear already done this week stays as it was run.
+    run = next(r for r in client.get("/api/tracker").json()["runs"] if r["task_id"] == act4["id"])
+    assert run["difficulty_id"] == difficulty(act4, "Normal")["id"]
+    assert raid_gold(client) == 27000
+
+    # A clear made after the update uses the new tier.
+    complete(client, alt["id"], cathedral["id"])
+    assert raid_gold(client) == 27000 + 40000

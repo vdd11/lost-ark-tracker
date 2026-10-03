@@ -132,9 +132,11 @@ CATALOG = [
         category="weekly",
         sand_scaled=True,
         difficulties=[
-            # Base reward: 15 Lv2 gem chests (one random Lv2 gem each).
+            # Base reward per the wiki: Lv1 15 Lv2 gem chests, Lv2 6 Lv3 gem
+            # chests (one random gem each). Sands multiply these; the lucky
+            # monster's drops aren't multiplied.
             Difficulty("Lv1", 1730, 0, reward_gems={"2": 15}),
-            Difficulty("Lv2", 1750, 0),
+            Difficulty("Lv2", 1750, 0, reward_gems={"3": 6}),
         ],
         note="Once a week. Sands of Trial (up to 5) multiply the rewards.",
     ),
