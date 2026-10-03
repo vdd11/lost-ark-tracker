@@ -22,12 +22,17 @@ sources to see your weekly gold over time.
     (from your last check-in) and show when your tracked gems add up to the
     next Lv9 / Lv10. A **Lost Ark updates** widget shows live NA/EU server
     status and official announcements, with the official X accounts
-    (@LAGameStatus, @playlostark) a tab away. **Edit who does what** sets each character's usual raids and tasks. Click
-    an item level to update it.
+    (@LAGameStatus, @playlostark) a tab away. **Edit who does what** sets each
+    character's usual raids and tasks; the pencil by an item level updates it.
+  - **All** beside a character ticks off everything they have left in that
+    card. After the Wednesday reset, a recap shows last week's gold, gems and
+    any gold raids left unrun.
+  - On a phone or narrow window, each character gets a stacked block instead
+    of a wide table.
 - **Accounts**: play more than one account? Add accounts in Settings and put
   each character on one. Each account is its own roster (up to 6 gold earners,
-  its own event clears), and the tracker gets a switcher to view one account
-  or all of them.
+  its own event clears, its own gold and check-ins). The tracker, Gold and
+  Gems pages get a switcher to view one account or all of them.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
   rest gauge, highlighted in gold when a rested run is available today. Click
   the number to match it to the game.
