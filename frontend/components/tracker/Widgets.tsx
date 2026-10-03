@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 
 import NumberInput from "@/components/NumberInput";
-import { formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
+import { formatCombinedGems, formatGold, usableGold, WeeklyGems, WeeklyGold } from "@/lib/api";
 import {
   compactGold,
   dailyRate,
@@ -108,7 +108,11 @@ export function GoldMonthWidget({ weeks }: { weeks: WeeklyGold[] }) {
   );
 }
 
-/** How long until a gold target at the recent pace, from what you have if you've checked in. */
+/**
+ * How long until a gold target at the recent pace, from what you have if
+ * you've checked in. Counts tradeable and roster-bound gold only: character-
+ * bound gold can't be spent on anyone else.
+ */
 export function GoldGoalWidget({
   weeks,
   daysIntoWeek,
@@ -118,12 +122,12 @@ export function GoldGoalWidget({
 }: {
   weeks: WeeklyGold[];
   daysIntoWeek: number;
-  /** Gold on hand from the last check-in plus tracked gold since, or null without a check-in. */
+  /** Tradeable + roster-bound gold on hand (last check-in plus tracked since), or null without a check-in. */
   balance: number | null;
   goal: number;
   onGoal: (goal: number) => void;
 }) {
-  const perDay = dailyRate(weeks.map((w) => w.net), daysIntoWeek);
+  const perDay = dailyRate(weeks.map(usableGold), daysIntoWeek);
   const start = balance ?? 0;
   const days = daysToGoal(start, goal, perDay);
 
@@ -154,7 +158,7 @@ export function GoldGoalWidget({
             <div className="mt-auto">
               <Bar value={start / goal} tone={days === 0 ? "bg-done" : "bg-accent"} />
               <p className="mt-1 text-[11px] text-muted">
-                {formatGold(start)} of {formatGold(goal)} on hand, from your last check-in
+                {formatGold(start)} of {formatGold(goal)} tradeable + roster-bound on hand, from your last check-in
               </p>
             </div>
           ) : (

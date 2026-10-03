@@ -224,6 +224,14 @@ export function gemsToLv1(gems: GemTable | null | undefined) {
   return Object.entries(gems ?? {}).reduce((sum, [level, count]) => sum + count * 3 ** (Number(level) - 1), 0);
 }
 
+/**
+ * Gold from a week you can spend on anything: tradeable plus roster-bound,
+ * after bonus boxes. Character-bound gold only works on its own character.
+ */
+export function usableGold(week: WeeklyGold) {
+  return week.tradeable_left + week.roster_bound_left;
+}
+
 /** How a week's gold splits by what you can do with it (logged gold counts as tradeable). */
 export function goldSplit(week: WeeklyGold) {
   return {

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { combineGems, errorMessage, formatCombinedGems, gemsToLv1, parseUtc } from "./api";
+describe("usableGold", () => {
+  it("leaves out character-bound gold", () => {
+    const week = { tradeable_left: 100, roster_bound_left: 40, character_bound_left: 500 } as WeeklyGold;
+    expect(usableGold(week)).toBe(140);
+  });
+});
+
+import { combineGems, errorMessage, formatCombinedGems, gemsToLv1, parseUtc, usableGold, WeeklyGold } from "./api";
 import { isNewer } from "./version";
 
 describe("gemsToLv1", () => {
