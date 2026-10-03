@@ -5,10 +5,12 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react"
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import Link from "next/link";
 
+import ClassInput, { ClassSuggestions } from "@/components/ClassInput";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import NumberInput from "@/components/NumberInput";
 import RaidPicker, { RaidSelection, suggestedRaids } from "@/components/RaidPicker";
 import { api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task, TaskCategory } from "@/lib/api";
+import { normalizeClass } from "@/lib/classes";
 import { isActiveRaid } from "@/lib/raids";
 
 type Positioned = { id: number; position: number };
@@ -65,6 +67,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-10">
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
+      <ClassSuggestions />
 
       <section>
         <h1 className="mb-1 text-2xl font-bold">Characters</h1>
@@ -235,7 +238,7 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
     event.preventDefault();
     await onAdd({
       name: name.trim(),
-      class_name: className.trim(),
+      class_name: normalizeClass(className),
       item_level: Number(itemLevel) || 0,
       is_gold_earner: isGoldEarner,
       raids: Object.entries(selectedRaids).map(([taskId, difficultyId]) => ({
@@ -253,7 +256,7 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
   return (
     <form onSubmit={handleSubmit} className="mb-4 flex flex-wrap items-end gap-2 text-sm">
       <input required placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input required placeholder="Class" value={className} onChange={(e) => setClassName(e.target.value)} />
+      <ClassInput required placeholder="Class (type to search)" value={className} onChange={(e) => setClassName(e.target.value)} />
       <input
         type="number"
         step="0.01"
@@ -319,7 +322,7 @@ function CharacterRow({
   });
 
   function saveText(field: "name" | "class_name") {
-    const value = draft[field].trim();
+    const value = field === "class_name" ? normalizeClass(draft[field]) : draft[field].trim();
     if (value && value !== character[field]) onSave({ [field]: value });
   }
 
@@ -329,7 +332,7 @@ function CharacterRow({
         <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} onBlur={() => saveText("name")} />
       </td>
       <td className="px-3 py-1.5">
-        <input value={draft.class_name} onChange={(e) => setDraft({ ...draft, class_name: e.target.value })} onBlur={() => saveText("class_name")} />
+        <ClassInput value={draft.class_name} onChange={(e) => setDraft({ ...draft, class_name: e.target.value })} onBlur={() => saveText("class_name")} aria-label={`${character.name} class`} />
       </td>
       <td className="px-3 py-1.5">
         <input

@@ -1,5 +1,6 @@
 "use client";
 
+import { Pencil } from "lucide-react";
 import { KeyboardEvent, useRef, useState } from "react";
 
 import { formatItemLevel } from "@/lib/raids";
@@ -61,9 +62,10 @@ export default function ItemLevelEdit({
       onClick={open}
       title="Click to update item level"
       aria-label={`${characterName} item level ${value || "not set"}. Click to edit`}
-      className="rounded px-0.5 tabular-nums hover:bg-surface-2 hover:text-foreground"
+      className="inline-flex items-center gap-1 rounded px-0.5 tabular-nums hover:bg-surface-2 hover:text-foreground"
     >
       {value > 0 ? formatItemLevel(value) : "set ilvl"}
+      <Pencil size={10} className="opacity-60" />
     </button>
   );
 }

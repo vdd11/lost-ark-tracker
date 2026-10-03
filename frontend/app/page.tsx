@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, CalendarDays, Coins, Flame, Pencil, Settings2, Sun, Wallet, X } from "lucide-react";
+import { Box, CalendarDays, Coins, Flame, Pencil, Settings2, Sun, TrendingUp, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
@@ -9,6 +9,7 @@ import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
 import CustomizePanel from "@/components/tracker/CustomizePanel";
+import ItemLevelPanel from "@/components/tracker/ItemLevelPanel";
 import TaskTable, { ExtraColumn } from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
 import {
@@ -75,6 +76,7 @@ export default function TrackerPage() {
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
   const [customizing, setCustomizing] = useState(false);
+  const [updatingItemLevels, setUpdatingItemLevels] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
 
@@ -232,6 +234,17 @@ export default function TrackerPage() {
     } catch (e) {
       setError(describeError(e));
     }
+  }
+
+  async function updateItemLevels(changes: { character: Character; itemLevel: number }[]) {
+    try {
+      for (const { character, itemLevel } of changes) {
+        await send("PATCH", `/characters/${character.id}`, { item_level: itemLevel });
+      }
+    } catch (e) {
+      setError(describeError(e));
+    }
+    loadAll();
   }
 
   async function setBonus(character: Character, task: Task, bought: boolean) {
@@ -431,7 +444,10 @@ export default function TrackerPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Roster</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <ToolbarButton active={updatingItemLevels} onClick={() => setUpdatingItemLevels((v) => !v)} icon={<TrendingUp size={16} />}>
+            Update item levels
+          </ToolbarButton>
           <ToolbarButton active={customizing} onClick={() => setCustomizing((v) => !v)} icon={<Settings2 size={16} />}>
             Customize
           </ToolbarButton>
@@ -483,6 +499,10 @@ export default function TrackerPage() {
           Some raids your characters run don&apos;t have a gold value yet (shown as ?). Fill them in on the{" "}
           <Link href="/raids" className="font-medium underline">Raids page</Link>.
         </Notice>
+      )}
+
+      {updatingItemLevels && characters.length > 0 && (
+        <ItemLevelPanel characters={roster} onSave={updateItemLevels} onClose={() => setUpdatingItemLevels(false)} />
       )}
 
       {customizing && (
