@@ -289,6 +289,9 @@ export type BalanceCheck = {
 
 export type ExpectedBalances = { last_check_in: string; expected: Balances };
 
+/** Last week's paying raid clears per character, for the new-week recap. */
+export type WeekRecap = { week: string; paid_raids: Record<string, number> };
+
 export type ServerStatus = { region: string; name: string; status: string };
 export type NewsItem = { title: string; url: string; date: string };
 export type NewsFeed = {

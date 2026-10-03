@@ -391,3 +391,10 @@ class NewsFeed(BaseModel):
     servers_error: str | None = None
     news: list[NewsItem] = []
     news_error: str | None = None
+
+
+class WeekRecap(BaseModel):
+    # Start of last week's reset period.
+    week: date
+    # character_id -> raid clears that paid gold last week.
+    paid_raids: dict[int, int] = {}

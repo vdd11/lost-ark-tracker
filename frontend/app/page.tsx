@@ -10,6 +10,7 @@ import DifficultySelect from "@/components/DifficultySelect";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import QuickGold from "@/components/QuickGold";
 import RaidCell from "@/components/RaidCell";
+import RecapCard from "@/components/tracker/RecapCard";
 import RestGauge from "@/components/RestGauge";
 import CustomizePanel from "@/components/tracker/CustomizePanel";
 import StyleChooser from "@/components/tracker/StyleChooser";
@@ -32,7 +33,9 @@ import {
   TrackerState,
   WeeklyGems,
   WeeklyGold,
+  WeekRecap,
 } from "@/lib/api";
+import { missedGoldRaids } from "@/lib/recap";
 import { daysIntoWeek } from "@/lib/insights";
 import {
   difficultyOf,
@@ -99,6 +102,8 @@ export default function TrackerPage() {
   // undefined until loaded, null if there has never been a gold check-in.
   const [lastCheckIn, setLastCheckIn] = useState<string | null | undefined>(undefined);
   const [checkInDismissed, setCheckInDismissed] = usePreference<string>("check-in-dismissed-week", "");
+  const [recap, setRecap] = useState<WeekRecap | null>(null);
+  const [recapDismissed, setRecapDismissed] = usePreference<string>("recap-dismissed-week", "");
   const [hiddenRaw, setHiddenRaw] = usePreference<string>(HIDDEN_PREFERENCE, DEFAULT_HIDDEN_RAW);
   // Whether the "how much do you want to track?" welcome has been answered.
   const [styleChosen, setStyleChosen] = usePreference<boolean>("style-chosen", false);
@@ -129,6 +134,9 @@ export default function TrackerPage() {
     // Everything tracked so far counts toward the next big gem.
     api<WeeklyGems[]>(`/gems/weekly?weeks=104&${accountQuery}`)
       .then(setGemWeeks)
+      .catch(() => {});
+    api<WeekRecap>("/recap")
+      .then(setRecap)
       .catch(() => {});
     api<ExpectedBalances | null>(`/balances/expected?${accountQuery}`)
       .then((data) => {
@@ -598,6 +606,19 @@ export default function TrackerPage() {
 
   const showToday = isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
   const showAnytime = isShown(SECTION_KEYS.anytime) && (anytime.columns.length > 0 || editMode);
+  // Last week's recap: for the first few days of a week, until dismissed, if
+  // anything happened last week.
+  const lastGoldWeek = goldWeeks.at(-2);
+  const lastGemWeek = gemWeeks.at(-2);
+  const missed = recap ? missedGoldRaids(characters, tasks, recap.paid_raids) : [];
+  const showRecap =
+    tracker &&
+    recap &&
+    isShown(SECTION_KEYS.recap) &&
+    recapDismissed !== tracker.weekly_period &&
+    daysIntoWeek(tracker.weekly_period, now) < 3 &&
+    ((lastGoldWeek?.total ?? 0) > 0 || (lastGemWeek?.total ?? 0) > 0 || Object.keys(recap.paid_raids).length > 0);
+
   // Check-ins are about spending, so they follow the "Left to use" box.
   const needsCheckIn =
     tracker &&
@@ -647,6 +668,17 @@ export default function TrackerPage() {
       )}
 
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
+
+      {showRecap && (
+        <RecapCard
+          week={recap!.week}
+          gold={lastGoldWeek}
+          previousGold={goldWeeks.at(-3)}
+          gems={lastGemWeek}
+          missed={missed}
+          onDismiss={() => setRecapDismissed(tracker!.weekly_period)}
+        />
+      )}
 
       {needsCheckIn && (
         <Notice onDismiss={() => setCheckInDismissed(tracker!.weekly_period)}>

@@ -19,7 +19,12 @@ export function viewKey(task: Task) {
   return `task:${task.catalog_key ?? task.name}`;
 }
 
-export const SECTION_KEYS = { gold: "section:gold", today: "section:today", anytime: "section:anytime" } as const;
+export const SECTION_KEYS = {
+  gold: "section:gold",
+  today: "section:today",
+  anytime: "section:anytime",
+  recap: "section:recap",
+} as const;
 export const CHARACTER_BOUND_KEY = "column:character-bound";
 /** Hiding this hides characters who've finished everything in a card. */
 export const FINISHED_ROWS_KEY = "rows:finished";

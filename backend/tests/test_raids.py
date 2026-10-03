@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import raids
 from database import SessionLocal
@@ -309,3 +309,17 @@ def test_item_level_up_keeps_this_weeks_runs_but_moves_future_ones(client, set_n
     # A clear made after the update uses the new tier.
     complete(client, alt["id"], cathedral["id"])
     assert raid_gold(client) == 27000 + 40000
+
+
+def test_recap_counts_last_weeks_paying_clears(client, set_now):
+    serca, act4 = task_named(client, "Serca"), task_named(client, "Act 4")
+    main = add_character(client, 1775, [{"task_id": serca["id"]}, {"task_id": act4["id"]}])
+    set_now(NOW - timedelta(days=7))
+    complete(client, main["id"], serca["id"])
+    complete(client, main["id"], act4["id"])
+    set_now(NOW)
+    complete(client, main["id"], serca["id"])  # this week: not in the recap
+
+    recap = client.get("/api/recap").json()
+    assert recap["paid_raids"] == {str(main["id"]): 2}
+    assert recap["week"] < NOW.date().isoformat()
