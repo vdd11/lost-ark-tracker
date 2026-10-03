@@ -14,8 +14,11 @@ non-raid sources to see your weekly gold over time.
   - **Any time**: Ebony Cube run counters for the character's own unlock
     (Kurzan Front / Chaos Rift tickets); the unlock button counts lower unlocks
     from guild shop boxes and lucky rooms.
-  - **Customize** picks which cards and columns you see (saved per browser);
-    **Edit who does what** sets each character's usual raids and tasks. Click
+  - **Customize** starts from a play style (Just raids, Raids + dailies, or
+    Everything), then lets you tick every card, column, gold box and menu
+    page on or off, and tuck away characters who are done (saved per
+    browser). The top boxes count gold raids left and log other gold in one
+    step. **Edit who does what** sets each character's usual raids and tasks. Click
     an item level to update it.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
   rest gauge, highlighted in gold when a rested run is available today. Click

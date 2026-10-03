@@ -19,6 +19,7 @@ export default function TaskTable({
   columnNote,
   onItemLevel,
   characterNote,
+  hideWhenEmpty = false,
 }: {
   characters: Character[];
   columns: Task[];
@@ -27,7 +28,10 @@ export default function TaskTable({
   columnNote?: (task: Task) => ReactNode;
   onItemLevel: (character: Character, itemLevel: number) => void;
   characterNote?: (character: Character) => ReactNode;
+  /** Render nothing, rather than "Nothing to show", when there are no rows. */
+  hideWhenEmpty?: boolean;
 }) {
+  if (characters.length === 0 && hideWhenEmpty) return null;
   if (characters.length === 0 || columns.length === 0) {
     return <p className="px-4 py-6 text-center text-sm text-muted">Nothing to show here.</p>;
   }

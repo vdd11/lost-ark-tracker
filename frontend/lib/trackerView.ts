@@ -21,12 +21,72 @@ export function viewKey(task: Task) {
 
 export const SECTION_KEYS = { gold: "section:gold", today: "section:today", anytime: "section:anytime" } as const;
 export const CHARACTER_BOUND_KEY = "column:character-bound";
+/** Hiding this hides characters who've finished everything in a card. */
+export const FINISHED_ROWS_KEY = "rows:finished";
+
+/** The boxes along the top of the tracker. */
+export const STAT_KEYS = {
+  raidsLeft: "stat:raids-left",
+  raidGold: "stat:raid-gold",
+  otherGold: "stat:other-gold",
+  total: "stat:total",
+  leftToUse: "stat:left-to-use",
+} as const;
+
+/** Pages that can be dropped from the menu. */
+export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems" } as const;
 
 /** Hidden until someone turns them on in Customize. */
 export const DEFAULT_HIDDEN = ["task:Guardian Raid"];
+export const DEFAULT_HIDDEN_RAW = DEFAULT_HIDDEN.join("|");
+/** The stored preference both the tracker and the menu read. */
+export const HIDDEN_PREFERENCE = "tracker-hidden";
 
 export function parseHidden(raw: string) {
-  return new Set(raw.split("|").filter(Boolean));
+  const hidden = new Set(raw.split("|").filter(Boolean));
+  // Older versions had one switch for all the gold boxes.
+  if (hidden.delete(SECTION_KEYS.gold)) Object.values(STAT_KEYS).forEach((key) => hidden.add(key));
+  return hidden;
+}
+
+export type Style = "casual" | "regular" | "everything";
+
+export const STYLES: { id: Style; label: string; description: string }[] = [
+  { id: "casual", label: "Just raids", description: "Weekly raids, gold raids left and raid gold. Nothing else." },
+  { id: "regular", label: "Raids + dailies", description: "Raids, Hourglass, Ebony Cube and Chaos Dungeon, with gold totals." },
+  { id: "everything", label: "Everything", description: "Every task, gold box and page, including Guardian Raid and char-bound gold." },
+];
+
+/** What a play style hides, given today's tasks. */
+export function styleHidden(style: Style, tasks: Task[]): Set<string> {
+  if (style === "everything") return new Set();
+  if (style === "regular") return new Set(DEFAULT_HIDDEN);
+  return new Set([
+    ...DEFAULT_HIDDEN,
+    SECTION_KEYS.today,
+    SECTION_KEYS.anytime,
+    CHARACTER_BOUND_KEY,
+    STAT_KEYS.otherGold,
+    STAT_KEYS.total,
+    STAT_KEYS.leftToUse,
+    PAGE_KEYS.gems,
+    ...tasks.filter((t) => t.category !== "raid" && sectionOf(t) === "week").map(viewKey),
+  ]);
+}
+
+/** The play style the current choices match exactly, if any. */
+export function matchingStyle(hidden: Set<string>, tasks: Task[]): Style | null {
+  const current = serializeHidden(hidden);
+  return STYLES.find((style) => serializeHidden(styleHidden(style.id, tasks)) === current)?.id ?? null;
+}
+
+/**
+ * Whether a character has finished everything they count for in a card, so
+ * they can be tucked away. Someone with nothing to count isn't "finished".
+ */
+export function isFinished(character: Character, columns: Task[], isDone: (task: Task) => boolean) {
+  const counted = columns.filter((task) => countsForProgress(character, task));
+  return counted.length > 0 && counted.every(isDone);
 }
 
 export function serializeHidden(hidden: Set<string>) {

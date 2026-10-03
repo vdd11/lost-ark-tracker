@@ -7,10 +7,12 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import ContentCell, { RunChanges } from "@/components/ContentCell";
 import DifficultySelect from "@/components/DifficultySelect";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import QuickGold from "@/components/QuickGold";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
 import CustomizePanel from "@/components/tracker/CustomizePanel";
 import ItemLevelPanel from "@/components/tracker/ItemLevelPanel";
+import StyleChooser from "@/components/tracker/StyleChooser";
 import TaskTable, { ExtraColumn } from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
 import {
@@ -41,17 +43,26 @@ import {
   appliesTo,
   CHARACTER_BOUND_KEY,
   countsForProgress,
-  DEFAULT_HIDDEN,
+  DEFAULT_HIDDEN_RAW,
+  FINISHED_ROWS_KEY,
+  HIDDEN_PREFERENCE,
+  isFinished,
   parseHidden,
   Section,
   SECTION_KEYS,
   sectionOf,
   serializeHidden,
+  STAT_KEYS,
+  Style,
+  styleHidden,
   viewKey,
 } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 
 const cellKey = (characterId: number, taskId: number) => `${characterId}:${taskId}`;
+
+// Static class names so Tailwind generates them: the stat row fits however many boxes are shown.
+const STAT_COLUMNS = ["", "lg:grid-cols-1", "lg:grid-cols-2", "lg:grid-cols-3", "lg:grid-cols-4", "lg:grid-cols-5"];
 
 function formatCountdown(target: Date, now: Date) {
   const minutes = Math.max(0, Math.floor((target.getTime() - now.getTime()) / 60000));
@@ -74,7 +85,9 @@ export default function TrackerPage() {
   // undefined until loaded, null if there has never been a gold check-in.
   const [lastCheckIn, setLastCheckIn] = useState<string | null | undefined>(undefined);
   const [checkInDismissed, setCheckInDismissed] = usePreference<string>("check-in-dismissed-week", "");
-  const [hiddenRaw, setHiddenRaw] = usePreference<string>("tracker-hidden", DEFAULT_HIDDEN.join("|"));
+  const [hiddenRaw, setHiddenRaw] = usePreference<string>(HIDDEN_PREFERENCE, DEFAULT_HIDDEN_RAW);
+  // Whether the "how much do you want to track?" welcome has been answered.
+  const [styleChosen, setStyleChosen] = usePreference<boolean>("style-chosen", false);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
   const [editMode, setEditMode] = useState(false);
   const [customizing, setCustomizing] = useState(false);
@@ -150,17 +163,23 @@ export default function TrackerPage() {
       .filter((t) => t.category !== "raid" || isActiveRaid(t))
       .filter((t) => editMode || roster.some((c) => appliesTo(c, t)))
       .sort(byPosition);
-    const rows = editMode ? roster : roster.filter((c) => columns.some((t) => appliesTo(c, t)));
+    const everyone = editMode ? roster : roster.filter((c) => columns.some((t) => appliesTo(c, t)));
     let done = 0;
     let total = 0;
-    for (const character of rows) {
+    for (const character of everyone) {
       for (const task of columns) {
         if (!countsForProgress(character, task)) continue;
         total += 1;
         if (completed.has(cellKey(character.id, task.id))) done += 1;
       }
     }
-    return { columns, rows, done, total };
+    // Ebony Cube is run whenever there are tickets, so nobody is ever "done" with it.
+    const tuckFinished = !editMode && section !== "anytime" && !isShown(FINISHED_ROWS_KEY);
+    const finished = tuckFinished
+      ? everyone.filter((c) => isFinished(c, columns, (t) => completed.has(cellKey(c.id, t.id))))
+      : [];
+    const rows = everyone.filter((c) => !finished.includes(c));
+    return { columns, rows, done, total, finished };
   }
 
   const week = sectionData("week");
@@ -307,6 +326,11 @@ export default function TrackerPage() {
     }
   }
 
+  function applyStyle(style: Style) {
+    setHiddenRaw(serializeHidden(styleHidden(style, tasks.filter((t) => t.category !== "raid" || isActiveRaid(t)))));
+    setStyleChosen(true);
+  }
+
   function setVisible(key: string, visible: boolean) {
     const next = new Set(hidden);
     if (visible) next.delete(key);
@@ -441,10 +465,92 @@ export default function TrackerPage() {
     );
   };
 
+  /** Who's tucked away for being done, with a way to show them again. */
+  const finishedNote = (finished: Character[], everyoneDone: boolean, period: string) =>
+    finished.length > 0 ? (
+      <p className={`flex flex-wrap items-center gap-x-2 px-4 py-2.5 text-xs text-muted ${everyoneDone ? "" : "border-t border-border"}`}>
+        <Check size={14} className="text-done" />
+        <span>
+          {everyoneDone ? `Everyone's done ${period}` : `${finished.map((c) => c.name).join(", ")} ${finished.length === 1 ? "is" : "are"} done ${period}`}
+        </span>
+        <button onClick={() => setVisible(FINISHED_ROWS_KEY, true)} className="underline hover:text-foreground">
+          Show
+        </button>
+      </p>
+    ) : null;
+
+  const stats = thisWeek
+    ? [
+        {
+          key: STAT_KEYS.raidsLeft,
+          node: (
+            <Stat
+              icon={<Swords size={16} />}
+              label="Gold raids left"
+              value={String(raidsLeft.left)}
+              sub={
+                raidsLeft.slots === 0
+                  ? "no gold earners with raids"
+                  : `of ${raidsLeft.slots} this week${raidsLeft.events ? ` · +${raidsLeft.events} event` : ""}`
+              }
+              title="Each gold earner is paid for 3 raids a week; event raids pay once per roster"
+              accent={raidsLeft.left > 0}
+            />
+          ),
+        },
+        {
+          key: STAT_KEYS.raidGold,
+          node: <Stat icon={<Coins size={16} />} label="Raid gold this week" value={formatGold(thisWeek.raid_gold)} sub={`of ${formatGold(possibleGold)} possible`} />,
+        },
+        {
+          key: STAT_KEYS.otherGold,
+          node: (
+            <Stat
+              icon={<Coins size={16} />}
+              label="Other gold this week"
+              value={formatGold(thisWeek.other_gold)}
+              sub={
+                <span className="flex items-center gap-2">
+                  <QuickGold onLogged={loadWeeklyGold} onError={(e) => setError(describeError(e))} />
+                  <Link href="/gold" className="underline">Gold page</Link>
+                </span>
+              }
+            />
+          ),
+        },
+        {
+          key: STAT_KEYS.total,
+          node: (
+            <Stat
+              icon={<Wallet size={16} />}
+              label="Total this week"
+              value={formatGold(thisWeek.net)}
+              sub={thisWeek.bonus_spent > 0 ? `after ${formatGold(thisWeek.bonus_spent)} on bonus boxes` : undefined}
+              accent
+            />
+          ),
+        },
+        {
+          key: STAT_KEYS.leftToUse,
+          node: (
+            <Stat
+              icon={<Wallet size={16} />}
+              label="Left to use"
+              value={formatGold(thisWeek.tradeable_left)}
+              sub={`tradeable · ${formatGold(thisWeek.roster_bound_left)} roster-bound`}
+              title="After bonus boxes, which use character-bound gold first, then roster-bound, then tradeable"
+            />
+          ),
+        },
+      ].filter((stat) => isShown(stat.key))
+    : [];
+
   const showToday = isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
   const showAnytime = isShown(SECTION_KEYS.anytime) && (anytime.columns.length > 0 || editMode);
+  // Check-ins are about spending, so they follow the "Left to use" box.
   const needsCheckIn =
     tracker &&
+    isShown(STAT_KEYS.leftToUse) &&
     lastCheckIn !== undefined &&
     checkInDismissed !== tracker.weekly_period &&
     (lastCheckIn === null || parseUtc(lastCheckIn) < parseUtc(`${tracker.weekly_period}T10:00:00`));
@@ -466,41 +572,26 @@ export default function TrackerPage() {
         </div>
       </div>
 
-      {isShown(SECTION_KEYS.gold) && thisWeek && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Stat
-            icon={<Swords size={16} />}
-            label="Gold raids left"
-            value={String(raidsLeft.left)}
-            sub={
-              raidsLeft.slots === 0
-                ? "no gold earners with raids"
-                : `of ${raidsLeft.slots} this week${raidsLeft.events ? ` · +${raidsLeft.events} event` : ""}`
-            }
-            title="Each gold earner is paid for 3 raids a week; event raids pay once per roster"
-            accent={raidsLeft.left > 0}
-          />
-          <Stat icon={<Coins size={16} />} label="Raid gold this week" value={formatGold(thisWeek.raid_gold)} sub={`of ${formatGold(possibleGold)} possible`} />
-          <Stat
-            icon={<Coins size={16} />}
-            label="Other gold this week"
-            value={formatGold(thisWeek.other_gold)}
-            sub={<Link href="/gold" className="underline">Log gold</Link>}
-          />
-          <Stat
-            icon={<Wallet size={16} />}
-            label="Total this week"
-            value={formatGold(thisWeek.net)}
-            sub={thisWeek.bonus_spent > 0 ? `after ${formatGold(thisWeek.bonus_spent)} on bonus boxes` : undefined}
-            accent
-          />
-          <Stat
-            icon={<Wallet size={16} />}
-            label="Left to use"
-            value={formatGold(thisWeek.tradeable_left)}
-            sub={`tradeable · ${formatGold(thisWeek.roster_bound_left)} roster-bound`}
-            title="After bonus boxes, which use character-bound gold first, then roster-bound, then tradeable"
-          />
+      {characters.length > 0 && !styleChosen && (
+        <section className="rounded-lg border border-accent/40 bg-surface p-4">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-semibold">How much do you want to track?</h2>
+              <p className="text-xs text-muted">Pick a starting point. You can fine-tune anything later under Customize.</p>
+            </div>
+            <button onClick={() => setStyleChosen(true)} className="shrink-0 rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-2">
+              Keep as is
+            </button>
+          </div>
+          <StyleChooser current={null} onChoose={applyStyle} />
+        </section>
+      )}
+
+      {stats.length > 0 && (
+        <div className={`grid gap-3 sm:grid-cols-2 ${STAT_COLUMNS[stats.length]}`}>
+          {stats.map((stat) => (
+            <div key={stat.key}>{stat.node}</div>
+          ))}
         </div>
       )}
 
@@ -531,7 +622,7 @@ export default function TrackerPage() {
           tasks={tasks.filter((t) => t.category !== "raid" || isActiveRaid(t))}
           hidden={hidden}
           onChange={setVisible}
-          onReset={() => setHiddenRaw(DEFAULT_HIDDEN.join("|"))}
+          onStyle={applyStyle}
           onClose={() => setCustomizing(false)}
         />
       )}
@@ -565,7 +656,9 @@ export default function TrackerPage() {
               columnNote={eventNote}
               onItemLevel={updateItemLevel}
               characterNote={goldRaidNote}
+              hideWhenEmpty={week.finished.length > 0}
             />
+            {finishedNote(week.finished, week.rows.length === 0, "this week")}
           </TrackerCard>
 
           {(showToday || showAnytime) && (
@@ -585,7 +678,14 @@ export default function TrackerPage() {
                     ) : undefined
                   }
                 >
-                  <TaskTable characters={today.rows} columns={today.columns} renderCell={renderCell} onItemLevel={updateItemLevel} />
+                  <TaskTable
+                    characters={today.rows}
+                    columns={today.columns}
+                    renderCell={renderCell}
+                    onItemLevel={updateItemLevel}
+                    hideWhenEmpty={today.finished.length > 0}
+                  />
+                  {finishedNote(today.finished, today.rows.length === 0, "today")}
                 </TrackerCard>
               )}
               {showAnytime && (
@@ -655,7 +755,7 @@ function Stat({
   title?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface px-4 py-3" title={title}>
+    <div className="h-full rounded-lg border border-border bg-surface px-4 py-3" title={title}>
       <div className="flex items-center gap-1.5 text-xs text-muted">
         {icon}
         {label}
