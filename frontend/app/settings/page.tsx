@@ -2,9 +2,11 @@
 
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 
+import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import NumberInput from "@/components/NumberInput";
 import RaidPicker, { RaidSelection, suggestedRaids } from "@/components/RaidPicker";
 import { api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task, TaskCategory } from "@/lib/api";
 import { isActiveRaid } from "@/lib/raids";
@@ -285,9 +287,15 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
 function RowActions({ onMove, onDelete }: { onMove: (direction: -1 | 1) => void; onDelete: () => void }) {
   return (
     <div className="flex justify-end gap-1 text-muted">
-      <button onClick={() => onMove(-1)} aria-label="Move up" className="rounded px-1.5 hover:bg-surface-2">↑</button>
-      <button onClick={() => onMove(1)} aria-label="Move down" className="rounded px-1.5 hover:bg-surface-2">↓</button>
-      <button onClick={onDelete} className="rounded px-1.5 text-danger hover:bg-danger/10">Delete</button>
+      <button onClick={() => onMove(-1)} aria-label="Move up" title="Move up" className="rounded-md p-1.5 hover:bg-surface-2">
+        <ArrowUp size={14} />
+      </button>
+      <button onClick={() => onMove(1)} aria-label="Move down" title="Move down" className="rounded-md p-1.5 hover:bg-surface-2">
+        <ArrowDown size={14} />
+      </button>
+      <button onClick={onDelete} aria-label="Delete" title="Delete" className="rounded-md p-1.5 text-danger hover:bg-danger/10">
+        <Trash2 size={14} />
+      </button>
     </div>
   );
 }
@@ -372,7 +380,7 @@ function AddTaskForm({ onAdd }: { onAdd: (data: object) => Promise<void> }) {
           <option key={c.value} value={c.value}>{c.label}</option>
         ))}
       </select>
-      <input type="number" min="0" placeholder="Gold" value={gold} onChange={(e) => setGold(e.target.value)} className="w-28" />
+      <NumberInput placeholder="Gold" value={gold} onChange={setGold} aria-label="Gold" className="w-28" />
       <button type="submit" className="rounded-md bg-accent px-3 py-1.5 font-medium text-background">
         Add task
       </button>
@@ -404,11 +412,9 @@ function TaskRow({
         aria-label="Task name"
       />
       <label className="flex items-center gap-1 text-muted">
-        <input
-          type="number"
-          min="0"
+        <NumberInput
           value={gold}
-          onChange={(e) => setGold(e.target.value)}
+          onChange={setGold}
           onBlur={() => (Number(gold) || 0) !== task.gold && onSave({ gold: Number(gold) || 0 })}
           className="w-24 text-foreground"
           aria-label={`${task.name} gold`}

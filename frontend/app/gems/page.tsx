@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
@@ -237,7 +238,7 @@ export default function GemsPage() {
                     className="rounded px-1.5 text-danger hover:bg-danger/10"
                     aria-label={`Delete ${entry.source} entry`}
                   >
-                    ✕
+                    <Trash2 size={14} />
                   </button>
                 </td>
               </tr>

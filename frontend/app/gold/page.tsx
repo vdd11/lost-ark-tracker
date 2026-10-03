@@ -1,9 +1,11 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import GoldCheckIn from "@/components/GoldCheckIn";
+import NumberInput from "@/components/NumberInput";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
 import { api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
 import { usePreference } from "@/lib/usePreference";
@@ -225,7 +227,7 @@ export default function GoldPage() {
                       className="rounded px-1.5 text-danger hover:bg-danger/10"
                       aria-label={`Delete ${entry.source} entry`}
                     >
-                      ✕
+                      <Trash2 size={14} />
                     </button>
                   </td>
                 </tr>
@@ -287,15 +289,7 @@ function AddGoldForm({ characters, onAdd }: { characters: Character[]; onAdd: (d
         {source === OTHER && (
           <input required placeholder="Source" value={customSource} onChange={(e) => setCustomSource(e.target.value)} />
         )}
-        <input
-          required
-          type="number"
-          min="1"
-          placeholder="Amount"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-32"
-        />
+        <NumberInput required placeholder="Amount" value={amount} onChange={setAmount} aria-label="Gold amount" className="w-32" />
         <select value={characterId} onChange={(e) => setCharacterId(e.target.value)} aria-label="Character">
           <option value="">Any character</option>
           {characters.map((c) => (

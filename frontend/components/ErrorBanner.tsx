@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+
 export default function ErrorBanner({ error, onDismiss }: { error: string | null; onDismiss?: () => void }) {
   if (!error) return null;
 
@@ -6,7 +8,7 @@ export default function ErrorBanner({ error, onDismiss }: { error: string | null
       <span>{error}</span>
       {onDismiss && (
         <button onClick={onDismiss} aria-label="Dismiss" className="shrink-0 rounded px-1 hover:bg-danger/10">
-          ✕
+          <X size={14} />
         </button>
       )}
     </div>

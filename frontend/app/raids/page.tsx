@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import NumberInput from "@/components/NumberInput";
 import { api, byPosition, Character, Difficulty, DifficultyDraft, EventTemplate, send, Task } from "@/lib/api";
 import { formatItemLevel, GOLD_RAIDS_PER_WEEK, isActiveRaid } from "@/lib/raids";
 
@@ -204,12 +205,10 @@ function EventForm({ onCreate, onError }: { onCreate: (data: object) => Promise<
                 aria-label={`${row.name} item level`}
                 className="w-24"
               />
-              <input
-                type="number"
-                min="0"
+              <NumberInput
                 placeholder="Gold"
-                value={row.gold ?? ""}
-                onChange={(e) => updateRow(index, { gold: e.target.value === "" ? null : Number(e.target.value) })}
+                value={row.gold === null ? "" : String(row.gold)}
+                onChange={(digits) => updateRow(index, { gold: digits === "" ? null : Number(digits) })}
                 aria-label={`${row.name} gold`}
                 className="w-28"
               />
@@ -385,12 +384,10 @@ function DifficultyRow({
         />
       </td>
       <td className="px-2 py-2">
-        <input
-          type="number"
-          min="0"
+        <NumberInput
           placeholder="?"
           value={gold}
-          onChange={(e) => setGold(e.target.value)}
+          onChange={setGold}
           onBlur={saveGold}
           aria-label={`${difficulty.name} gold`}
           className={`w-24 ${difficulty.gold === null ? "border-accent" : ""}`}
@@ -419,12 +416,10 @@ function DifficultyRow({
         </select>
       </td>
       <td className="px-2 py-2">
-        <input
-          type="number"
-          min="0"
+        <NumberInput
           placeholder="?"
           value={bonus}
-          onChange={(e) => setBonus(e.target.value)}
+          onChange={setBonus}
           onBlur={saveBonus}
           aria-label={`${difficulty.name} bonus chest cost`}
           className="w-24"
@@ -490,7 +485,7 @@ function AddDifficultyForm({ onAdd }: { onAdd: (data: object) => void }) {
     <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 border-t border-border px-4 py-2 text-sm">
       <input required placeholder="Difficulty, e.g. Hard" value={name} onChange={(e) => setName(e.target.value)} className="w-40" />
       <input type="number" step="any" min="0" placeholder="Item level" value={itemLevel} onChange={(e) => setItemLevel(e.target.value)} className="w-24" />
-      <input type="number" min="0" placeholder="Gold" value={gold} onChange={(e) => setGold(e.target.value)} className="w-24" />
+      <NumberInput placeholder="Gold" value={gold} onChange={setGold} aria-label="Gold" className="w-24" />
       <button type="submit" className="rounded-md border border-border px-3 py-1.5 hover:bg-surface-2">
         Add difficulty
       </button>

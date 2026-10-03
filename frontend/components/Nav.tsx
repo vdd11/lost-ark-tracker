@@ -1,5 +1,6 @@
 "use client";
 
+import { Coins, Gem, LayoutGrid, Settings2, Swords } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -7,11 +8,11 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UpdateNotice from "@/components/UpdateNotice";
 
 const LINKS = [
-  { href: "/", label: "Tracker" },
-  { href: "/raids", label: "Raids" },
-  { href: "/gold", label: "Gold" },
-  { href: "/gems", label: "Gems" },
-  { href: "/settings", label: "Settings" },
+  { href: "/", label: "Tracker", icon: LayoutGrid },
+  { href: "/raids", label: "Raids", icon: Swords },
+  { href: "/gold", label: "Gold", icon: Coins },
+  { href: "/gems", label: "Gems", icon: Gem },
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export default function Nav() {
@@ -27,10 +28,11 @@ export default function Nav() {
             <Link
               key={link.href}
               href={link.href}
-              className={`rounded px-3 py-1.5 text-sm ${
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
                 pathname === link.href ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
               }`}
             >
+              <link.icon size={16} />
               {link.label}
             </Link>
           ))}

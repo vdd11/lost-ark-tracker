@@ -1,8 +1,10 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
+import NumberInput from "@/components/NumberInput";
 import { api, BalanceCheck, Character, ExpectedBalances, formatGold, parseUtc, send } from "@/lib/api";
 
 // Character-bound gold comes from Horizon Cathedral, which starts at 1700.
@@ -87,12 +89,10 @@ export default function GoldCheckIn({
   const field = (key: string, label: string, hint?: string) => (
     <label key={key} className="flex flex-col gap-1 text-xs text-muted" title={hint}>
       {label}
-      <input
-        type="number"
-        min="0"
+      <NumberInput
         required={key === "tradeable" || key === "roster_bound"}
         value={draft[key] ?? ""}
-        onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+        onChange={(digits) => setDraft({ ...draft, [key]: digits })}
         className="w-32 text-sm text-foreground"
       />
     </label>
@@ -187,7 +187,7 @@ export default function GoldCheckIn({
                     <td className="py-1.5 pl-3 text-muted">{check.note}</td>
                     <td className="py-1.5 text-right">
                       <button onClick={() => remove(check)} aria-label="Delete check-in" className="rounded px-1.5 text-danger hover:bg-danger/10">
-                        ✕
+                        <Trash2 size={14} />
                       </button>
                     </td>
                   </tr>

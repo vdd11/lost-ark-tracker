@@ -1,14 +1,16 @@
 "use client";
 
+import { Check, ChevronDown, Gift } from "lucide-react";
 import { useState } from "react";
 
 import { Character, formatGold, Run, Task } from "@/lib/api";
-import { bestDifficulty, difficultyOf, formatItemLevel, formatShortGold, shortDifficulty } from "@/lib/raids";
+import { bestDifficulty, difficultyOf, formatItemLevel, formatShortGold } from "@/lib/raids";
 
 /**
- * A raid cell: a checkbox plus the difficulty run, which can be changed right
- * here. Raids the character doesn't usually run show faded, so an extra clear
- * can still be ticked.
+ * A raid cell: a checkbox, the difficulty (a dropdown you can change right
+ * here), and once cleared, a "Bonus box" button for the View More chests.
+ * Raids the character doesn't usually run show faded, so an extra clear can
+ * still be ticked.
  */
 export default function RaidCell({
   task,
@@ -34,8 +36,8 @@ export default function RaidCell({
 
   if (clearedBy) {
     return (
-      <div className="flex h-12 items-center justify-center text-[11px] text-muted" title={`${task.name} is one clear per roster per week`}>
-        ✓ {clearedBy}
+      <div className="flex h-full min-h-14 items-center justify-center gap-1 text-xs text-muted" title={`${task.name} is one clear per roster per week`}>
+        <Check size={14} /> {clearedBy}
       </div>
     );
   }
@@ -49,53 +51,60 @@ export default function RaidCell({
 
   return (
     <div
-      className={`${done ? "bg-done/15" : ""} ${extra && !done ? "opacity-35 hover:opacity-100 focus-within:opacity-100" : ""}`}
+      className={`flex flex-col items-center gap-1.5 px-1 py-2 ${done ? "bg-done/15" : ""} ${
+        extra && !done ? "opacity-40 hover:opacity-100 focus-within:opacity-100" : ""
+      }`}
       title={extra ? `Not one of ${character.name}'s usual raids. Check it if you ran it this week.` : undefined}
     >
-      <label className="flex h-7 cursor-pointer items-end justify-center">
-        <input
-          type="checkbox"
-          checked={done}
-          onChange={() => onToggle(!done, shownId)}
-          aria-label={`${task.name} for ${character.name}`}
-          className="h-4 w-4 cursor-pointer"
-        />
+      <input
+        type="checkbox"
+        checked={done}
+        onChange={() => onToggle(!done, shownId)}
+        aria-label={`${task.name} cleared by ${character.name}`}
+        className="h-5 w-5 cursor-pointer"
+      />
+
+      <label className="relative" title={underLevel && shown ? `${shown.name} needs item level ${formatItemLevel(shown.min_item_level)}` : "Change difficulty"}>
+        <select
+          value={shownId ?? ""}
+          onChange={(e) => {
+            const id = Number(e.target.value);
+            if (extra) setChoice(id);
+            onDifficulty(id, done);
+          }}
+          aria-label={`${task.name} difficulty for ${character.name}`}
+          className={`w-36 cursor-pointer appearance-none truncate rounded-md border py-0.5 pl-2 pr-6 text-xs ${
+            underLevel ? "border-danger/50 text-danger" : "border-border text-foreground"
+          } bg-surface hover:bg-surface-2`}
+        >
+          {task.difficulties.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name} · {formatShortGold(d.gold)}
+              {d.min_item_level > character.item_level ? ` (needs ${formatItemLevel(d.min_item_level)})` : ""}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={12} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-muted" />
       </label>
-      <select
-        value={shownId ?? ""}
-        onChange={(e) => {
-          const id = Number(e.target.value);
-          if (extra) setChoice(id);
-          onDifficulty(id, done);
-        }}
-        aria-label={`${task.name} difficulty for ${character.name}`}
-        title={underLevel && shown ? `${shown.name} needs item level ${formatItemLevel(shown.min_item_level)}` : undefined}
-        className={`mx-auto mb-1 block cursor-pointer appearance-none rounded border-0 bg-transparent px-1 py-0.5 text-center text-[11px] hover:bg-surface-2 ${
-          underLevel ? "text-danger" : "text-muted"
-        }`}
-      >
-        {task.difficulties.map((d) => (
-          <option key={d.id} value={d.id}>
-            {shortDifficulty(d.name)} · {formatShortGold(d.gold)}
-            {d.min_item_level > character.item_level ? " ⚠" : ""}
-          </option>
-        ))}
-      </select>
+
       {done && (
         <button
           onClick={() => onBonus(!run!.bought_bonus)}
           aria-pressed={run!.bought_bonus}
-          aria-label={`Bought the ${task.name} bonus chests for ${character.name}`}
+          aria-label={`Bought the ${task.name} bonus box on ${character.name}`}
           title={
             shown?.bonus_cost == null
-              ? "Bonus chest cost unknown for this difficulty: set it on the Raids page"
-              : `Bonus ("View More") chests for every gate: ${formatGold(shown.bonus_cost)} gold`
+              ? "Bonus box cost unknown for this difficulty: set it on the Raids page"
+              : `Bought the bonus ("View More") boxes for every gate: ${formatGold(shown.bonus_cost)} gold`
           }
-          className={`mx-auto mb-1 block rounded px-1 text-[10px] leading-tight ${
-            run!.bought_bonus ? "bg-accent/15 font-medium text-accent" : "text-muted/70 hover:bg-surface-2 hover:text-muted"
+          className={`flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] ${
+            run!.bought_bonus
+              ? "bg-accent/20 font-medium text-accent"
+              : "border border-dashed border-border text-muted hover:border-accent/60 hover:text-foreground"
           }`}
         >
-          {run!.bought_bonus ? `−${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)} bonus` : "+ bonus"}
+          <Gift size={12} />
+          {run!.bought_bonus ? `Bought −${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)}` : "Bonus box"}
         </button>
       )}
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown, Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Character, Difficulty, formatCombinedGems, formatGems, gemsToLv1, Run, Task } from "@/lib/api";
@@ -84,21 +85,22 @@ export default function ContentCell({
     run?.lucky_rooms ? `L${run.lucky_rooms}` : null,
     run?.mega_rooms ? `M${run.mega_rooms}` : null,
   ].filter(Boolean);
-  const stepper = "h-6 w-6 rounded text-muted hover:bg-surface-2 hover:text-foreground disabled:opacity-30";
+  const stepper =
+    "flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted hover:bg-surface-2 hover:text-foreground disabled:opacity-30";
 
   return (
-    <div className={done ? "bg-done/15" : ""}>
-      <div className="flex h-7 items-end justify-center gap-1">
+    <div className={`flex flex-col items-center gap-1.5 px-1 py-2 ${done ? "bg-done/15" : ""}`}>
+      <div className="flex items-center justify-center gap-1.5">
         {task.counted ? (
           <>
             <button onClick={() => onChange({ count: ownCount - 1 })} disabled={ownCount === 0} aria-label={`One fewer ${label} run`} className={stepper}>
-              −
+              <Minus size={14} />
             </button>
-            <span className="min-w-4 pb-0.5 tabular-nums" aria-label={`${ownCount} ${label} runs at ${tier?.name ?? "their"} unlock`}>
+            <span className="min-w-5 text-center text-base font-medium tabular-nums" aria-label={`${ownCount} ${label} runs at ${tier?.name ?? "their"} unlock`}>
               {ownCount}
             </span>
             <button onClick={() => onChange({ count: ownCount + 1 })} aria-label={`One more ${label} run`} className={stepper}>
-              +
+              <Plus size={14} />
             </button>
           </>
         ) : (
@@ -107,7 +109,7 @@ export default function ContentCell({
             checked={done}
             onChange={() => (done ? onRemove() : onChange({}))}
             aria-label={label}
-            className="h-4 w-4 cursor-pointer"
+            className="h-5 w-5 cursor-pointer"
           />
         )}
       </div>
@@ -116,10 +118,12 @@ export default function ContentCell({
         onClick={toggleDetails}
         aria-expanded={Boolean(open)}
         aria-label={`${label}: ${tier?.name ?? ""} details`}
-        className="mx-auto mb-1 block rounded px-1 py-0.5 text-[11px] leading-none text-muted hover:bg-surface-2"
+        title={task.counted ? "Lower unlocks, lucky rooms" : "Sands of Trial, lucky rooms"}
+        className="flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground"
       >
-        {tier?.name ?? "—"}
+        {tier ? (task.counted ? `${tier.name} unlock` : tier.name) : "—"}
         {extras.length > 0 && <span className="text-accent"> · {extras.join(" ")}</span>}
+        <ChevronDown size={12} />
       </button>
 
       {open && (
