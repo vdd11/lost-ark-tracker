@@ -1,10 +1,11 @@
 "use client";
 
-import { Box, CalendarDays, Coins, Flame, Pencil, Settings2, Sun, TrendingUp, Wallet, X } from "lucide-react";
+import { Box, CalendarDays, Check, Coins, Swords, Flame, Pencil, Settings2, Sun, TrendingUp, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import ContentCell, { RunChanges } from "@/components/ContentCell";
+import DifficultySelect from "@/components/DifficultySelect";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
@@ -28,8 +29,9 @@ import {
 } from "@/lib/api";
 import {
   difficultyOf,
-  formatItemLevel,
   GOLD_RAIDS_PER_WEEK,
+  goldRaidsLeft,
+  goldRaidWeek,
   isActiveRaid,
   paidRaids,
   possibleRaidGold,
@@ -168,7 +170,9 @@ export default function TrackerPage() {
     (r) => r.rested_run_available && today.columns.some((t) => t.id === r.task_id),
   ).length;
 
-  const possibleGold = possibleRaidGold(characters, tasks);
+  const runs = tracker?.runs ?? [];
+  const possibleGold = possibleRaidGold(characters, tasks, runs);
+  const raidsLeft = goldRaidsLeft(characters, tasks, runs);
   const hasUnknownGold = characters.some((c) =>
     tasks.some((t) => isActiveRaid(t) && isTiered(t) && c.task_ids.includes(t.id) && raidGold(c, t) === null),
   );
@@ -322,21 +326,16 @@ export default function TrackerPage() {
       if (isTiered(task)) {
         const difficulty = difficultyOf(character, task);
         return (
-          <div className="px-1 py-2">
-            <select
-              value={isAssigned ? (difficulty?.id ?? "") : ""}
-              onChange={(e) => setRaidDifficulty(character, task, e.target.value ? Number(e.target.value) : null)}
-              aria-label={`${task.name} for ${character.name}`}
-              className={`w-full py-1 text-xs ${isAssigned ? "border-accent bg-accent/15 font-medium" : "text-muted"}`}
-            >
-              <option value="">Doesn&apos;t run</option>
-              {task.difficulties.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({formatItemLevel(d.min_item_level)})
-                  {d.min_item_level > character.item_level ? " – too low" : ""}
-                </option>
-              ))}
-            </select>
+          <div className="flex justify-center px-1 py-3">
+            <DifficultySelect
+              task={task}
+              character={character}
+              value={isAssigned ? (difficulty?.id ?? null) : null}
+              onChange={(id) => setRaidDifficulty(character, task, id)}
+              noneLabel={task.counted ? "Doesn't do it" : "Doesn't run"}
+              label={`${task.name} for ${character.name}`}
+              highlight
+            />
           </div>
         );
       }
@@ -423,13 +422,23 @@ export default function TrackerPage() {
     },
   };
 
-  const goldRaidWarning = (character: Character) => {
-    const count = paidRaids(character, tasks).length;
-    return count > GOLD_RAIDS_PER_WEEK ? (
-      <div className="text-[11px] text-accent" title="Only the first raids you clear each week pay gold">
-        {count} gold raids, {GOLD_RAIDS_PER_WEEK} pay
+  const goldRaidNote = (character: Character) => {
+    const { slots, left } = goldRaidWeek(character, tasks, runs);
+    if (slots === 0) return null;
+    const usual = paidRaids(character, tasks).length;
+    const title =
+      usual > GOLD_RAIDS_PER_WEEK
+        ? `Runs ${usual} raids, but only the first ${GOLD_RAIDS_PER_WEEK} cleared each week pay gold`
+        : `Only the first ${GOLD_RAIDS_PER_WEEK} raids cleared each week pay gold`;
+    return left === 0 ? (
+      <div className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-done" title={title}>
+        <Check size={12} /> Gold raids done
       </div>
-    ) : null;
+    ) : (
+      <div className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-accent" title={title}>
+        <Swords size={12} /> {left} gold raid{left === 1 ? "" : "s"} left
+      </div>
+    );
   };
 
   const showToday = isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
@@ -458,7 +467,19 @@ export default function TrackerPage() {
       </div>
 
       {isShown(SECTION_KEYS.gold) && thisWeek && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Stat
+            icon={<Swords size={16} />}
+            label="Gold raids left"
+            value={String(raidsLeft.left)}
+            sub={
+              raidsLeft.slots === 0
+                ? "no gold earners with raids"
+                : `of ${raidsLeft.slots} this week${raidsLeft.events ? ` · +${raidsLeft.events} event` : ""}`
+            }
+            title="Each gold earner is paid for 3 raids a week; event raids pay once per roster"
+            accent={raidsLeft.left > 0}
+          />
           <Stat icon={<Coins size={16} />} label="Raid gold this week" value={formatGold(thisWeek.raid_gold)} sub={`of ${formatGold(possibleGold)} possible`} />
           <Stat
             icon={<Coins size={16} />}
@@ -543,7 +564,7 @@ export default function TrackerPage() {
               renderCell={renderCell}
               columnNote={eventNote}
               onItemLevel={updateItemLevel}
-              characterNote={goldRaidWarning}
+              characterNote={goldRaidNote}
             />
           </TrackerCard>
 

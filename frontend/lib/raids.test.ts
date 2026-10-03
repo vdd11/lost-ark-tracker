@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { Character, Difficulty, Task } from "./api";
+import { Character, Difficulty, Run, Task } from "./api";
 import {
   bestDifficulty,
   canRun,
   formatShortGold,
+  goldRaidsLeft,
+  goldRaidWeek,
   isActiveRaid,
   paidRaids,
   possibleRaidGold,
@@ -108,7 +110,8 @@ describe("possibleRaidGold", () => {
   });
 
   it("counts a roster-limited event once, at the best assigned tier", () => {
-    const a = character(1760, [[extreme, "Hard"]]);
+    // Event raids pay even characters that aren't gold earners.
+    const a = character(1760, [[extreme, "Hard"]], { is_gold_earner: false });
     const b = character(1725, [[extreme, "Normal"]], { is_gold_earner: false });
     expect(possibleRaidGold([a, b], raids)).toBe(45000);
   });
@@ -116,6 +119,52 @@ describe("possibleRaidGold", () => {
   it("treats unknown gold as zero", () => {
     const unknown = raid("Mystery", [["Normal", 1700, null]]);
     expect(possibleRaidGold([character(1700, [[unknown, "Normal"]])], [unknown])).toBe(0);
+  });
+});
+
+function clear(who: Character, task: Task, tier: string): Run {
+  return {
+    character_id: who.id, task_id: task.id, difficulty_id: task.difficulties.find((d) => d.name === tier)!.id,
+    count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0, bought_bonus: false, bonus_spent: 0,
+    tier_counts: null, gems: null,
+  };
+}
+
+describe("goldRaidWeek", () => {
+  const usual: [Task, string][] = [[serca, "Nightmare"], [cathedral, "Lv3"], [finalDay, "Hard"]];
+
+  it("counts down the three paying raids", () => {
+    const main = character(1770, usual);
+    expect(goldRaidWeek(main, raids, [])).toMatchObject({ slots: 3, cleared: 0, left: 3, possible: 152000 });
+    expect(goldRaidWeek(main, raids, [clear(main, serca, "Nightmare")])).toMatchObject({ cleared: 1, left: 2, possible: 152000 });
+  });
+
+  it("doesn't raise possible gold for a fourth clear", () => {
+    const main = character(1770, usual);
+    const runs = [...usual.map(([task, tier]) => clear(main, task, tier)), clear(main, act4, "Hard")];
+    expect(goldRaidWeek(main, raids, runs)).toMatchObject({ cleared: 3, left: 0, possible: 152000 });
+  });
+
+  it("counts an extra clear instead of a usual raid, so earned never passes possible", () => {
+    const alt = character(1770, [[serca, "Nightmare"], [cathedral, "Lv3"]]);
+    const runs = [clear(alt, serca, "Nightmare"), clear(alt, finalDay, "Hard")];
+    expect(goldRaidWeek(alt, raids, runs)).toMatchObject({ slots: 3, cleared: 2, left: 1, possible: 152000 });
+  });
+
+  it("fills missing usual raids with the best ones they can enter", () => {
+    const fresh = character(1725, []);
+    expect(goldRaidWeek(fresh, raids, [])).toMatchObject({ slots: 3, left: 3, possible: 40000 + 38000 + 32000 });
+    const low = character(1690, []);
+    expect(goldRaidWeek(low, raids, [])).toMatchObject({ slots: 0, left: 0, possible: 0 });
+  });
+
+  it("totals what's left across the roster, with one roster-wide event", () => {
+    const a = character(1770, usual);
+    const b = character(1770, usual);
+    const runs = [clear(a, serca, "Nightmare")];
+    expect(goldRaidsLeft([a, b], raids, runs)).toEqual({ left: 5, slots: 6, events: 1 });
+    expect(goldRaidsLeft([a, b], raids, [...runs, clear(b, extreme, "Hard")]).events).toBe(0);
+    expect(possibleRaidGold([a, b], raids, [clear(b, extreme, "Hard")])).toBe(2 * 152000 + 45000);
   });
 });
 

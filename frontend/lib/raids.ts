@@ -1,4 +1,4 @@
-import { Character, Difficulty, Task } from "./api";
+import { Character, Difficulty, Run, Task } from "./api";
 
 /** Gold is only paid for this many raids per character per week. */
 export const GOLD_RAIDS_PER_WEEK = 3;
@@ -62,19 +62,90 @@ export function paidRaids(character: Character, tasks: Task[]) {
   return tasks.filter((t) => isActiveRaid(t) && !t.gold_for_everyone && character.task_ids.includes(t.id));
 }
 
+/** Gold a clear this week pays at the difficulty it was run on. */
+function runGold(task: Task, run: Run) {
+  if (!task.difficulties.length) return task.gold;
+  return task.difficulties.find((d) => d.id === run.difficulty_id)?.gold ?? 0;
+}
+
+const sumTop = (golds: number[], n: number) =>
+  [...golds].sort((a, b) => b - a).slice(0, Math.max(0, n)).reduce((sum, g) => sum + g, 0);
+
+export type GoldRaidWeek = {
+  /** Raids that will pay this week: up to 3, from clears plus usual raids. */
+  slots: number;
+  /** Paying clears so far (extra clears past the limit don't count). */
+  cleared: number;
+  left: number;
+  possible: number;
+};
+
+/**
+ * A gold earner's week. Clears count first (even raids they don't usually
+ * run), then their usual raids fill the remaining slots, then the best other
+ * raids they can enter, so the gold earned can never pass what's possible.
+ */
+export function goldRaidWeek(character: Character, tasks: Task[], runs: Run[] = []): GoldRaidWeek {
+  if (!character.is_gold_earner) return { slots: 0, cleared: 0, left: 0, possible: 0 };
+  const mine = new Map(runs.filter((r) => r.character_id === character.id).map((r) => [r.task_id, r]));
+  const raids = tasks.filter((t) => isActiveRaid(t) && !t.gold_for_everyone);
+  const clearedGold = raids.filter((t) => mine.has(t.id)).map((t) => runGold(t, mine.get(t.id)!));
+  const usual = paidRaids(character, tasks).filter((t) => !mine.has(t.id));
+  const others = topGoldRaids(
+    raids.filter((t) => !mine.has(t.id) && !usual.includes(t)),
+    character.item_level,
+    GOLD_RAIDS_PER_WEEK - clearedGold.length - usual.length,
+  );
+  const plannedGold = [
+    ...usual.map((t) => raidGold(character, t) ?? 0),
+    ...others.map(({ difficulty }) => difficulty.gold ?? 0),
+  ];
+  const cleared = Math.min(clearedGold.length, GOLD_RAIDS_PER_WEEK);
+  const slots = Math.min(GOLD_RAIDS_PER_WEEK, clearedGold.length + plannedGold.length);
+  const left = slots - cleared;
+  return {
+    slots,
+    cleared,
+    left,
+    possible: sumTop(clearedGold, GOLD_RAIDS_PER_WEEK) + sumTop(plannedGold, left),
+  };
+}
+
+/** Event (Extreme) raids pay any character; roster-limited ones once per roster. */
+function eventWeeks(characters: Character[], tasks: Task[], runs: Run[]) {
+  return tasks
+    .filter((t) => isActiveRaid(t) && t.gold_for_everyone)
+    .map((task) => {
+      const clears = runs.filter((r) => r.task_id === task.id);
+      const golds = characters.map((c) => {
+        const run = clears.find((r) => r.character_id === c.id);
+        if (run) return runGold(task, run);
+        return c.task_ids.includes(task.id) ? (raidGold(c, task) ?? 0) : 0;
+      });
+      const runnable = characters.some((c) => canRun(c, task));
+      return task.roster_limited
+        ? {
+            possible: clears.length ? Math.max(...clears.map((r) => runGold(task, r))) : Math.max(0, ...golds),
+            left: clears.length === 0 && runnable ? 1 : 0,
+          }
+        : { possible: golds.reduce((sum, g) => sum + g, 0), left: 0 };
+    });
+}
+
 /** Most raid gold the roster can make this week, honoring the weekly limits. */
-export function possibleRaidGold(characters: Character[], tasks: Task[]) {
-  let total = 0;
-  for (const character of characters) {
-    const golds = paidRaids(character, tasks).map((t) => raidGold(character, t) ?? 0);
-    total += golds.sort((a, b) => b - a).slice(0, GOLD_RAIDS_PER_WEEK).reduce((sum, g) => sum + g, 0);
-  }
-  // Extreme raids pay any character, but only one clear per roster.
-  for (const task of tasks.filter((t) => isActiveRaid(t) && t.gold_for_everyone)) {
-    const golds = characters.filter((c) => c.task_ids.includes(task.id)).map((c) => raidGold(c, task) ?? 0);
-    total += task.roster_limited ? Math.max(0, ...golds) : golds.reduce((sum, g) => sum + g, 0);
-  }
-  return total;
+export function possibleRaidGold(characters: Character[], tasks: Task[], runs: Run[] = []) {
+  const raids = characters.reduce((sum, c) => sum + goldRaidWeek(c, tasks, runs).possible, 0);
+  return raids + eventWeeks(characters, tasks, runs).reduce((sum, e) => sum + e.possible, 0);
+}
+
+/** Gold-paying raids still to run this week, across the roster. */
+export function goldRaidsLeft(characters: Character[], tasks: Task[], runs: Run[] = []) {
+  const weeks = characters.map((c) => goldRaidWeek(c, tasks, runs));
+  return {
+    left: weeks.reduce((sum, w) => sum + w.left, 0),
+    slots: weeks.reduce((sum, w) => sum + w.slots, 0),
+    events: eventWeeks(characters, tasks, runs).reduce((sum, e) => sum + e.left, 0),
+  };
 }
 
 export function formatItemLevel(value: number) {
