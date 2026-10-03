@@ -6,6 +6,17 @@ from sqlalchemy.orm import Mapped, mapped_column
 from database import Base
 
 
+class Account(Base):
+    """A game account: its own roster, with its own gold earners and
+    once-per-roster clears."""
+
+    __tablename__ = "accounts"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(50))
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
 class Character(Base):
     __tablename__ = "characters"
 
@@ -16,6 +27,8 @@ class Character(Base):
     # Only a limited number of characters per roster earn raid gold.
     is_gold_earner: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Older databases put everyone on the first account (see accounts.py).
+    account_id: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
 
 class Task(Base):
@@ -148,6 +161,8 @@ class GoldEntry(Base):
     source: Mapped[str] = mapped_column(String(50))
     amount: Mapped[int] = mapped_column(Integer)
     character_id: Mapped[int | None] = mapped_column(ForeignKey("characters.id"), nullable=True)
+    # For gold not tied to a character; otherwise the character's account counts.
+    account_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
     earned_at: Mapped[datetime] = mapped_column(DateTime)
 

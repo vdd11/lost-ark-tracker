@@ -172,7 +172,13 @@ def complete_task(
         other = (
             db.query(Character.name)
             .join(Completion, Completion.character_id == Character.id)
-            .filter(Completion.task_id == task_id, Completion.period == period, Character.id != character_id)
+            .filter(
+                Completion.task_id == task_id,
+                Completion.period == period,
+                Character.id != character_id,
+                # Once per roster: each account gets its own clear.
+                Character.account_id == character.account_id,
+            )
             .first()
         )
         if other is not None:

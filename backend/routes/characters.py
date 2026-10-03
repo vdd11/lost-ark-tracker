@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Character, CharacterTask, Completion, GoldEntry, RaidDifficulty, Task
+from accounts import first_account_id
+from models import Account, Character, CharacterTask, Completion, GoldEntry, RaidDifficulty, Task
 from schemas import (
     AssignTask,
     CharacterCreate,
@@ -51,10 +52,17 @@ def choose_difficulty(db: Session, task: Task, character: Character, difficulty_
     return chosen.id if chosen else None
 
 
+def check_account(db: Session, account_id: int | None) -> int:
+    if account_id is None:
+        return first_account_id(db)
+    return get_or_404(db, Account, account_id).id
+
+
 @router.post("/characters", response_model=CharacterRead, status_code=201)
 def create_character(character_data: CharacterCreate, db: Session = Depends(get_db)):
     character = Character(
-        **character_data.model_dump(exclude={"raids"}),
+        **character_data.model_dump(exclude={"raids", "account_id"}),
+        account_id=check_account(db, character_data.account_id),
         position=next_position(db, Character),
     )
 
@@ -90,6 +98,8 @@ def create_character(character_data: CharacterCreate, db: Session = Depends(get_
 def update_character(character_id: int, changes: CharacterUpdate, db: Session = Depends(get_db)):
     character = get_or_404(db, Character, character_id)
     old_item_level = character.item_level
+    if changes.account_id is not None:
+        check_account(db, changes.account_id)
 
     for field, value in changes.model_dump(exclude_unset=True).items():
         setattr(character, field, value)

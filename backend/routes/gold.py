@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from balances import evaluate_checks
 from database import get_db
-from models import Character, Completion, GoldEntry
+from models import Account, Character, Completion, GoldEntry
 from resets import utc_now, week_of, weekly_reset_before
 from schemas import (
     CharacterBoundGold,
@@ -32,10 +32,13 @@ def get_gold_entries(limit: int = Query(default=100, le=1000), db: Session = Dep
 
 @router.post("/gold-entries", response_model=GoldEntryRead, status_code=201)
 def create_gold_entry(entry_data: GoldEntryCreate, db: Session = Depends(get_db)):
-    if entry_data.character_id is not None:
-        get_or_404(db, Character, entry_data.character_id)
-
     values = entry_data.model_dump()
+    if entry_data.character_id is not None:
+        # A character's gold always counts toward their own account.
+        values["account_id"] = get_or_404(db, Character, entry_data.character_id).account_id
+    elif entry_data.account_id is not None:
+        get_or_404(db, Account, entry_data.account_id)
+
     earned_at = to_naive_utc(values.pop("earned_at"))
     entry = GoldEntry(**values, earned_at=earned_at)
     db.add(entry)
@@ -75,8 +78,13 @@ def spend_bonus_chests(bucket: WeeklyGold, by_character: dict[int | None, list[i
 
 
 @router.get("/gold/weekly", response_model=list[WeeklyGold])
-def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = Depends(get_db)):
-    """Gold per reset week, oldest first: raid clears plus manually logged gold."""
+def get_weekly_gold(
+    weeks: int = Query(default=12, ge=1, le=104),
+    account_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """Gold per reset week, oldest first: raid clears plus manually logged gold.
+    With account_id, only that account's characters (and gold logged to it)."""
     current_week = week_of(utc_now())
     week_starts = [current_week - timedelta(weeks=i) for i in reversed(range(weeks))]
     first_reset = weekly_reset_before(utc_now()) - timedelta(weeks=weeks - 1)
@@ -86,6 +94,12 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
         for week in week_starts
     }
     names = dict(db.query(Character.id, Character.name).all())
+    account_of = dict(db.query(Character.id, Character.account_id).all())
+
+    def in_account(character_id: int | None, entry_account: int | None = None) -> bool:
+        if account_id is None:
+            return True
+        return (account_of.get(character_id) if character_id is not None else entry_account) == account_id
 
     def credit(bucket: WeeklyGold, character_id: int | None, amount: int):
         who = names.get(character_id, "Unassigned")
@@ -97,6 +111,7 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
         .filter((Completion.gold > 0) | (Completion.bonus_spent > 0))
         .all()
     )
+    completions = [c for c in completions if in_account(c.character_id)]
     for completion in completions:
         bucket = totals.get(week_of(completion.completed_at))
         if bucket is not None:
@@ -108,6 +123,8 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
 
     entries = db.query(GoldEntry).filter(GoldEntry.earned_at >= first_reset).all()
     for entry in entries:
+        if not in_account(entry.character_id, entry.account_id):
+            continue
         bucket = totals.get(week_of(entry.earned_at))
         if bucket is not None:
             bucket.other_gold += entry.amount
@@ -122,7 +139,8 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
             entry[0] += completion.character_bound_gold
             entry[1] += completion.bonus_spent
 
-    for result in evaluate_checks(db):
+    # Check-ins cover all accounts together.
+    for result in evaluate_checks(db) if account_id is None else []:
         bucket = totals.get(week_of(result.check.checked_at))
         if bucket is not None and result.untracked_total is not None:
             bucket.untracked_spent = (bucket.untracked_spent or 0) + result.untracked_total

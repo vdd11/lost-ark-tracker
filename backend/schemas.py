@@ -13,11 +13,31 @@ class RaidChoice(BaseModel):
     difficulty_id: int | None = None
 
 
+class AccountCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+
+
+class AccountUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    position: int | None = None
+
+
+class AccountRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    position: int
+    characters: int = 0
+
+
 class CharacterCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     class_name: str = Field(min_length=1, max_length=50)
     item_level: float = 0
     is_gold_earner: bool = True
+    # Defaults to the first account.
+    account_id: int | None = None
     raids: list[RaidChoice] = []
 
 
@@ -27,6 +47,7 @@ class CharacterUpdate(BaseModel):
     item_level: float | None = None
     is_gold_earner: bool | None = None
     position: int | None = None
+    account_id: int | None = None
 
 
 class CharacterRead(BaseModel):
@@ -38,6 +59,7 @@ class CharacterRead(BaseModel):
     item_level: float
     is_gold_earner: bool
     position: int
+    account_id: int = 1
     task_ids: list[int] = []
     # task_id -> difficulty_id for assigned raids that have difficulties.
     difficulty_ids: dict[int, int] = {}
@@ -224,6 +246,8 @@ class GoldEntryCreate(BaseModel):
     source: str = Field(min_length=1, max_length=50)
     amount: int = Field(gt=0)
     character_id: int | None = None
+    # Only for gold not tied to a character.
+    account_id: int | None = None
     note: str | None = Field(default=None, max_length=200)
     earned_at: datetime | None = None
 
@@ -235,6 +259,7 @@ class GoldEntryRead(BaseModel):
     source: str
     amount: int
     character_id: int | None
+    account_id: int | None = None
     note: str | None
     earned_at: datetime
 
@@ -343,3 +368,23 @@ class WeeklyGems(BaseModel):
     by_source: dict[str, float]
     by_level: dict[int, float]
     by_character: dict[str, float] = {}
+
+
+class ServerStatus(BaseModel):
+    region: str
+    name: str
+    # As the official page labels it: good, busy, full or maintenance.
+    status: str
+
+
+class NewsItem(BaseModel):
+    title: str
+    url: str
+    date: datetime
+
+
+class NewsFeed(BaseModel):
+    servers: list[ServerStatus] = []
+    servers_error: str | None = None
+    news: list[NewsItem] = []
+    news_error: str | None = None

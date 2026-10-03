@@ -15,8 +15,10 @@ import ItemLevelPanel from "@/components/tracker/ItemLevelPanel";
 import StyleChooser from "@/components/tracker/StyleChooser";
 import TaskTable, { ExtraColumn } from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
+import NewsWidget from "@/components/tracker/NewsWidget";
 import { GemWidget, GoldGoalWidget, GoldMonthWidget } from "@/components/tracker/Widgets";
 import {
+  Account,
   api,
   byPosition,
   Character,
@@ -82,7 +84,10 @@ function isTiered(task: Task) {
 }
 
 export default function TrackerPage() {
-  const [characters, setCharacters] = useState<Character[]>([]);
+  const [allCharacters, setCharacters] = useState<Character[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  // Which account's roster to show; 0 is all of them.
+  const [chosenAccount, setChosenAccount] = usePreference<number>("tracker-account", 0);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tracker, setTracker] = useState<TrackerState | null>(null);
   const [thisWeek, setThisWeek] = useState<WeeklyGold | null>(null);
@@ -107,10 +112,16 @@ export default function TrackerPage() {
 
   const hidden = useMemo(() => parseHidden(hiddenRaw), [hiddenRaw]);
   const isShown = (key: string) => !hidden.has(key);
+  // A remembered account that's since been removed falls back to all.
+  const accountId = accounts.length > 1 && accounts.some((a) => a.id === chosenAccount) ? chosenAccount : 0;
+  const characters = useMemo(
+    () => (accountId ? allCharacters.filter((c) => c.account_id === accountId) : allCharacters),
+    [allCharacters, accountId],
+  );
 
   const loadWeeklyGold = useCallback(() => {
     // Nine weeks: this one, plus two runs of four finished weeks to compare.
-    api<WeeklyGold[]>("/gold/weekly?weeks=9")
+    api<WeeklyGold[]>(`/gold/weekly?weeks=9${accountId ? `&account_id=${accountId}` : ""}`)
       .then((weeks) => {
         setGoldWeeks(weeks);
         setThisWeek(weeks[weeks.length - 1]);
@@ -123,10 +134,11 @@ export default function TrackerPage() {
     api<ExpectedBalances | null>("/balances/expected")
       .then((data) => {
         setLastCheckIn(data ? data.last_check_in : null);
-        setBalance(data ? data.expected.total : null);
+        // Check-ins cover every account, so they only apply to the all-accounts view.
+        setBalance(data && !accountId ? data.expected.total : null);
       })
       .catch(() => {});
-  }, []);
+  }, [accountId]);
 
   // Rest, runs and roster limits depend on check-offs, so re-read after changes.
   const refreshTracker = useCallback(() => {
@@ -139,9 +151,15 @@ export default function TrackerPage() {
   }, []);
 
   const loadAll = useCallback(() => {
-    Promise.all([api<Character[]>("/characters"), api<Task[]>("/tasks"), api<TrackerState>("/tracker")])
-      .then(([characterData, taskData, trackerData]) => {
+    Promise.all([
+      api<Character[]>("/characters"),
+      api<Task[]>("/tasks"),
+      api<TrackerState>("/tracker"),
+      api<Account[]>("/accounts"),
+    ])
+      .then(([characterData, taskData, trackerData, accountData]) => {
         setCharacters(characterData);
+        setAccounts(accountData);
         setTasks(taskData);
         setTracker(trackerData);
         setCompleted(new Set(trackerData.completed.map(([c, t]) => cellKey(c, t))));
@@ -174,7 +192,8 @@ export default function TrackerPage() {
     () => new Map<string, Run>((tracker?.runs ?? []).map((r) => [cellKey(r.character_id, r.task_id), r])),
     [tracker],
   );
-  const namesById = new Map(characters.map((c) => [c.id, c.name]));
+  const namesById = new Map(allCharacters.map((c) => [c.id, c.name]));
+  const accountOf = new Map(allCharacters.map((c) => [c.id, c.account_id]));
   const roster = [...characters].sort(byPosition);
 
   /** A card's columns and rows. Outside edit mode, only what applies to someone. */
@@ -395,8 +414,14 @@ export default function TrackerPage() {
 
     if (task.category === "raid" && isTiered(task)) {
       if (!appliesTo(character, task)) return dash;
+      // Once per roster: only a clear on this character's own account blocks it.
       const otherClear = task.roster_limited
-        ? (tracker?.runs ?? []).find((r) => r.task_id === task.id && r.character_id !== character.id)
+        ? (tracker?.runs ?? []).find(
+            (r) =>
+              r.task_id === task.id &&
+              r.character_id !== character.id &&
+              accountOf.get(r.character_id) === character.account_id,
+          )
         : undefined;
       return (
         <RaidCell
@@ -515,7 +540,7 @@ export default function TrackerPage() {
                   ? "no gold earners with raids"
                   : `of ${raidsLeft.slots} this week${raidsLeft.events ? ` · +${raidsLeft.events} event` : ""}`
               }
-              title="Each gold earner is paid for 3 raids a week; event raids pay once per roster"
+              title="Each gold earner is paid for 3 raids a week; event raids pay once per account"
               accent={raidsLeft.left > 0}
             />
           ),
@@ -533,7 +558,11 @@ export default function TrackerPage() {
               value={formatGold(thisWeek.other_gold)}
               sub={
                 <span className="flex items-center gap-2">
-                  <QuickGold onLogged={loadWeeklyGold} onError={(e) => setError(describeError(e))} />
+                  <QuickGold
+                    accountId={accountId || null}
+                    onLogged={loadWeeklyGold}
+                    onError={(e) => setError(describeError(e))}
+                  />
                   <Link href="/gold" className="underline">Gold page</Link>
                 </span>
               }
@@ -575,6 +604,7 @@ export default function TrackerPage() {
       node: <GoldGoalWidget weeks={goldWeeks} daysIntoWeek={weekDays} balance={balance} goal={goldGoal} onGoal={setGoldGoal} />,
     },
     { key: WIDGET_KEYS.gems, node: <GemWidget weeks={gemWeeks} daysIntoWeek={weekDays} /> },
+    { key: WIDGET_KEYS.news, node: <NewsWidget /> },
   ].filter((widget) => isShown(widget.key) && goldWeeks.length > 0);
 
   const showToday = isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
@@ -590,7 +620,12 @@ export default function TrackerPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Roster</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold">Roster</h1>
+          {accounts.length > 1 && (
+            <AccountTabs accounts={accounts} value={accountId} onChange={setChosenAccount} />
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <ToolbarButton active={updatingItemLevels} onClick={() => setUpdatingItemLevels((v) => !v)} icon={<TrendingUp size={16} />}>
             Update item levels
@@ -604,7 +639,7 @@ export default function TrackerPage() {
         </div>
       </div>
 
-      {characters.length > 0 && !styleChosen && (
+      {allCharacters.length > 0 && !styleChosen && (
         <section className="rounded-lg border border-accent/40 bg-surface p-4">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div>
@@ -669,7 +704,8 @@ export default function TrackerPage() {
 
       {characters.length === 0 && !error ? (
         <p className="rounded-lg border border-border bg-surface p-8 text-center text-muted">
-          No characters yet. <Link href="/settings" className="underline">Add your roster in Settings</Link>.
+          {allCharacters.length > 0 ? "No characters on this account yet." : "No characters yet."}{" "}
+          <Link href="/settings" className="underline">Add your roster in Settings</Link>.
         </p>
       ) : (
         <>
@@ -729,7 +765,7 @@ export default function TrackerPage() {
           )}
 
           {widgets.length > 0 && (
-            <div className={`grid gap-4 md:grid-cols-2 ${widgets.length >= 3 ? "xl:grid-cols-3" : ""}`}>
+            <div className={`grid gap-4 md:grid-cols-2 ${widgets.length === 3 ? "xl:grid-cols-3" : ""}`}>
               {widgets.map((widget) => (
                 <div key={widget.key} className="flex [&>*]:flex-1">
                   {widget.node}
@@ -739,6 +775,28 @@ export default function TrackerPage() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/** Switch between accounts' rosters; only shown with more than one account. */
+function AccountTabs({ accounts, value, onChange }: { accounts: Account[]; value: number; onChange: (id: number) => void }) {
+  const options = [{ id: 0, name: "All accounts" }, ...accounts];
+  return (
+    <div role="tablist" aria-label="Account" className="flex flex-wrap gap-0.5 rounded-lg border border-border bg-surface p-0.5 text-sm">
+      {options.map((account) => (
+        <button
+          key={account.id}
+          role="tab"
+          aria-selected={value === account.id}
+          onClick={() => onChange(account.id)}
+          className={`rounded-md px-3 py-1 ${
+            value === account.id ? "bg-accent/15 font-medium text-foreground" : "text-muted hover:bg-surface-2 hover:text-foreground"
+          }`}
+        >
+          {account.name}
+        </button>
+      ))}
     </div>
   );
 }

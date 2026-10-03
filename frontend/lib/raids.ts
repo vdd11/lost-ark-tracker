@@ -111,24 +111,36 @@ export function goldRaidWeek(character: Character, tasks: Task[], runs: Run[] = 
   };
 }
 
-/** Event (Extreme) raids pay any character; roster-limited ones once per roster. */
+/** Characters split by account, since each account is its own roster. */
+export function byAccount(characters: Character[]) {
+  const groups = new Map<number, Character[]>();
+  for (const character of characters) {
+    groups.set(character.account_id, [...(groups.get(character.account_id) ?? []), character]);
+  }
+  return [...groups.values()];
+}
+
+/** Event (Extreme) raids pay any character; roster-limited ones once per account. */
 function eventWeeks(characters: Character[], tasks: Task[], runs: Run[]) {
   return tasks
     .filter((t) => isActiveRaid(t) && t.gold_for_everyone)
-    .map((task) => {
-      const clears = runs.filter((r) => r.task_id === task.id);
-      const golds = characters.map((c) => {
-        const run = clears.find((r) => r.character_id === c.id);
-        if (run) return runGold(task, run);
-        return c.task_ids.includes(task.id) ? (raidGold(c, task) ?? 0) : 0;
+    .flatMap((task) => {
+      const goldOf = (c: Character) => {
+        const run = runs.find((r) => r.task_id === task.id && r.character_id === c.id);
+        if (run) return { cleared: true, gold: runGold(task, run) };
+        return { cleared: false, gold: c.task_ids.includes(task.id) ? (raidGold(c, task) ?? 0) : 0 };
+      };
+      if (!task.roster_limited) {
+        return [{ possible: characters.reduce((sum, c) => sum + goldOf(c).gold, 0), left: 0 }];
+      }
+      return byAccount(characters).map((roster) => {
+        const results = roster.map(goldOf);
+        const cleared = results.filter((r) => r.cleared);
+        return {
+          possible: Math.max(0, ...(cleared.length ? cleared : results).map((r) => r.gold)),
+          left: cleared.length === 0 && roster.some((c) => canRun(c, task)) ? 1 : 0,
+        };
       });
-      const runnable = characters.some((c) => canRun(c, task));
-      return task.roster_limited
-        ? {
-            possible: clears.length ? Math.max(...clears.map((r) => runGold(task, r))) : Math.max(0, ...golds),
-            left: clears.length === 0 && runnable ? 1 : 0,
-          }
-        : { possible: golds.reduce((sum, g) => sum + g, 0), left: 0 };
     });
 }
 

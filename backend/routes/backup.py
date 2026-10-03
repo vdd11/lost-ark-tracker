@@ -7,8 +7,9 @@ from sqlalchemy import Date, DateTime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from accounts import ensure_accounts
 from database import get_db
-from models import BalanceCheck, Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
+from models import Account, BalanceCheck, Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
 from resets import utc_now
 from version import APP_NAME
 
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/api")
 
 # Restore order: parents before children. Deletes run in reverse.
 BACKUP_MODELS = {
+    "accounts": Account,
     "characters": Character,
     "tasks": Task,
     "raid_difficulties": RaidDifficulty,
@@ -78,5 +80,7 @@ def restore_backup(backup: dict = Body(...), db: Session = Depends(get_db)):
     except (ValueError, TypeError, AttributeError, SQLAlchemyError) as error:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Backup file is invalid: {error}")
+    # Backups from before accounts have none; put everyone on one.
+    ensure_accounts(db)
 
     return Response(status_code=204)

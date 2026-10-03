@@ -6,11 +6,25 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from accounts import ensure_accounts
 from database import Base, SessionLocal, add_missing_columns, backup_database, engine
 from raids import backfill_bound_gold, backfill_character_bound_gold, retire_old_tasks, run_once, sync_catalog
 from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
-from routes import backup, balances, characters, difficulties, events, export, gems, gold, tasks, tracker
+from routes import (
+    accounts,
+    backup,
+    balances,
+    characters,
+    difficulties,
+    events,
+    export,
+    gems,
+    gold,
+    news,
+    tasks,
+    tracker,
+)
 
 
 @asynccontextmanager
@@ -22,6 +36,7 @@ async def lifespan(app: FastAPI):
     added_columns = add_missing_columns()
     with SessionLocal() as db:
         seed_default_tasks(db)
+        ensure_accounts(db)
         # Databases from before rest tracking get the default rules once.
         if ("tasks", "rest_max") in added_columns:
             apply_default_rest_rules(db)
@@ -56,7 +71,7 @@ def root():
 
 
 app.include_router(router)
-for module in (characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export):
+for module in (accounts, characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export, news):
     app.include_router(module.router)
 
 

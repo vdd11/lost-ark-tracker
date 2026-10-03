@@ -50,7 +50,7 @@ function raid(name: string, tiers: [string, number, number | null][], extra: Par
 function character(itemLevel: number, runs: [Task, string][], extra: Partial<Character> = {}): Character {
   return {
     id: nextId++, name: "C", class_name: "Bard", item_level: itemLevel, is_gold_earner: true,
-    position: 0,
+    position: 0, account_id: 1,
     task_ids: runs.map(([task]) => task.id),
     difficulty_ids: Object.fromEntries(
       runs.map(([task, tier]) => [String(task.id), task.difficulties.find((d) => d.name === tier)!.id]),
@@ -165,6 +165,18 @@ describe("goldRaidWeek", () => {
     expect(goldRaidsLeft([a, b], raids, runs)).toEqual({ left: 5, slots: 6, events: 1 });
     expect(goldRaidsLeft([a, b], raids, [...runs, clear(b, extreme, "Hard")]).events).toBe(0);
     expect(possibleRaidGold([a, b], raids, [clear(b, extreme, "Hard")])).toBe(2 * 152000 + 45000);
+  });
+});
+
+describe("accounts", () => {
+  it("gives each account its own roster-limited event clear", () => {
+    const usual: [Task, string][] = [[extreme, "Hard"]];
+    const main = character(1760, usual, { is_gold_earner: false });
+    const sameAccount = character(1760, usual, { is_gold_earner: false });
+    const otherAccount = character(1760, usual, { is_gold_earner: false, account_id: 2 });
+    expect(goldRaidsLeft([main, sameAccount, otherAccount], raids, []).events).toBe(2);
+    expect(possibleRaidGold([main, sameAccount, otherAccount], raids, [])).toBe(2 * 45000);
+    expect(goldRaidsLeft([main, sameAccount, otherAccount], raids, [clear(main, extreme, "Hard")]).events).toBe(1);
   });
 });
 

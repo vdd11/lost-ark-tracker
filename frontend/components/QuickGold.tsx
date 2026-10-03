@@ -12,7 +12,16 @@ import { usePreference } from "@/lib/usePreference";
  * Log gold from the tracker without leaving it: pick a source, type the
  * amount, Enter. Remembers the last source. Dates and notes live on the Gold page.
  */
-export default function QuickGold({ onLogged, onError }: { onLogged: () => void; onError: (error: unknown) => void }) {
+export default function QuickGold({
+  accountId,
+  onLogged,
+  onError,
+}: {
+  /** The account it goes to, when the tracker shows one account. */
+  accountId: number | null;
+  onLogged: () => void;
+  onError: (error: unknown) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [source, setSource] = usePreference<string>("quick-gold-source", GOLD_SOURCES[0], GOLD_SOURCES);
   const [amount, setAmount] = useState("");
@@ -39,7 +48,7 @@ export default function QuickGold({ onLogged, onError }: { onLogged: () => void;
     if (!Number(amount) || saving) return;
     setSaving(true);
     try {
-      await send("POST", "/gold-entries", { source, amount: Number(amount) });
+      await send("POST", "/gold-entries", { source, amount: Number(amount), account_id: accountId });
       setAmount("");
       setOpen(false);
       onLogged();

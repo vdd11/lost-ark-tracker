@@ -5,12 +5,13 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react"
 import { GripVertical, Trash2 } from "lucide-react";
 import Link from "next/link";
 
+import AccountsBar from "@/components/AccountsBar";
 import ClassInput from "@/components/ClassInput";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import NumberInput from "@/components/NumberInput";
 import RaidPicker, { RaidSelection, suggestedRaids } from "@/components/RaidPicker";
 import { useDragReorder } from "@/components/useDragReorder";
-import { api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task, TaskCategory } from "@/lib/api";
+import { Account, api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task, TaskCategory } from "@/lib/api";
 import { normalizeClass } from "@/lib/classes";
 import { renumber } from "@/lib/order";
 import { isActiveRaid } from "@/lib/raids";
@@ -21,15 +22,17 @@ type DragHandleProps = ReturnType<ReturnType<typeof useDragReorder>["handleProps
 export default function SettingsPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
   // Bumped after a restore so rows drop their drafts of the old data.
   const [dataVersion, setDataVersion] = useState(0);
 
   const load = useCallback(() => {
-    Promise.all([api<Character[]>("/characters"), api<Task[]>("/tasks")])
-      .then(([characterData, taskData]) => {
+    Promise.all([api<Character[]>("/characters"), api<Task[]>("/tasks"), api<Account[]>("/accounts")])
+      .then(([characterData, taskData, accountData]) => {
         setCharacters(characterData.sort(byPosition));
         setTasks(taskData.sort(byPosition));
+        setAccounts(accountData);
         setError(null);
       })
       .catch((e) => setError(describeError(e)));
@@ -49,7 +52,14 @@ export default function SettingsPage() {
     }
   }
 
-  const goldEarners = characters.filter((c) => c.is_gold_earner).length;
+  const multipleAccounts = accounts.length > 1;
+  // The gold earner limit is per account (each account is its own roster).
+  const overLimit = accounts
+    .map((account) => ({
+      account,
+      earners: characters.filter((c) => c.account_id === account.id && c.is_gold_earner).length,
+    }))
+    .filter(({ earners }) => earners > MAX_GOLD_EARNERS);
 
   /** Save a new order: show it right away, then store the positions that changed. */
   function saveOrder<T extends Positioned>(ordered: T[], path: string, apply: (renumbered: T[]) => void) {
@@ -67,17 +77,26 @@ export default function SettingsPage() {
       <section>
         <h1 className="mb-1 text-2xl font-bold">Characters</h1>
         <p className="mb-4 text-sm text-muted">
-          Gold earners get raid gold counted toward your weekly total (up to {MAX_GOLD_EARNERS} per roster).
+          Gold earners get raid gold counted toward your weekly total (up to {MAX_GOLD_EARNERS} per account).
         </p>
 
-        {goldEarners > MAX_GOLD_EARNERS && (
-          <p className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
-            {goldEarners} characters are marked as gold earners, but only {MAX_GOLD_EARNERS} per roster earn raid gold.
-            Untick the ones you don&apos;t designate in game so your possible gold stays accurate.
+        <AccountsBar
+          accounts={accounts}
+          onAdd={(name) => mutate(() => send("POST", "/accounts", { name }))}
+          onRename={(account, name) => mutate(() => send("PATCH", `/accounts/${account.id}`, { name }))}
+          onDelete={(account) => mutate(() => send("DELETE", `/accounts/${account.id}`))}
+        />
+
+        {overLimit.map(({ account, earners }) => (
+          <p key={account.id} className="mb-4 rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm">
+            {earners} characters{multipleAccounts ? ` on ${account.name}` : ""} are marked as gold earners, but only{" "}
+            {MAX_GOLD_EARNERS} per account earn raid gold. Untick the ones you don&apos;t designate in game
+            {multipleAccounts ? ", or move some to another account" : ""} so your possible gold stays accurate.
           </p>
-        )}
+        ))}
 
         <AddCharacterForm
+          accounts={multipleAccounts ? accounts : []}
           raids={tasks.filter((t) => isActiveRaid(t))}
           onAdd={(data) => mutate(() => send("POST", "/characters", data))}
         />
@@ -91,6 +110,7 @@ export default function SettingsPage() {
                 <th className="px-3 py-2 font-medium">Class</th>
                 <th className="px-3 py-2 font-medium">Item level</th>
                 <th className="px-3 py-2 font-medium">Gold earner</th>
+                {multipleAccounts && <th className="px-3 py-2 font-medium">Account</th>}
                 <th className="px-3 py-2" />
               </tr>
             </thead>
@@ -99,6 +119,7 @@ export default function SettingsPage() {
                 <CharacterRow
                   key={`${character.id}-${dataVersion}`}
                   character={character}
+                  accounts={multipleAccounts ? accounts : []}
                   rowRef={characterDrag.rowRef(character.id)}
                   dragging={characterDrag.draggingId === character.id}
                   handle={characterDrag.handleProps(character, character.name)}
@@ -112,7 +133,7 @@ export default function SettingsPage() {
               ))}
               {characters.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-muted">No characters yet.</td>
+                  <td colSpan={7} className="px-3 py-4 text-center text-muted">No characters yet.</td>
                 </tr>
               )}
             </tbody>
@@ -271,8 +292,38 @@ function BackupSection({ onError, onRestored }: { onError: (error: string) => vo
   );
 }
 
-function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: object) => Promise<void> }) {
+/** Pick an account; only shown once there's more than one. */
+function AccountSelect({
+  accounts,
+  value,
+  onChange,
+  label,
+}: {
+  accounts: Account[];
+  value: number;
+  onChange: (accountId: number) => void;
+  label: string;
+}) {
+  return (
+    <select value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={label}>
+      {accounts.map((account) => (
+        <option key={account.id} value={account.id}>{account.name}</option>
+      ))}
+    </select>
+  );
+}
+
+function AddCharacterForm({
+  accounts,
+  raids,
+  onAdd,
+}: {
+  accounts: Account[];
+  raids: Task[];
+  onAdd: (data: object) => Promise<void>;
+}) {
   const [name, setName] = useState("");
+  const [accountId, setAccountId] = useState<number | null>(null);
   const [className, setClassName] = useState("");
   const [itemLevel, setItemLevel] = useState("");
   const [isGoldEarner, setIsGoldEarner] = useState(true);
@@ -292,6 +343,7 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
       class_name: normalizeClass(className),
       item_level: Number(itemLevel) || 0,
       is_gold_earner: isGoldEarner,
+      account_id: accounts.length ? (accountId ?? accounts[0].id) : undefined,
       raids: Object.entries(selectedRaids).map(([taskId, difficultyId]) => ({
         task_id: Number(taskId),
         difficulty_id: difficultyId || null,
@@ -317,6 +369,9 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
         onChange={(e) => changeItemLevel(e.target.value)}
         className="w-28"
       />
+      {accounts.length > 0 && (
+        <AccountSelect accounts={accounts} value={accountId ?? accounts[0].id} onChange={setAccountId} label="Account" />
+      )}
       <label className="flex items-center gap-1.5 px-1 py-1.5">
         <input type="checkbox" checked={isGoldEarner} onChange={(e) => setIsGoldEarner(e.target.checked)} />
         Gold earner
@@ -349,6 +404,7 @@ function DeleteButton({ onDelete }: { onDelete: () => void }) {
 // Rows keep a local draft and save a field when it loses focus.
 function CharacterRow({
   character,
+  accounts,
   rowRef,
   dragging,
   handle,
@@ -356,6 +412,7 @@ function CharacterRow({
   onDelete,
 }: {
   character: Character;
+  accounts: Account[];
   rowRef: (element: HTMLElement | null) => void;
   dragging: boolean;
   handle: DragHandleProps;
@@ -412,6 +469,16 @@ function CharacterRow({
           aria-label={`${character.name} is a gold earner`}
         />
       </td>
+      {accounts.length > 0 && (
+        <td className="px-3 py-1.5">
+          <AccountSelect
+            accounts={accounts}
+            value={character.account_id}
+            onChange={(accountId) => onSave({ account_id: accountId })}
+            label={`${character.name} account`}
+          />
+        </td>
+      )}
       <td className="px-3 py-1.5 text-right">
         <DeleteButton onDelete={onDelete} />
       </td>

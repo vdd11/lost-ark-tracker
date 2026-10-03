@@ -9,6 +9,15 @@ export const CATEGORIES: { value: TaskCategory; label: string }[] = [
   { value: "raid", label: "Raids" },
 ];
 
+/** A game account: its own roster, with its own gold earners and event clears. */
+export type Account = {
+  id: number;
+  name: string;
+  position: number;
+  /** How many characters are on it. */
+  characters: number;
+};
+
 export type Character = {
   id: number;
   name: string;
@@ -16,6 +25,7 @@ export type Character = {
   item_level: number;
   is_gold_earner: boolean;
   position: number;
+  account_id: number;
   task_ids: number[];
   /** task_id -> difficulty_id for raids (JSON object keys are strings). */
   difficulty_ids: Record<string, number>;
@@ -111,6 +121,7 @@ export type GoldEntry = {
   source: string;
   amount: number;
   character_id: number | null;
+  account_id: number | null;
   note: string | null;
   earned_at: string;
 };
@@ -268,3 +279,12 @@ export type BalanceCheck = {
 };
 
 export type ExpectedBalances = { last_check_in: string; expected: Balances };
+
+export type ServerStatus = { region: string; name: string; status: string };
+export type NewsItem = { title: string; url: string; date: string };
+export type NewsFeed = {
+  servers: ServerStatus[];
+  servers_error: string | null;
+  news: NewsItem[];
+  news_error: string | null;
+};
