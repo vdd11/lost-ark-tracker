@@ -27,5 +27,8 @@ def client():
 def set_now(monkeypatch):
     """Freeze the API's clock at a given naive-UTC datetime."""
     def _set(moment):
-        monkeypatch.setattr(main, "utc_now", lambda: moment)
+        # Route modules import utc_now by name, so patch it everywhere it's used.
+        for name, module in list(sys.modules.items()):
+            if (name == "main" or name.startswith("routes.")) and hasattr(module, "utc_now"):
+                monkeypatch.setattr(module, "utc_now", lambda: moment)
     return _set

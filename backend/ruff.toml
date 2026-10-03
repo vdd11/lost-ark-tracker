@@ -1,0 +1,3 @@
+[lint]
+# Pyflakes (unused imports, undefined names) and syntax errors.
+select = ["F", "E9"]

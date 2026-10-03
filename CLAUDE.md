@@ -9,7 +9,10 @@ so no server components with dynamic data, rewrites, or route handlers), served
 by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 `build.py` runs PyInstaller. All API routes live under `/api`.
 
-- Backend tests: `cd backend && .venv/Scripts/python -m pytest -q`
+- Backend: `main.py` sets up the app; endpoints live in `routes/<area>.py`
+  (one router each, all under `/api`). Domain logic stays out of routes:
+  `raids.py` (catalog), `rest.py`, `gems.py`, `resets.py`.
+- Backend checks: `cd backend && .venv/Scripts/python -m ruff check . && .venv/Scripts/python -m pytest -q`
 - Frontend checks: `cd frontend && npm test && npx tsc --noEmit && npm run lint && npm run build`
   (vitest covers the pure logic in `lib/`; keep component-free code there)
 - Package: `backend/.venv/Scripts/python build.py` → `dist/LostArkTracker.exe`

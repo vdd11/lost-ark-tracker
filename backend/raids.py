@@ -231,9 +231,9 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
         difficulty.position = position
 
         previous = difficulty.catalog_rewards or {}
-        for field, value in spec.rewards().items():
-            if getattr(difficulty, field) == previous.get(field):
-                setattr(difficulty, field, value)
+        for table, value in spec.rewards().items():
+            if getattr(difficulty, table) == previous.get(table):
+                setattr(difficulty, table, value)
         difficulty.catalog_rewards = spec.rewards()
 
 
