@@ -63,3 +63,47 @@ def test_check_in_validation_and_delete(client, set_now):
     check = check_in(client, tradeable=10, roster_bound=0)
     assert client.delete(f"/api/balances/{check['id']}").status_code == 204
     assert client.get("/api/balances").json() == []
+
+
+def test_bonus_chests_count_when_bought_not_when_cleared(client, set_now):
+    final = task_named(client, "The Final Day")
+    alt = add_character(client, 1715, [{"task_id": final["id"]}], name="Alt")  # Normal: 16k roster + 16k tradeable
+
+    set_now(datetime(2026, 10, 1, 12))
+    check_in(client, tradeable=0, roster_bound=0)
+    set_now(datetime(2026, 10, 2, 12))
+    complete(client, alt["id"], final["id"])
+    set_now(datetime(2026, 10, 3, 12))
+    second = check_in(client, tradeable=16000, roster_bound=16000)
+    assert second["untracked"]["total"] == 0
+
+    # Chests bought after that check-in belong to the next window, not the old one.
+    set_now(datetime(2026, 10, 4, 12))
+    complete(client, alt["id"], final["id"], bought_bonus=True)  # 10,240 from roster-bound
+    set_now(datetime(2026, 10, 5, 12))
+    third = check_in(client, tradeable=16000, roster_bound=16000 - 10240)
+    history = {c["id"]: c for c in client.get("/api/balances").json()}
+    assert history[second["id"]]["untracked"]["total"] == 0
+    assert third["untracked"]["total"] == 0
+
+
+def test_filling_in_unknown_values_updates_this_weeks_clears(client, set_now):
+    set_now(datetime(2026, 10, 2, 12))
+    serca = task_named(client, "Serca")
+    hard = difficulty(serca, "Hard")
+    assert hard["bonus_cost"] is None
+    main = add_character(client, 1735, [{"task_id": serca["id"]}], name="Main")
+    complete(client, main["id"], serca["id"], bought_bonus=True)
+    assert client.get("/api/gold/weekly?weeks=1").json()[0]["bonus_spent"] == 0
+
+    client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": 9000})
+    week = client.get("/api/gold/weekly?weeks=1").json()[0]
+    assert (week["raid_gold"], week["bonus_spent"]) == (44000, 9000)
+
+    # A value that was already known isn't rewritten for clears already made.
+    client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": 1})
+    assert client.get("/api/gold/weekly?weeks=1").json()[0]["bonus_spent"] == 9000
+
+
+def test_gold_on_hand_cannot_be_negative(client):
+    assert client.post("/api/balances", json={"tradeable": -5, "roster_bound": 0}).status_code == 422

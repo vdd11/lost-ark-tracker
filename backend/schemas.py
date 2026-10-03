@@ -248,7 +248,7 @@ class BalancesOut(BaseModel):
 
 
 class BalanceCheckCreate(BaseModel):
-    tradeable: int
+    tradeable: int = Field(ge=0)
     roster_bound: int = Field(ge=0)
     character_bound: dict[int, int] = {}
     note: str | None = Field(default=None, max_length=200)

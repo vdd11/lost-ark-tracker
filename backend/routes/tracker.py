@@ -188,6 +188,7 @@ def complete_task(
             difficulty_id=run_difficulty(db, task, character, body.difficulty_id),
             count=body.count or 1,
             bought_bonus=bool(body.bought_bonus),
+            bonus_bought_at=now if body.bought_bonus else None,
             **details,
         )
         if tiers is not None:
@@ -206,6 +207,7 @@ def complete_task(
             setattr(existing, field, value)
         if body.bought_bonus is not None and body.bought_bonus != existing.bought_bonus:
             existing.bought_bonus = body.bought_bonus
+            existing.bonus_bought_at = now if body.bought_bonus else None
             existing.bonus_spent = bonus_spent(db, existing)
         # Only a different difficulty re-prices a clear; history stays as recorded.
         if body.difficulty_id is not None and body.difficulty_id != existing.difficulty_id:

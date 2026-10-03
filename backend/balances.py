@@ -41,13 +41,18 @@ def project(db: Session, start: Balances, since: datetime, until: datetime) -> B
     for entry in db.query(GoldEntry).filter(GoldEntry.earned_at > since, GoldEntry.earned_at <= until):
         result.tradeable += entry.amount
 
-    clears = (
+    in_window = lambda moment: since < moment <= until  # noqa: E731
+    candidates = (
         db.query(Completion)
-        .filter(Completion.completed_at > since, Completion.completed_at <= until)
         .filter((Completion.gold > 0) | (Completion.bonus_spent > 0))
+        .filter((Completion.completed_at <= until) | (Completion.bonus_bought_at <= until))
         .order_by(Completion.completed_at, Completion.id)
         .all()
     )
+    clears = [c for c in candidates if in_window(c.completed_at)]
+    # Chests count when bought, which can be after the clear.
+    purchases = [c for c in candidates if c.bonus_spent and in_window(c.bonus_bought_at or c.completed_at)]
+
     # Earnings first, then spending, so a chest can use gold from the same window.
     for clear in clears:
         result.tradeable += clear.gold - clear.bound_gold
@@ -56,8 +61,8 @@ def project(db: Session, start: Balances, since: datetime, until: datetime) -> B
             result.character_bound[clear.character_id] = (
                 result.character_bound.get(clear.character_id, 0) + clear.character_bound_gold
             )
-    for clear in clears:
-        spend(result, clear.character_id, clear.bonus_spent)
+    for purchase in purchases:
+        spend(result, purchase.character_id, purchase.bonus_spent)
     return result
 
 

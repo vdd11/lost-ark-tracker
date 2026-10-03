@@ -6,13 +6,15 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import CharacterTask, RaidDifficulty, Task
+from models import Character, CharacterTask, Completion, RaidDifficulty, Task
+from resets import period_for, utc_now
 from schemas import (
     DifficultyCreate,
     DifficultyRead,
     DifficultyUpdate,
 )
 from routes.common import get_or_404
+from routes.tracker import price_completion
 
 router = APIRouter(prefix="/api")
 
@@ -33,13 +35,30 @@ def create_difficulty(task_id: int, data: DifficultyCreate, db: Session = Depend
 @router.patch("/difficulties/{difficulty_id}", response_model=DifficultyRead)
 def update_difficulty(difficulty_id: int, changes: DifficultyUpdate, db: Session = Depends(get_db)):
     difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
-    for field, value in changes.model_dump(exclude_unset=True).items():
+    updates = changes.model_dump(exclude_unset=True)
+    # Clears made while a value was unknown recorded 0; once it's filled in,
+    # this week's clears pick it up. Known values stay as recorded (history).
+    filled_in = any(field in updates and getattr(difficulty, field) is None for field in ("gold", "bonus_cost"))
+    for field, value in updates.items():
         if field.endswith("_gems") and value is not None:
             value = {str(level): count for level, count in sorted(value.items()) if count > 0} or None
         setattr(difficulty, field, value)
+    db.flush()
+    if filled_in:
+        reprice_this_week(db, difficulty)
     db.commit()
     db.refresh(difficulty)
     return difficulty
+
+
+def reprice_this_week(db: Session, difficulty: RaidDifficulty):
+    task = db.get(Task, difficulty.task_id)
+    period = period_for(task.category, utc_now())
+    clears = db.query(Completion).filter_by(difficulty_id=difficulty.id, period=period).order_by(Completion.id)
+    for clear in clears:
+        character = db.get(Character, clear.character_id) if clear.character_id else None
+        if character is not None:
+            price_completion(db, character, task, clear)
 
 
 @router.post("/difficulties/{difficulty_id}/reset", response_model=DifficultyRead)

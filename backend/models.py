@@ -122,6 +122,8 @@ class Completion(Base):
     character_bound_gold: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # Bonus ("View More") chests bought for this clear, and what they cost.
     bought_bonus: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    # When the chests were bought (can be after the clear); None = at the clear.
+    bonus_bought_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     bonus_spent: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # The difficulty actually run, which can differ from the usual one.
     difficulty_id: Mapped[int | None] = mapped_column(ForeignKey("raid_difficulties.id"), nullable=True)
