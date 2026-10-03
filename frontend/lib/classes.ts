@@ -5,7 +5,7 @@ export const CLASS_GROUPS: { archetype: string; classes: string[] }[] = [
   { archetype: "Gunner", classes: ["Artillerist", "Deadeye", "Gunslinger", "Machinist", "Sharpshooter"] },
   { archetype: "Mage", classes: ["Arcanist", "Bard", "Sorceress", "Summoner"] },
   { archetype: "Assassin", classes: ["Deathblade", "Reaper", "Shadowhunter", "Souleater"] },
-  { archetype: "Specialist", classes: ["Aeromancer", "Artist", "Wildsoul"] },
+  { archetype: "Specialist", classes: ["Aeromancer", "Artist", "Dimensionalist", "Wildsoul"] },
 ];
 
 export const LOST_ARK_CLASSES = CLASS_GROUPS.flatMap((group) => group.classes).sort();

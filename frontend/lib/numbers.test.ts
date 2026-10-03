@@ -24,6 +24,7 @@ describe("class names", () => {
     const { normalizeClass, LOST_ARK_CLASSES } = await import("./classes");
     expect(normalizeClass(" sorceress ")).toBe("Sorceress");
     expect(normalizeClass("GUARDIANKNIGHT")).toBe("Guardianknight");
+    expect(normalizeClass("dimensionalist")).toBe("Dimensionalist");
     expect(normalizeClass("New Class")).toBe("New Class");
     expect(new Set(LOST_ARK_CLASSES).size).toBe(LOST_ARK_CLASSES.length);
   });
