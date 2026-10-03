@@ -67,8 +67,7 @@ export default function SettingsPage() {
       <section>
         <h1 className="mb-1 text-2xl font-bold">Characters</h1>
         <p className="mb-4 text-sm text-muted">
-          Gold earners get raid gold counted toward your weekly total (up to {MAX_GOLD_EARNERS} per roster). Fill in
-          &quot;Saved for&quot; on characters you keep for a friend&apos;s clears.
+          Gold earners get raid gold counted toward your weekly total (up to {MAX_GOLD_EARNERS} per roster).
         </p>
 
         {goldEarners > MAX_GOLD_EARNERS && (
@@ -91,7 +90,6 @@ export default function SettingsPage() {
                 <th className="px-3 py-2 font-medium">Class</th>
                 <th className="px-3 py-2 font-medium">Item level</th>
                 <th className="px-3 py-2 font-medium">Gold earner</th>
-                <th className="px-3 py-2 font-medium">Saved for</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>
@@ -111,7 +109,7 @@ export default function SettingsPage() {
               ))}
               {characters.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-muted">No characters yet.</td>
+                  <td colSpan={5} className="px-3 py-4 text-center text-muted">No characters yet.</td>
                 </tr>
               )}
             </tbody>
@@ -222,7 +220,6 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
   const [className, setClassName] = useState("");
   const [itemLevel, setItemLevel] = useState("");
   const [isGoldEarner, setIsGoldEarner] = useState(true);
-  const [reservedFor, setReservedFor] = useState("");
   const [selectedRaids, setSelectedRaids] = useState<RaidSelection>({});
   // Until the raid list is changed by hand, it follows the item level.
   const [autoPick, setAutoPick] = useState(true);
@@ -239,7 +236,6 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
       class_name: className.trim(),
       item_level: Number(itemLevel) || 0,
       is_gold_earner: isGoldEarner,
-      reserved_for: reservedFor.trim() || null,
       raids: Object.entries(selectedRaids).map(([taskId, difficultyId]) => ({
         task_id: Number(taskId),
         difficulty_id: difficultyId || null,
@@ -248,7 +244,6 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
     setName("");
     setClassName("");
     setItemLevel("");
-    setReservedFor("");
     setSelectedRaids({});
     setAutoPick(true);
   }
@@ -266,7 +261,6 @@ function AddCharacterForm({ raids, onAdd }: { raids: Task[]; onAdd: (data: objec
         onChange={(e) => changeItemLevel(e.target.value)}
         className="w-28"
       />
-      <input placeholder="Saved for (optional)" value={reservedFor} onChange={(e) => setReservedFor(e.target.value)} />
       <label className="flex items-center gap-1.5 px-1 py-1.5">
         <input type="checkbox" checked={isGoldEarner} onChange={(e) => setIsGoldEarner(e.target.checked)} />
         Gold earner
@@ -314,14 +308,11 @@ function CharacterRow({
     name: character.name,
     class_name: character.class_name,
     item_level: String(character.item_level || ""),
-    reserved_for: character.reserved_for ?? "",
   });
 
-  function saveText(field: "name" | "class_name" | "reserved_for") {
+  function saveText(field: "name" | "class_name") {
     const value = draft[field].trim();
-    const current = character[field] ?? "";
-    if (value === current || (field !== "reserved_for" && !value)) return;
-    onSave({ [field]: value || null });
+    if (value && value !== character[field]) onSave({ [field]: value });
   }
 
   return (
@@ -352,14 +343,6 @@ function CharacterRow({
           checked={character.is_gold_earner}
           onChange={(e) => onSave({ is_gold_earner: e.target.checked })}
           aria-label={`${character.name} is a gold earner`}
-        />
-      </td>
-      <td className="px-3 py-1.5">
-        <input
-          placeholder="—"
-          value={draft.reserved_for}
-          onChange={(e) => setDraft({ ...draft, reserved_for: e.target.value })}
-          onBlur={() => saveText("reserved_for")}
         />
       </td>
       <td className="px-3 py-1.5">

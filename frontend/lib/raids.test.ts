@@ -48,7 +48,7 @@ function raid(name: string, tiers: [string, number, number | null][], extra: Par
 function character(itemLevel: number, runs: [Task, string][], extra: Partial<Character> = {}): Character {
   return {
     id: nextId++, name: "C", class_name: "Bard", item_level: itemLevel, is_gold_earner: true,
-    reserved_for: null, position: 0,
+    position: 0,
     task_ids: runs.map(([task]) => task.id),
     difficulty_ids: Object.fromEntries(
       runs.map(([task, tier]) => [String(task.id), task.difficulties.find((d) => d.name === tier)!.id]),

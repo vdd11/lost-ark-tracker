@@ -15,7 +15,6 @@ export type Character = {
   class_name: string;
   item_level: number;
   is_gold_earner: boolean;
-  reserved_for: string | null;
   position: number;
   task_ids: number[];
   /** task_id -> difficulty_id for raids (JSON object keys are strings). */

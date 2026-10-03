@@ -15,8 +15,6 @@ class Character(Base):
     item_level: Mapped[float] = mapped_column(Float, default=0, server_default="0")
     # Only a limited number of characters per roster earn raid gold.
     is_gold_earner: Mapped[bool] = mapped_column(Boolean, default=True, server_default="1")
-    # Name of the friend this character is being saved for, if any.
-    reserved_for: Mapped[str | None] = mapped_column(String(100), nullable=True)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 

@@ -18,7 +18,6 @@ class CharacterCreate(BaseModel):
     class_name: str = Field(min_length=1, max_length=50)
     item_level: float = 0
     is_gold_earner: bool = True
-    reserved_for: str | None = None
     raids: list[RaidChoice] = []
 
 
@@ -27,7 +26,6 @@ class CharacterUpdate(BaseModel):
     class_name: str | None = Field(default=None, min_length=1, max_length=50)
     item_level: float | None = None
     is_gold_earner: bool | None = None
-    reserved_for: str | None = None
     position: int | None = None
 
 
@@ -39,7 +37,6 @@ class CharacterRead(BaseModel):
     class_name: str
     item_level: float
     is_gold_earner: bool
-    reserved_for: str | None
     position: int
     task_ids: list[int] = []
     # task_id -> difficulty_id for assigned raids that have difficulties.

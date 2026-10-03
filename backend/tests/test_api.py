@@ -22,16 +22,6 @@ def test_new_character_gets_dailies_and_weeklies_but_not_raids(client):
     assert assigned == {"daily", "weekly"}
 
 
-def test_reserved_for_blank_is_stored_as_null(client):
-    character = client.post(
-        "/api/characters", json={"name": "Alt", "class_name": "Bard", "reserved_for": ""}
-    ).json()
-    assert character["reserved_for"] is None
-
-    updated = client.patch(f"/api/characters/{character['id']}", json={"reserved_for": "Sam"}).json()
-    assert updated["reserved_for"] == "Sam"
-
-
 def test_completions_reset_on_schedule(client, set_now):
     character = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress"}).json()
     daily = task_named(client, "Chaos Dungeon")
@@ -67,7 +57,7 @@ def test_weekly_gold_combines_raids_and_logged_gold(client, set_now):
     earner = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress"}).json()
     friend_alt = client.post(
         "/api/characters",
-        json={"name": "Spare", "class_name": "Bard", "is_gold_earner": False, "reserved_for": "Sam"},
+        json={"name": "Spare", "class_name": "Bard", "is_gold_earner": False},
     ).json()
     raid = custom_raid(client)
     client.patch(f"/api/tasks/{raid['id']}", json={"gold": 20000})
@@ -116,7 +106,7 @@ def test_deleting_character_keeps_gold_history(client, set_now):
 
 def test_backup_round_trip(client, set_now):
     set_now(datetime(2026, 10, 2, 12))
-    character = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress", "reserved_for": "Sam"}).json()
+    character = client.post("/api/characters", json={"name": "Main", "class_name": "Sorceress"}).json()
     raid = custom_raid(client)
     client.patch(f"/api/tasks/{raid['id']}", json={"gold": 5000})
     client.put(f"/api/characters/{character['id']}/tasks/{raid['id']}")

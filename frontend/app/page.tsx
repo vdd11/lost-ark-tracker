@@ -6,7 +6,6 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import ContentCell, { RunChanges } from "@/components/ContentCell";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import RaidCell from "@/components/RaidCell";
-import { usePreference } from "@/lib/usePreference";
 import RestGauge from "@/components/RestGauge";
 import {
   canRun,
@@ -35,8 +34,6 @@ import {
   WeeklyGold,
 } from "@/lib/api";
 
-type Filter = "all" | "mine" | "friends";
-const FILTERS: readonly Filter[] = ["all", "mine", "friends"];
 
 const cellKey = (characterId: number, taskId: number) => `${characterId}:${taskId}`;
 
@@ -54,7 +51,6 @@ export default function TrackerPage() {
   const [tracker, setTracker] = useState<TrackerState | null>(null);
   const [thisWeek, setThisWeek] = useState<WeeklyGold | null>(null);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = usePreference<Filter>("tracker-filter", "all", FILTERS);
   const [editMode, setEditMode] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
@@ -124,9 +120,7 @@ export default function TrackerPage() {
     [characters],
   );
 
-  const visibleCharacters = characters
-    .filter((c) => filter === "all" || (filter === "friends") === Boolean(c.reserved_for))
-    .sort(byPosition);
+  const visibleCharacters = [...characters].sort(byPosition);
 
   // Outside edit mode, hide columns nobody is doing (e.g. raids out of reach).
   const columnGroups = CATEGORIES.map((category) => ({
@@ -332,19 +326,7 @@ export default function TrackerPage() {
         </p>
       )}
 
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-md border border-border bg-surface p-0.5 text-sm">
-          {FILTERS.map((value) => (
-            <button
-              key={value}
-              onClick={() => setFilter(value)}
-              className={`rounded px-3 py-1 ${filter === value ? "bg-surface-2 font-medium" : "text-muted"}`}
-            >
-              {value === "all" ? "All" : value === "mine" ? "Mine" : "Saved for friends"}
-            </button>
-          ))}
-        </div>
-
+      <div className="mb-3 flex justify-end">
         <button
           onClick={() => setEditMode((v) => !v)}
           className={`rounded-md border px-3 py-1.5 text-sm ${
@@ -419,11 +401,6 @@ export default function TrackerPage() {
                         <span className="font-medium">{character.name}</span>
                         {character.is_gold_earner && (
                           <span title="Gold earner" className="rounded bg-accent/15 px-1.5 text-xs font-medium text-accent">G</span>
-                        )}
-                        {character.reserved_for && (
-                          <span className="rounded bg-series-1/15 px-1.5 text-xs text-series-1">
-                            for {character.reserved_for}
-                          </span>
                         )}
                       </div>
                       <div className="text-xs text-muted">

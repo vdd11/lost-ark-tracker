@@ -57,8 +57,6 @@ def create_character(character_data: CharacterCreate, db: Session = Depends(get_
         **character_data.model_dump(exclude={"raids"}),
         position=next_position(db, Character),
     )
-    if not character.reserved_for:
-        character.reserved_for = None
 
     db.add(character)
     db.flush()
@@ -95,8 +93,6 @@ def update_character(character_id: int, changes: CharacterUpdate, db: Session = 
 
     for field, value in changes.model_dump(exclude_unset=True).items():
         setattr(character, field, value)
-    if not character.reserved_for:
-        character.reserved_for = None
 
     if character.item_level != old_item_level:
         follow_item_level(db, character, old_item_level)
