@@ -81,6 +81,10 @@ def test_weekly_gold_combines_raids_and_logged_gold(client, set_now):
         "character_bound_gold": 0,
         "bonus_spent": 0,
         "net": 22500,
+        "tradeable_left": 22500,
+        "roster_bound_left": 0,
+        "character_bound_left": 0,
+        "character_bound": {},
         "by_source": {"Field Boss": 1500, "Chaos Gate": 1000},
         # The friend's alt cleared too but isn't a gold earner, so it's absent.
         "by_character": {"Main": 21000, "Unassigned": 1500},

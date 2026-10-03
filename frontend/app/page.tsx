@@ -24,7 +24,6 @@ import {
   CATEGORIES,
   Character,
   formatGold,
-  goldSplit,
   parseUtc,
   RestState,
   Run,
@@ -360,7 +359,7 @@ export default function TrackerPage() {
                     {group.label}
                   </th>
                 ))}
-                <th className="border-l border-border" />
+                <th className="border-l border-border" colSpan={2} />
               </tr>
               <tr className="border-b border-border">
                 <th className="sticky left-0 min-w-36 bg-surface px-3 py-2 text-left font-medium">Character</th>
@@ -382,6 +381,12 @@ export default function TrackerPage() {
                     )}
                   </th>
                 ))}
+                <th
+                  className="whitespace-nowrap border-l border-border px-3 py-2 text-right font-medium"
+                  title="Character-bound gold left this week, after bonus chests bought on that character"
+                >
+                  Char-bound
+                </th>
                 <th className="border-l border-border px-3 py-2 text-right font-medium">Done</th>
               </tr>
             </thead>
@@ -532,6 +537,7 @@ export default function TrackerPage() {
                       );
                     })}
 
+                    <CharacterBoundCell gold={thisWeek?.character_bound[String(character.id)]} />
                     <td className={`border-l border-border px-3 py-2 text-right tabular-nums ${rowTasks.length > 0 && rowDone === rowTasks.length ? "text-done" : "text-muted"}`}>
                       {rowDone}/{rowTasks.length}
                     </td>
@@ -553,14 +559,16 @@ function isTiered(task: Task) {
 
 /** Earned gold by what you can do with it. */
 function GoldSplit({ week }: { week: WeeklyGold }) {
-  const split = goldSplit(week);
+  // Character-bound gold is per character, so it's shown on each row instead.
   const rows = [
-    { label: "Tradeable", value: split.tradeable },
-    { label: "Roster-bound", value: split.roster },
-    { label: "Character-bound", value: split.character },
+    { label: "Tradeable", value: week.tradeable_left },
+    { label: "Roster-bound", value: week.roster_bound_left },
   ];
   return (
-    <div className="min-w-44 rounded-md border border-border bg-surface px-3 py-2 text-xs">
+    <div
+      className="min-w-44 rounded-md border border-border bg-surface px-3 py-2 text-xs"
+      title="After bonus chests, which use character-bound gold first, then roster-bound, then tradeable"
+    >
       {rows.map((row) => (
         <div key={row.label} className="flex justify-between gap-3">
           <span className="text-muted">{row.label}</span>
@@ -568,6 +576,24 @@ function GoldSplit({ week }: { week: WeeklyGold }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function CharacterBoundCell({ gold }: { gold: { earned: number; spent: number; left: number } | undefined }) {
+  return (
+    <td
+      className="border-l border-border px-3 py-2 text-right tabular-nums"
+      title={gold ? `Earned ${formatGold(gold.earned)}, ${formatGold(gold.spent)} spent on bonus chests` : undefined}
+    >
+      {gold ? (
+        <>
+          <div>{formatGold(gold.left)}</div>
+          {gold.spent > 0 && <div className="text-[11px] text-muted">of {formatGold(gold.earned)}</div>}
+        </>
+      ) : (
+        <span className="text-muted/50">–</span>
+      )}
+    </td>
   );
 }
 

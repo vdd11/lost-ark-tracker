@@ -9,6 +9,7 @@ from database import get_db
 from models import Character, Completion, GoldEntry
 from resets import utc_now, week_of, weekly_reset_before
 from schemas import (
+    CharacterBoundGold,
     GoldEntryCreate,
     GoldEntryRead,
     WeeklyGold,
@@ -48,6 +49,28 @@ def delete_gold_entry(entry_id: int, db: Session = Depends(get_db)):
     db.delete(entry)
     db.commit()
     return Response(status_code=204)
+
+
+def spend_bonus_chests(bucket: WeeklyGold, by_character: dict[int | None, list[int]]):
+    """Pay for bonus chests the way the game does: each buyer's own
+    character-bound gold first, then the roster's roster-bound gold, then
+    tradeable gold. Works within the week's earnings."""
+    overflow = 0
+    for character_id, (earned, spent) in by_character.items():
+        from_character = min(earned, spent)
+        overflow += spent - from_character
+        if character_id is not None and earned:
+            bucket.character_bound[character_id] = CharacterBoundGold(
+                earned=earned, spent=from_character, left=earned - from_character
+            )
+
+    roster_bound = bucket.bound_gold - bucket.character_bound_gold
+    from_roster = min(roster_bound, overflow)
+    tradeable = bucket.total - bucket.bound_gold
+
+    bucket.roster_bound_left = roster_bound - from_roster
+    bucket.tradeable_left = tradeable - (overflow - from_roster)
+    bucket.character_bound_left = sum(c.left for c in bucket.character_bound.values())
 
 
 @router.get("/gold/weekly", response_model=list[WeeklyGold])
@@ -90,8 +113,17 @@ def get_weekly_gold(weeks: int = Query(default=12, ge=1, le=104), db: Session = 
             bucket.by_source[entry.source] = bucket.by_source.get(entry.source, 0) + entry.amount
             credit(bucket, entry.character_id, entry.amount)
 
-    for bucket in totals.values():
+    spending: dict = {}  # week -> character_id -> [character-bound earned, bonus spent]
+    for completion in completions:
+        week = week_of(completion.completed_at)
+        if week in totals:
+            entry = spending.setdefault(week, {}).setdefault(completion.character_id, [0, 0])
+            entry[0] += completion.character_bound_gold
+            entry[1] += completion.bonus_spent
+
+    for week, bucket in totals.items():
         bucket.total = bucket.raid_gold + bucket.other_gold
         bucket.net = bucket.total - bucket.bonus_spent
+        spend_bonus_chests(bucket, spending.get(week, {}))
 
     return [totals[week] for week in week_starts]

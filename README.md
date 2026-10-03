@@ -25,7 +25,10 @@ non-raid sources to see your weekly gold over time.
   - Gold is split into tradeable, roster-bound (half of Serca Normal) and
     character-bound (Cathedral), on the tracker and the Gold page.
   - Tick "+ bonus" on a cleared raid when you buy its bonus ("View More")
-    chests. The cost comes off that character's gold. Act 4 and The Final Day
+    chests. Like the game, they're paid from that character's
+    character-bound gold first, then roster-bound, then tradeable. The
+    tracker's top-right box shows the tradeable and roster-bound gold left;
+    each character's row shows its character-bound gold left. Act 4 and The Final Day
     costs are built in; enter Serca's and Cathedral's on the Raids page.
   - The **Events** tab adds limited-time raids (e.g. "Act 3 Extreme"). Pick
     the raid, check the pre-filled difficulties, done. Events are one clear

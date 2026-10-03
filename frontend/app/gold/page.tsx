@@ -63,7 +63,6 @@ export default function GoldPage() {
   const thisWeek = weeks.at(-1);
   const lastWeek = weeks.at(-2);
   const average = weeks.length ? Math.round(weeks.reduce((sum, w) => sum + w.net, 0) / weeks.length) : 0;
-  const split = thisWeek ? goldSplit(thisWeek) : null;
   // What each character brings in: this week and the weekly average over the range.
   const characterRows = [...characters.map((c) => c.name), "Unassigned"]
     .map((name) => ({
@@ -86,9 +85,9 @@ export default function GoldPage() {
           label="This week"
           value={thisWeek?.net ?? 0}
           sub={
-            split
-              ? `${formatGold(split.tradeable)} tradeable · ${formatGold(split.roster)} roster-bound · ${formatGold(split.character)} character-bound` +
-                (thisWeek!.bonus_spent ? ` · −${formatGold(thisWeek!.bonus_spent)} bonus chests` : "")
+            thisWeek
+              ? `${formatGold(thisWeek.tradeable_left)} tradeable · ${formatGold(thisWeek.roster_bound_left)} roster-bound · ${formatGold(thisWeek.character_bound_left)} character-bound` +
+                (thisWeek.bonus_spent ? ` (after ${formatGold(thisWeek.bonus_spent)} on bonus chests)` : "")
               : undefined
           }
           accent

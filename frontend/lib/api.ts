@@ -127,6 +127,13 @@ export type WeeklyGold = {
   /** Gold spent on bonus chests; net = total - bonus_spent. */
   bonus_spent: number;
   net: number;
+  /** Left after bonus chests, which spend the buyer's character-bound gold, then
+   * roster-bound, then tradeable. */
+  tradeable_left: number;
+  roster_bound_left: number;
+  character_bound_left: number;
+  /** character_id -> that character's character-bound gold this week. */
+  character_bound: Record<string, { earned: number; spent: number; left: number }>;
   by_source: Record<string, number>;
   by_character: Record<string, number>;
 };

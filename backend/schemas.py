@@ -239,6 +239,15 @@ class GoldEntryRead(BaseModel):
     earned_at: datetime
 
 
+class CharacterBoundGold(BaseModel):
+    """One character's character-bound gold for a week."""
+
+    earned: int = 0
+    # Bonus chests are paid from character-bound gold first.
+    spent: int = 0
+    left: int = 0
+
+
 class WeeklyGold(BaseModel):
     week: date
     raid_gold: int
@@ -255,6 +264,13 @@ class WeeklyGold(BaseModel):
     # Character name -> net gold (raid clears plus logged gold tied to them,
     # minus bonus chests they bought).
     by_character: dict[str, int] = {}
+    # What's left after bonus chests, which spend gold in the game's order:
+    # the buyer's character-bound gold, then roster-bound, then tradeable.
+    tradeable_left: int = 0
+    roster_bound_left: int = 0
+    character_bound_left: int = 0
+    # character_id -> that character's character-bound gold this week.
+    character_bound: dict[int, CharacterBoundGold] = {}
 
 
 class GemEntryCreate(BaseModel):

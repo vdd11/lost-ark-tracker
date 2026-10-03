@@ -99,3 +99,44 @@ def test_upgrade_hides_unas_tasks_and_splits_bound_gold(client, set_now):
     with TestClient(main.app) as restarted:
         assert all(t["name"] != "Una's Dailies" for t in restarted.get("/api/tasks").json())
         assert restarted.get("/api/gold/weekly?weeks=1").json()[0]["character_bound_gold"] == 50000
+
+
+def test_bonus_chests_spend_character_bound_then_roster_bound_then_tradeable(client, set_now):
+    set_now(NOW)
+    cathedral, final, act4 = (task_named(client, n) for n in ["Horizon Cathedral", "The Final Day", "Act 4"])
+    final_normal = difficulty(final, "Normal")["id"]
+    # Main: Cathedral Lv3 pays 50,000 character-bound gold.
+    main = add_character(client, 1755, [{"task_id": cathedral["id"]}], name="Main")
+    # Alt: no character-bound gold; Final Day Normal pays 16,000 roster-bound + 16,000 tradeable.
+    alt = add_character(client, 1715, [{"task_id": final["id"], "difficulty_id": final_normal}], name="Alt")
+
+    complete(client, main["id"], cathedral["id"])
+    complete(client, main["id"], final["id"], difficulty_id=final_normal, bought_bonus=True)  # 10,240
+    complete(client, alt["id"], final["id"], bought_bonus=True)  # 10,240
+
+    totals = week(client)
+    # Main's chest comes out of Main's own character-bound gold...
+    assert totals["character_bound"][str(main["id"])] == {"earned": 50000, "spent": 10240, "left": 39760}
+    # ...Alt has none, so Alt's chest comes out of the roster-bound gold (16,000 + 16,000).
+    assert str(alt["id"]) not in totals["character_bound"]
+    assert totals["roster_bound_left"] == 32000 - 10240
+    assert totals["tradeable_left"] == 32000
+    assert totals["character_bound_left"] == 39760
+
+    # Run the roster-bound gold dry: tradeable pays the rest.
+    complete(client, alt["id"], act4["id"], bought_bonus=True)  # Act 4 Normal (27,000 tradeable): 8,640 more
+    complete(client, main["id"], act4["id"], bought_bonus=True)  # Act 4 Hard (38,000 tradeable): 12,160 from Main's
+    totals = week(client)
+    assert totals["character_bound"][str(main["id"])]["left"] == 39760 - 12160
+    assert totals["roster_bound_left"] == 32000 - 10240 - 8640
+    assert totals["tradeable_left"] == 32000 + 27000 + 38000
+
+    complete(client, alt["id"], act4["id"], bought_bonus=False)
+    # A friend's alt with no bound gold buys 22,400 of chests; only 21,760
+    # roster-bound gold is left, so the last 640 comes out of tradeable gold.
+    friend = add_character(client, 1725, [], is_gold_earner=False, name="Friend")
+    complete(client, friend["id"], final["id"], difficulty_id=final_normal, bought_bonus=True)  # 10,240
+    complete(client, friend["id"], act4["id"], bought_bonus=True)  # Hard: 12,160
+    totals = week(client)
+    assert totals["roster_bound_left"] == 0
+    assert totals["tradeable_left"] == 32000 + 27000 + 38000 - 640
