@@ -33,6 +33,13 @@ export const STAT_KEYS = {
   leftToUse: "stat:left-to-use",
 } as const;
 
+/** Insight widgets under the tracker. */
+export const WIDGET_KEYS = {
+  goldMonth: "widget:gold-month",
+  goldGoal: "widget:gold-goal",
+  gems: "widget:gems",
+} as const;
+
 /** Pages that can be dropped from the menu. */
 export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems" } as const;
 
@@ -53,8 +60,8 @@ export type Style = "casual" | "regular" | "everything";
 
 export const STYLES: { id: Style; label: string; description: string }[] = [
   { id: "casual", label: "Just raids", description: "Weekly raids, gold raids left and raid gold. Nothing else." },
-  { id: "regular", label: "Raids + dailies", description: "Raids, Hourglass, Ebony Cube and Chaos Dungeon, with gold totals." },
-  { id: "everything", label: "Everything", description: "Every task, gold box and page, including Guardian Raid and char-bound gold." },
+  { id: "regular", label: "Raids + dailies", description: "Raids, Hourglass, Ebony Cube and Chaos Dungeon, with gold totals and charts." },
+  { id: "everything", label: "Everything", description: "Every task, gold box, chart and page, including Guardian Raid and char-bound gold." },
 ];
 
 /** What a play style hides, given today's tasks. */
@@ -70,6 +77,7 @@ export function styleHidden(style: Style, tasks: Task[]): Set<string> {
     STAT_KEYS.total,
     STAT_KEYS.leftToUse,
     PAGE_KEYS.gems,
+    ...Object.values(WIDGET_KEYS),
     ...tasks.filter((t) => t.category !== "raid" && sectionOf(t) === "week").map(viewKey),
   ]);
 }

@@ -12,6 +12,7 @@ import {
   STAT_KEYS,
   Style,
   viewKey,
+  WIDGET_KEYS,
 } from "@/lib/trackerView";
 
 /** Choose what the tracker shows. Saved in this browser only. */
@@ -55,6 +56,14 @@ export default function CustomizePanel({
       items: [{ key: SECTION_KEYS.anytime, label: "Show the Any time card", strong: true }, ...taskItems("anytime")],
     },
     {
+      title: "Widgets",
+      items: [
+        { key: WIDGET_KEYS.goldMonth, label: "Gold, past month" },
+        { key: WIDGET_KEYS.goldGoal, label: "Gold goal" },
+        { key: WIDGET_KEYS.gems, label: "Gem progress (Lv9 / Lv10)" },
+      ],
+    },
+    {
       title: "Also",
       items: [
         { key: FINISHED_ROWS_KEY, label: "Characters who are all done" },
@@ -80,7 +89,7 @@ export default function CustomizePanel({
 
       <StyleChooser current={matchingStyle(hidden, tasks)} onChoose={onStyle} />
 
-      <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {groups.map((group) => (
           <div key={group.title}>
             <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted">{group.title}</h3>

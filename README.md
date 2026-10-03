@@ -18,7 +18,9 @@ non-raid sources to see your weekly gold over time.
     Everything), then lets you tick every card, column, gold box and menu
     page on or off, and tuck away characters who are done (saved per
     browser). The top boxes count gold raids left and log other gold in one
-    step. **Edit who does what** sets each character's usual raids and tasks. Click
+    step. Optional widgets chart the past month of gold, project a gold goal
+    (from your last check-in) and show when your tracked gems add up to the
+    next Lv9 / Lv10. **Edit who does what** sets each character's usual raids and tasks. Click
     an item level to update it.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
   rest gauge, highlighted in gold when a rested run is available today. Click

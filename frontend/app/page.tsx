@@ -15,6 +15,7 @@ import ItemLevelPanel from "@/components/tracker/ItemLevelPanel";
 import StyleChooser from "@/components/tracker/StyleChooser";
 import TaskTable, { ExtraColumn } from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
+import { GemWidget, GoldGoalWidget, GoldMonthWidget } from "@/components/tracker/Widgets";
 import {
   api,
   byPosition,
@@ -27,8 +28,10 @@ import {
   send,
   Task,
   TrackerState,
+  WeeklyGems,
   WeeklyGold,
 } from "@/lib/api";
+import { daysIntoWeek } from "@/lib/insights";
 import {
   difficultyOf,
   GOLD_RAIDS_PER_WEEK,
@@ -56,6 +59,7 @@ import {
   Style,
   styleHidden,
   viewKey,
+  WIDGET_KEYS,
 } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 
@@ -82,6 +86,12 @@ export default function TrackerPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tracker, setTracker] = useState<TrackerState | null>(null);
   const [thisWeek, setThisWeek] = useState<WeeklyGold | null>(null);
+  // Recent weeks for the widgets (oldest first, this week last).
+  const [goldWeeks, setGoldWeeks] = useState<WeeklyGold[]>([]);
+  const [gemWeeks, setGemWeeks] = useState<WeeklyGems[]>([]);
+  // Gold on hand per the last check-in plus tracked gold since; null without one.
+  const [balance, setBalance] = useState<number | null>(null);
+  const [goldGoal, setGoldGoal] = usePreference<number>("gold-goal", 1_000_000);
   // undefined until loaded, null if there has never been a gold check-in.
   const [lastCheckIn, setLastCheckIn] = useState<string | null | undefined>(undefined);
   const [checkInDismissed, setCheckInDismissed] = usePreference<string>("check-in-dismissed-week", "");
@@ -99,11 +109,22 @@ export default function TrackerPage() {
   const isShown = (key: string) => !hidden.has(key);
 
   const loadWeeklyGold = useCallback(() => {
-    api<WeeklyGold[]>("/gold/weekly?weeks=1")
-      .then((weeks) => setThisWeek(weeks[0]))
+    // Nine weeks: this one, plus two runs of four finished weeks to compare.
+    api<WeeklyGold[]>("/gold/weekly?weeks=9")
+      .then((weeks) => {
+        setGoldWeeks(weeks);
+        setThisWeek(weeks[weeks.length - 1]);
+      })
       .catch((e) => setError(describeError(e)));
+    // Everything tracked so far counts toward the next big gem.
+    api<WeeklyGems[]>("/gems/weekly?weeks=104")
+      .then(setGemWeeks)
+      .catch(() => {});
     api<ExpectedBalances | null>("/balances/expected")
-      .then((data) => setLastCheckIn(data ? data.last_check_in : null))
+      .then((data) => {
+        setLastCheckIn(data ? data.last_check_in : null);
+        setBalance(data ? data.expected.total : null);
+      })
       .catch(() => {});
   }, []);
 
@@ -244,6 +265,7 @@ export default function TrackerPage() {
       const path = `/characters/${character.id}/tasks/${task.id}/completion`;
       await (changes === null ? send("DELETE", path) : send("PUT", path, changes));
       refreshTracker();
+      loadWeeklyGold();
     } catch (e) {
       setError(describeError(e));
     }
@@ -545,6 +567,16 @@ export default function TrackerPage() {
       ].filter((stat) => isShown(stat.key))
     : [];
 
+  const weekDays = tracker ? daysIntoWeek(tracker.weekly_period, now) : 0;
+  const widgets = [
+    { key: WIDGET_KEYS.goldMonth, node: <GoldMonthWidget weeks={goldWeeks} /> },
+    {
+      key: WIDGET_KEYS.goldGoal,
+      node: <GoldGoalWidget weeks={goldWeeks} daysIntoWeek={weekDays} balance={balance} goal={goldGoal} onGoal={setGoldGoal} />,
+    },
+    { key: WIDGET_KEYS.gems, node: <GemWidget weeks={gemWeeks} daysIntoWeek={weekDays} /> },
+  ].filter((widget) => isShown(widget.key) && goldWeeks.length > 0);
+
   const showToday = isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
   const showAnytime = isShown(SECTION_KEYS.anytime) && (anytime.columns.length > 0 || editMode);
   // Check-ins are about spending, so they follow the "Left to use" box.
@@ -693,6 +725,16 @@ export default function TrackerPage() {
                   <TaskTable characters={anytime.rows} columns={anytime.columns} renderCell={renderCell} onItemLevel={updateItemLevel} />
                 </TrackerCard>
               )}
+            </div>
+          )}
+
+          {widgets.length > 0 && (
+            <div className={`grid gap-4 md:grid-cols-2 ${widgets.length >= 3 ? "xl:grid-cols-3" : ""}`}>
+              {widgets.map((widget) => (
+                <div key={widget.key} className="flex [&>*]:flex-1">
+                  {widget.node}
+                </div>
+              ))}
             </div>
           )}
         </>
