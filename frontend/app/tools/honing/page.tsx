@@ -9,7 +9,7 @@ import GuideLink from "@/components/guides/GuideLink";
 import NumberInput from "@/components/NumberInput";
 import { useUndo } from "@/components/Toast";
 import HoningStepsEditor from "@/components/tools/HoningStepsEditor";
-import { api, byPosition, Character, formatGold, send, WeeklyGold } from "@/lib/api";
+import { api, API_URL, byPosition, Character, formatGold, send, WeeklyGold } from "@/lib/api";
 import {
   averageIncome,
   BOUND_MODES,
@@ -205,6 +205,11 @@ export default function HoningPage() {
             <Hammer size={22} /> Honing planner
           </h1>
           <GuideLink id="maxroll-honing" label="How honing works" />
+          {plans.length > 0 && (
+            <a href={`${API_URL}/export/honing-plans.csv`} download className="ml-auto rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
+              Export plans (CSV)
+            </a>
+          )}
         </div>
         <p className="text-sm text-muted">
           How much gold a target item level costs, as a range, and how many weeks your own income needs to pay for it.

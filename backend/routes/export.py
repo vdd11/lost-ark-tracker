@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from accounts import account_owner
 from database import get_db
 from gems import lv1_equivalent
-from models import Account, Character, Completion, GemEntry, GoldEntry, SpendingEntry, Task
+from models import Account, Character, Completion, GemEntry, GoldEntry, HoningPlan, MarketPrice, SpendingEntry, Task
+from price_items import PRICE_ITEMS
 from resets import week_of
 
 router = APIRouter(prefix="/api")
@@ -129,3 +130,29 @@ def export_spending(db: Session = Depends(get_db)):
     ]
     header = ["time", "week", "category", "amount", "paid_from", "character", "note", "account"]
     return csv_response("lost-ark-spending.csv", header, rows)
+
+
+@router.get("/export/honing-plans.csv")
+def export_honing_plans(db: Session = Depends(get_db)):
+    """One row per upgrade step, with the plan's goal on each row."""
+    names = dict(db.query(Character.id, Character.name).all())
+    item_names = {item.key: item.name for item in PRICE_ITEMS}
+    item_names.update({row.key: row.name for row in db.query(MarketPrice) if row.name})
+    rows = []
+    for plan in db.query(HoningPlan):
+        for step in plan.plan.get("steps", []):
+            materials = "; ".join(
+                f"{item_names.get(key, key)} x{number(amount)}" for key, amount in step.get("materials", {}).items() if amount
+            )
+            rows.append([
+                names.get(plan.character_id, ""), number(plan.start_item_level),
+                "" if plan.target_item_level is None else number(plan.target_item_level), step.get("label", ""),
+                step.get("count", 0), number(step.get("chance", 0)), number(step.get("chanceStep", 0)),
+                "" if step.get("chanceCap") is None else number(step["chanceCap"]), step.get("guaranteedBy") or "",
+                number(step.get("gold", 0)), number(step.get("silver", 0)), materials, plan.notes or "",
+            ])
+    header = [
+        "character", "start_item_level", "target_item_level", "step", "times", "chance_percent", "chance_per_fail",
+        "max_chance", "guaranteed_by", "gold_per_try", "silver_per_try", "materials_per_try", "notes",
+    ]
+    return csv_response("lost-ark-honing-plans.csv", header, rows)

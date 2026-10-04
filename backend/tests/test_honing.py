@@ -55,3 +55,11 @@ def test_plans_go_with_their_character_and_into_backups(client):
     assert client.get("/api/honing-plans").json() == []
     assert client.post("/api/backup", json=backup).status_code == 204
     assert client.get("/api/honing-plans").json()[0]["target_item_level"] == 1720
+
+
+def test_plans_export_as_csv(client):
+    main = add_character(client, 1700, [], name="Main")
+    client.put(f"/api/honing-plans/{main['id']}", json=plan_body())
+    lines = client.get("/api/export/honing-plans.csv").text.splitlines()
+    assert lines[0].startswith("character,start_item_level,target_item_level,step,times,chance_percent")
+    assert lines[1] == "Main,1700,1720,Armor +14,5,30,3,,8,2000,90000,Destiny Crystallized Guardian Stone x1200,armor first"
