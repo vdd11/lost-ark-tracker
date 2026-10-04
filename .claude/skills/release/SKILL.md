@@ -33,8 +33,11 @@ and publishes downloads for everyone, so **ask before pushing**.
 
    ```sh
    git commit -am "chore: release 1.14.0" -m "Co-Authored-By: ..."   # attribution line as configured
-   git tag -a v1.14.0 -F <notes file>
+   git tag -a v1.14.0 --cleanup=whitespace -F <notes file>
    ```
+
+   `--cleanup=whitespace` matters: by default git drops lines starting with
+   `#` as comments, which would strip the notes' `## New` headings.
 
 7. **Ask before pushing.** Then `git push origin main` and
    `git push origin v1.14.0`. The tag triggers `.github/workflows/release.yml`:
