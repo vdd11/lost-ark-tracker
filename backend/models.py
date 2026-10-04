@@ -272,6 +272,23 @@ class Counter(Base):
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
+class RaidGroup(Base):
+    """A static or regular raid group: which raid, when, and who's in it
+    (character names, some of them other players'). Local only; the tracker
+    shows which of the user's own characters in it still have the raid."""
+
+    __tablename__ = "raid_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    task_id: Mapped[int | None] = mapped_column(ForeignKey("tasks.id"), nullable=True)
+    # Free text, e.g. "Wed 20:00" or "after reset".
+    schedule: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    members: Mapped[list] = mapped_column(JSON, default=list)
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
 class GuideLink(Base):
     """A link the user added to the Guides page (their guild's Discord, a
     favorite creator, ...). The built-in links live in the frontend."""

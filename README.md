@@ -20,11 +20,13 @@ sources to see your weekly gold over time.
     browser). The top boxes count gold raids left and log other gold in one
     step. Optional widgets chart the past month of gold, project a gold goal
     (from your last check-in) and show when your tracked gems add up to the
-    next Lv9 / Lv10. Two more you can turn on under Customize: a **reset
+    next Lv9 / Lv10. More you can turn on under Customize: a **reset
     clock** (next daily and weekly reset in your time and UTC) and
     **counters** you keep by hand (collectibles, tokens, reputation: a name,
     a number, an optional target and +1 / −1, for a character, an account or
-    everyone). A **Lost Ark updates** widget shows live NA/EU server
+    everyone), and **raid groups** for your statics (raid, time, members,
+    some of them other players): each shows which of your characters in it
+    still need the raid this week. A **Lost Ark updates** widget shows live NA/EU server
     status and official announcements, with the official X accounts
     (@LAGameStatus, @playlostark) a tab away. **Edit who does what** sets each
     character's usual raids and tasks; the pencil by an item level updates it.

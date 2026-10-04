@@ -4,6 +4,7 @@ import StyleChooser from "@/components/tracker/StyleChooser";
 import { Task } from "@/lib/api";
 import { COUNTERS_PREFERENCE } from "@/lib/counters";
 import { NEWS_PREFERENCE } from "@/lib/online";
+import { RAID_GROUPS_PREFERENCE } from "@/lib/raidGroups";
 import { RESET_CLOCK_PREFERENCE } from "@/lib/resetClock";
 import { usePreference } from "@/lib/usePreference";
 import {
@@ -38,11 +39,13 @@ export default function CustomizePanel({
   const [newsOn, setNewsOn] = usePreference<boolean>(NEWS_PREFERENCE, false);
   const [resetClockOn, setResetClockOn] = usePreference<boolean>(RESET_CLOCK_PREFERENCE, false);
   const [countersOn, setCountersOn] = usePreference<boolean>(COUNTERS_PREFERENCE, false);
+  const [groupsOn, setGroupsOn] = usePreference<boolean>(RAID_GROUPS_PREFERENCE, false);
   // Opt-in widgets keep their own on/off switch instead of the hidden list.
   const optIn: Record<string, [boolean, (on: boolean) => void]> = {
     [NEWS_PREFERENCE]: [newsOn, setNewsOn],
     [RESET_CLOCK_PREFERENCE]: [resetClockOn, setResetClockOn],
     [COUNTERS_PREFERENCE]: [countersOn, setCountersOn],
+    [RAID_GROUPS_PREFERENCE]: [groupsOn, setGroupsOn],
   };
   const isChecked = (key: string) => (key in optIn ? optIn[key][0] : !hidden.has(key));
   const toggle = (key: string, on: boolean) => (key in optIn ? optIn[key][1](on) : onChange(key, on));
@@ -84,6 +87,7 @@ export default function CustomizePanel({
         { key: WIDGET_KEYS.gems, label: "Gem progress (Lv9 / Lv10)" },
         { key: RESET_CLOCK_PREFERENCE, label: "Reset clock (your time and UTC)" },
         { key: COUNTERS_PREFERENCE, label: "Counters you keep by hand" },
+        { key: RAID_GROUPS_PREFERENCE, label: "Raid groups (statics)" },
         { key: NEWS_PREFERENCE, label: "Lost Ark news & servers (goes online)" },
       ],
     },

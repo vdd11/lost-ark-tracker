@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Character, CharacterTask, Completion, RaidDifficulty, Task
+from models import Character, CharacterTask, Completion, RaidDifficulty, RaidGroup, Task
 from schemas import (
     DifficultyRead,
     TaskCreate,
@@ -83,6 +83,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
         task.archived = True
     else:
         db.query(Completion).filter(Completion.task_id == task_id).update({"task_id": None})
+        db.query(RaidGroup).filter(RaidGroup.task_id == task_id).update({"task_id": None})
         db.query(RaidDifficulty).filter(RaidDifficulty.task_id == task_id).delete()
         db.delete(task)
     db.commit()

@@ -38,6 +38,7 @@ from models import (
     MarketPrice,
     SpendingEntry,
     RaidDifficulty,
+    RaidGroup,
     Task,
 )
 from version import APP_NAME
@@ -59,6 +60,7 @@ BACKUP_MODELS = {
     "hidden_guides": HiddenGuide,
     "honing_plans": HoningPlan,
     "counters": Counter,
+    "raid_groups": RaidGroup,
 }
 BACKUP_FORMAT = 1
 

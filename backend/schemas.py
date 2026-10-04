@@ -404,6 +404,38 @@ class CounterRead(BaseModel):
     position: int
 
 
+class RaidGroupCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    task_id: int | None = None
+    schedule: str | None = Field(default=None, max_length=100)
+    members: list[str] = Field(default=[], max_length=16)
+    notes: str | None = Field(default=None, max_length=500)
+
+    @field_validator("members")
+    @classmethod
+    def clean_members(cls, members: list[str]) -> list[str]:
+        cleaned = [m.strip()[:50] for m in members if m.strip()]
+        return list(dict.fromkeys(cleaned))
+
+
+class RaidGroupUpdate(RaidGroupCreate):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    members: list[str] | None = Field(default=None, max_length=16)
+    position: int | None = None
+
+
+class RaidGroupRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    task_id: int | None
+    schedule: str | None
+    members: list[str]
+    notes: str | None
+    position: int
+
+
 class GuideLinkCreate(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     url: str = Field(min_length=1, max_length=500)
