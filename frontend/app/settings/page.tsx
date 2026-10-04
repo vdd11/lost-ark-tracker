@@ -12,6 +12,7 @@ import CharacterRow from "@/components/settings/CharacterRow";
 import GoldOptimizer from "@/components/settings/GoldOptimizer";
 import LoaLogsSection from "@/components/settings/LoaLogsSection";
 import OnlineSection from "@/components/settings/OnlineSection";
+import PasteRoster from "@/components/settings/PasteRoster";
 import RemindersSection from "@/components/settings/RemindersSection";
 import { AddTaskForm, TaskGroup } from "@/components/settings/TaskLists";
 import { useDragReorder } from "@/components/useDragReorder";
@@ -103,6 +104,13 @@ export default function SettingsPage() {
           accounts={multipleAccounts ? accounts : []}
           raids={tasks.filter((t) => isActiveRaid(t))}
           onAdd={(data) => mutate(() => send("POST", "/characters", data))}
+        />
+        <PasteRoster
+          accounts={accounts}
+          characters={characters}
+          raids={tasks.filter((t) => isActiveRaid(t))}
+          onDone={load}
+          onError={setError}
         />
 
         <div className="overflow-x-auto rounded-md border border-border bg-surface">

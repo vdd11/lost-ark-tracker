@@ -46,6 +46,10 @@ sources to see your weekly gold over time.
   and each one's 3 best-paying raids and difficulties, shows the gain against
   your current setup, and applies it in one click (with Undo). Bound gold can
   count fully, half, or not at all.
+- **Paste a roster** (Settings): add many characters at once from pasted
+  lines of name, class and item level, in any order (typed, or copied from a
+  spreadsheet or a roster page). It previews what it read, skips duplicates,
+  and makes the highest item levels gold earners. Nothing is looked up online.
 - **Accounts**: play more than one account? Add accounts in Settings and put
   each character on one. Each account is its own roster (up to 6 gold earners,
   its own event clears, its own gold and check-ins). The tracker, Gold and
