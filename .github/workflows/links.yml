@@ -1,0 +1,47 @@
+name: Guides links
+
+# Weekly check of the Guides page's built-in links (scripts/check_links.py).
+# Kept out of the normal CI: other sites being down shouldn't fail a build.
+# When a link is dead or now leads to a different site, opens an issue (or
+# comments on the open one) with the report.
+on:
+  schedule:
+    - cron: "17 9 * * 1" # Mondays 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check links
+        id: check
+        run: |
+          set +e
+          python scripts/check_links.py --report links-report.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update an issue
+        if: steps.check.outputs.code == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Guides page: links need attention"
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file links-report.md
+          else
+            gh issue create --title "$title" --body-file links-report.md
+          fi
+
+      - name: Fail if the checker itself couldn't run
+        if: steps.check.outputs.code == '2'
+        run: exit 1
