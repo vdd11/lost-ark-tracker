@@ -136,3 +136,44 @@ def test_preview_matches_clears_to_characters_and_raids(client, set_now, tmp_pat
 
     bad = client.post("/api/loa-logs/preview", json={"path": str(tmp_path / "nope.db")})
     assert bad.status_code == 400 and "No LOA Logs database" in bad.json()["detail"]
+
+
+def test_only_a_local_regular_sqlite_file_is_opened(tmp_path, monkeypatch):
+    good = tmp_path / "encounters.db"
+    make_db(good, [])
+    assert loa_logs.check_database_path(good) == good.resolve()
+
+    with pytest.raises(loa_logs.LoaLogsError, match="is a folder"):
+        loa_logs.check_database_path(tmp_path)
+
+    text = tmp_path / "notes.txt"
+    text.write_text("not a database")
+    with pytest.raises(loa_logs.LoaLogsError, match="isn't a SQLite database"):
+        loa_logs.read_cleared(text, WEEK_START)
+
+    empty = tmp_path / "empty.db"
+    empty.write_bytes(b"")
+    with pytest.raises(loa_logs.LoaLogsError, match="isn't a SQLite database"):
+        loa_logs.check_database_path(empty)
+
+    monkeypatch.setattr(loa_logs, "MAX_DATABASE_BYTES", 10)
+    with pytest.raises(loa_logs.LoaLogsError, match="too large"):
+        loa_logs.check_database_path(good)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [r"\\server\share\encounters.db", "//server/share/encounters.db", r"\\?\UNC\server\share\encounters.db", r"\\.\pipe\x"],
+)
+def test_network_and_device_paths_are_refused(path):
+    from pathlib import PureWindowsPath
+
+    assert loa_logs.is_network_path(PureWindowsPath(path))
+    with pytest.raises(loa_logs.LoaLogsError, match="network path"):
+        loa_logs.check_database_path(PureWindowsPath(path))
+
+
+def test_preview_explains_a_bad_path(client, tmp_path):
+    response = client.post("/api/loa-logs/preview", json={"path": str(tmp_path)})
+    assert response.status_code == 400
+    assert "is a folder" in response.json()["detail"]

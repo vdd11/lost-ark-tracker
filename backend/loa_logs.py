@@ -20,6 +20,7 @@ unknown bosses and players and lets the user map them.
 import json
 import os
 import sqlite3
+import stat
 import sys
 from contextlib import closing
 from dataclasses import dataclass
@@ -28,6 +29,10 @@ from pathlib import Path
 from urllib.parse import quote
 
 DATABASE_NAME = "encounters.db"
+SQLITE_HEADER = b"SQLite format 3\x00"
+# Years of logs make a database of a few GB; nothing this big is LOA Logs'.
+MAX_DATABASE_BYTES = 20 * 1024**3
+MAX_RAID_MAP_BYTES = 5 * 1024**2
 
 
 class LoaLogsError(Exception):
@@ -62,11 +67,56 @@ def default_path() -> Path | None:
     return next((p for p in candidates if p.is_file()), candidates[0] if candidates else None)
 
 
+def is_network_path(path: Path) -> bool:
+    r"""UNC paths (\\server\share, \\?\UNC\...), device paths (\\.\pipe\...)
+    and, on Windows, mapped network drives."""
+    text = str(path)
+    if text.upper().startswith(("\\\\?\\UNC\\", "//?/UNC/")):
+        return True
+    # \\?\C:\... is just a long local path; any other \\ prefix is a share or a device.
+    if text.startswith(("\\\\", "//")) and not text.startswith(("\\\\?\\", "//?/")):
+        return True
+    if sys.platform == "win32" and path.drive.endswith(":"):
+        import ctypes
+
+        DRIVE_REMOTE = 4
+        return ctypes.windll.kernel32.GetDriveTypeW(f"{path.drive}\\") == DRIVE_REMOTE
+    return False
+
+
+def check_database_path(path: Path) -> Path:
+    """The real path of a local, regular, SQLite file of sane size, or a
+    LoaLogsError saying what's wrong. The path comes from the request, so
+    nothing else (folders, devices, network shares, other files) is opened."""
+    if is_network_path(path):
+        raise LoaLogsError("LOA Logs' database has to be on this computer, not a network path.")
+    try:
+        resolved = path.resolve(strict=True)
+        info = resolved.stat()
+    except (OSError, RuntimeError):
+        raise LoaLogsError(f"No LOA Logs database at {path}. Check the path in Settings.") from None
+    if is_network_path(resolved):  # a link or mapped drive that leads to a share
+        raise LoaLogsError("LOA Logs' database has to be on this computer, not a network path.")
+    if stat.S_ISDIR(info.st_mode):
+        raise LoaLogsError(f"{path} is a folder. Choose the {DATABASE_NAME} file inside LOA Logs' folder.")
+    if not stat.S_ISREG(info.st_mode):
+        raise LoaLogsError(f"{path} isn't a regular file.")
+    if info.st_size > MAX_DATABASE_BYTES:
+        raise LoaLogsError(f"{path} is too large to be LOA Logs' database.")
+    try:
+        with open(resolved, "rb") as file:
+            header = file.read(len(SQLITE_HEADER))
+    except OSError as error:
+        raise LoaLogsError(f"Couldn't read {path}: {error.strerror or error}") from error
+    if header != SQLITE_HEADER:
+        raise LoaLogsError(f"{path} isn't a SQLite database. Choose LOA Logs' {DATABASE_NAME}.")
+    return resolved
+
+
 def connect_readonly(path: Path) -> sqlite3.Connection:
     """Open LOA Logs' database without any chance of writing to it."""
-    if not path.is_file():
-        raise LoaLogsError(f"No LOA Logs database at {path}. Check the path in Settings.")
-    uri = f"file:{quote(str(path.resolve()).replace(os.sep, '/'))}?mode=ro"
+    path = check_database_path(path)
+    uri = f"file:{quote(str(path).replace(os.sep, '/'))}?mode=ro"
     try:
         return sqlite3.connect(uri, uri=True)
     except sqlite3.Error as error:
@@ -121,6 +171,8 @@ def read_raid_map(database: Path) -> dict[str, dict[str, list[str]]] | None:
     """LOA Logs' raid -> gate -> bosses table, if it's installed next to the database."""
     path = database.parent / "meter-data" / "encounters.json"
     try:
+        if is_network_path(path) or not path.is_file() or path.stat().st_size > MAX_RAID_MAP_BYTES:
+            return None
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
