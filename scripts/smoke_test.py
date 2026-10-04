@@ -92,7 +92,9 @@ def main() -> int:
 
     port = free_port()
     base = f"http://127.0.0.1:{port}"
-    with tempfile.TemporaryDirectory(prefix="lat-smoke-") as tmp:
+    # On Windows the killed app can hold database.db for a moment longer, so a
+    # leftover temp folder mustn't turn a passing run into a failure.
+    with tempfile.TemporaryDirectory(prefix="lat-smoke-", ignore_cleanup_errors=True) as tmp:
         data_dir = Path(tmp) / "data"
         output_path = Path(tmp) / "output.txt"
         started = time.monotonic()
