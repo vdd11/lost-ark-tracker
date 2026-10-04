@@ -20,9 +20,14 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   checks `/api/` and `/` (CI does this on Linux, releases on all three OSes).
 - Reset logic lives in `backend/resets.py` (naive UTC everywhere). Completions
   are stored per reset period, never cleared, and double as gold history.
-- Schema changes: add new model columns with a `server_default` so
-  `add_missing_columns()` can upgrade existing databases. New tables must also
-  be added to `BACKUP_MODELS` in `backups.py`.
+- Changing the database (details in `migrations.py`):
+  - new column: give it a `server_default`; `add_missing_columns()` adds it.
+  - new table: `create_all` makes it; also add it to `BACKUP_MODELS` in `backups.py`.
+  - fill in or fix data: `run_once(db, "name", fn)` (from `migrations.py`) in `main.py`.
+  - rename / retype / drop a column: `rebuild_table` in `SCHEMA_MIGRATIONS`
+    (runs before `add_missing_columns`; check the old shape first so a new
+    database is a no-op), plus a backup format step (below). Never edit a
+    migration that has shipped; add a new one.
 - Backups (`backups.py`): any change to backed-up data that old files can't
   just be read as (renamed/removed column, changed meaning) bumps
   `BACKUP_FORMAT`, adds an `upgrade_vN_to_vN+1` to `UPGRADES`, and commits a

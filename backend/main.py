@@ -8,7 +8,8 @@ from fastapi.staticfiles import StaticFiles
 
 from accounts import ensure_accounts
 from database import Base, SessionLocal, add_missing_columns, backup_database, engine
-from raids import backfill_bound_gold, backfill_character_bound_gold, retire_old_tasks, run_once, sync_catalog
+from migrations import run_once, run_schema_migrations
+from raids import backfill_bound_gold, backfill_character_bound_gold, retire_old_tasks, sync_catalog
 from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
 from routes import (
@@ -30,10 +31,12 @@ from routes import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Back up first, then create any new tables, upgrade existing ones, and
-    # add the default tasks.
+    # Back up first, then create any new tables, rebuild changed ones (renames
+    # and type changes, before columns are added), add new columns, and add
+    # the default tasks.
     backup_database()
     Base.metadata.create_all(bind=engine)
+    run_schema_migrations(engine)
     added_columns = add_missing_columns()
     with SessionLocal() as db:
         seed_default_tasks(db)
