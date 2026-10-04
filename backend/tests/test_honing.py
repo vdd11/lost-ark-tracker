@@ -17,7 +17,7 @@ def test_save_read_and_delete_a_plan(client, set_now):
     set_now(datetime(2026, 10, 4, 12))
     saved = client.put(f"/api/honing-plans/{main['id']}", json=plan_body()).json()
     assert saved["start_item_level"] == 1700 and saved["target_item_level"] == 1720
-    assert saved["notes"] == "armor first" and saved["bound_mode"] == "roster"
+    assert saved["notes"] == "armor first" and saved["bound_mode"] == "all"
     assert saved["plan"]["steps"][0]["materials"] == {"destiny-guardian-stone": 1200}
     assert saved["plan"]["steps"][0]["chanceCap"] is None
 

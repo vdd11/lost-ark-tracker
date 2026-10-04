@@ -194,13 +194,17 @@ export function forecastPlan(plan: HoningPlan, prices: UnitPrices, samples = 100
   };
 }
 
-/** Which gold can pay for honing: the user's choice, shown on screen. */
+/**
+ * Which gold can pay honing fees. In game, honing uses the character's bound
+ * gold first, then roster-bound, then tradeable (confirmed by the user,
+ * 2026-10-04), so "all" is the default; the others are for planning stricter.
+ */
 export type BoundMode = "tradeable" | "roster" | "all";
 
 export const BOUND_MODES: { key: BoundMode; label: string }[] = [
+  { key: "all", label: "Character-bound, roster-bound, then tradeable (as in game)" },
+  { key: "roster", label: "Roster-bound and tradeable only" },
   { key: "tradeable", label: "Tradeable gold only" },
-  { key: "roster", label: "Tradeable + roster-bound" },
-  { key: "all", label: "Tradeable + roster-bound + this character's bound gold" },
 ];
 
 export type WeeklyIncome = { tradeable: number; rosterBound: number; characterBound: number };

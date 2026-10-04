@@ -35,7 +35,8 @@ type SavedPlan = {
 
 type Draft = { target: string; notes: string; plan: HoningPlan; boundMode: BoundMode };
 
-const EMPTY: Draft = { target: "", notes: "", plan: { steps: [], owned: {} }, boundMode: "roster" };
+// Honing spends the character's bound gold, then roster-bound, then tradeable (per the user, 2026-10-04).
+const EMPTY: Draft = { target: "", notes: "", plan: { steps: [], owned: {} }, boundMode: "all" };
 const INCOME_WEEKS = 9; // 8 finished weeks plus the current one
 
 function draftOf(saved: SavedPlan | undefined): Draft {
@@ -324,8 +325,8 @@ export default function HoningPage() {
               <p className="text-xs text-muted">
                 An estimate from the numbers above, simulated {forecast.samples.toLocaleString()} times with a fixed seed so
                 it doesn&apos;t change between visits. Materials you already have count as free and are used first; the
-                rest is bought at your prices with tradeable gold. If you could sell what you own instead, the real cost is
-                higher.
+                rest is bought at your prices with tradeable gold (bound materials from dailies and raids belong in
+                &ldquo;already have&rdquo;). If you could sell what you own instead, the real cost is higher.
               </p>
             </section>
           )}
@@ -337,8 +338,9 @@ export default function HoningPage() {
                 <p className="text-muted">
                   Your average over the last {INCOME_WEEKS - 1} finished weeks{characters.length > 1 ? ` on ${character.name}'s account` : ""}:{" "}
                   {formatGold(Math.round(income.tradeable))} tradeable, {formatGold(Math.round(income.rosterBound))} roster-bound and{" "}
-                  {formatGold(Math.round(income.characterBound))} {character.name}-bound gold a week (after bonus chests). Materials need
-                  tradeable gold; fees can use whatever &ldquo;{BOUND_MODES.find((m) => m.key === draft.boundMode)?.label}&rdquo; allows.
+                  {formatGold(Math.round(income.characterBound))} {character.name}-bound gold a week (after bonus chests). Buying materials
+                  on the market takes tradeable gold; honing fees use {character.name}&apos;s bound gold first, then
+                  roster-bound, then tradeable (narrow it with &ldquo;{BOUND_MODES.find((m) => m.key === draft.boundMode)?.label}&rdquo;).
                 </p>
               )}
               <label className="flex flex-wrap items-center gap-2">

@@ -360,7 +360,8 @@ class HoningPlanSave(BaseModel):
     target_item_level: float | None = Field(default=None, ge=0, le=5000)
     notes: str | None = Field(default=None, max_length=1000)
     plan: HoningPlanData
-    bound_mode: Literal["tradeable", "roster", "all"] = "roster"
+    # Honing uses the character's bound gold, then roster-bound, then tradeable.
+    bound_mode: Literal["tradeable", "roster", "all"] = "all"
 
 
 class HoningPlanRead(BaseModel):
