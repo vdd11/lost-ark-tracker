@@ -5,11 +5,13 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import { useUndo } from "@/components/Toast";
 import GoldCheckIn from "@/components/GoldCheckIn";
 import NumberInput from "@/components/NumberInput";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
 import { Account, api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
 import { GOLD_SOURCES } from "@/lib/goldSources";
+import { goldEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
 
 const OTHER = "__other__";
@@ -38,6 +40,7 @@ export default function GoldPage() {
   const [showTable, setShowTable] = usePreference<boolean>("gold-table", false);
   const [view, setView] = usePreference("gold-view", 0, VIEW_INDEXES);
   const [error, setError] = useState<string | null>(null);
+  const offerUndo = useUndo();
 
   const load = useCallback(() => {
     Promise.all([
@@ -236,7 +239,15 @@ export default function GoldPage() {
                   <td className="py-1.5 pr-3 text-right tabular-nums">{formatGold(entry.amount)}</td>
                   <td className="py-1.5 text-right">
                     <button
-                      onClick={() => mutate(() => send("DELETE", `/gold-entries/${entry.id}`))}
+                      onClick={() =>
+                        mutate(async () => {
+                          await send("DELETE", `/gold-entries/${entry.id}`);
+                          offerUndo(`Deleted ${formatGold(entry.amount)} from ${entry.source}`, async () => {
+                            await send("POST", "/gold-entries", goldEntryBody(entry));
+                            load();
+                          });
+                        })
+                      }
                       className="rounded px-1.5 text-danger hover:bg-danger/10"
                       aria-label={`Delete ${entry.source} entry`}
                     >

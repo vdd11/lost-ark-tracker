@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAccountChoice } from "@/components/AccountTabs";
 import { RunChanges } from "@/components/ContentCell";
 import { describeError } from "@/components/ErrorBanner";
+import { useUndo } from "@/components/Toast";
 import {
   Account,
   api,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/api";
 import { difficultyOf } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
+import { restoreRunBody } from "@/lib/undo";
 
 /**
  * Everything the tracker page reads from the API, and every change it makes.
@@ -46,6 +48,7 @@ export function useTrackerData() {
   const [recap, setRecap] = useState<WeekRecap | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
+  const offerUndo = useUndo();
 
   // Which account's roster to show; 0 is all of them.
   const [accountId, setAccountId] = useAccountChoice(accounts);
@@ -135,6 +138,24 @@ export function useTrackerData() {
 
   // ---------- mutations ----------
 
+  const completionPath = (character: Character, task: Task) => `/characters/${character.id}/tasks/${task.id}/completion`;
+
+  /** Offer to take back a change; `inverse` makes the API calls, then the tracker re-reads. */
+  function undoable(message: string, inverse: () => Promise<unknown>) {
+    offerUndo(message, async () => {
+      await inverse();
+      refreshTracker();
+      loadWeeklyGold();
+    });
+  }
+
+  /** Undo for a tick (remove it again) or an untick (put the run back as it was). */
+  function offerToggleUndo(character: Character, task: Task, ticked: boolean, before: Run | undefined) {
+    const path = completionPath(character, task);
+    if (ticked) undoable(`${task.name} done on ${character.name}`, () => send("DELETE", path));
+    else undoable(`${task.name} unticked on ${character.name}`, () => send("PUT", path, before ? restoreRunBody(before) : {}));
+  }
+
   async function toggleCompletion(character: Character, task: Task) {
     const key = cellKey(character.id, task.id);
     const wasDone = completed.has(key);
@@ -148,9 +169,10 @@ export function useTrackerData() {
 
     update(!wasDone);
     try {
-      await send(wasDone ? "DELETE" : "PUT", `/characters/${character.id}/tasks/${task.id}/completion`);
+      await send(wasDone ? "DELETE" : "PUT", completionPath(character, task));
       loadWeeklyGold();
       if (task.rest_max > 0) refreshTracker();
+      offerToggleUndo(character, task, !wasDone, undefined);
     } catch (e) {
       update(wasDone);
       setError(describeError(e));
@@ -158,12 +180,20 @@ export function useTrackerData() {
   }
 
   /** Check off (or un-check) a raid at a difficulty; works for extra raids too. */
-  async function toggleRaid(character: Character, task: Task, done: boolean, difficultyId: number | undefined) {
+  async function toggleRaid(
+    character: Character,
+    task: Task,
+    done: boolean,
+    difficultyId: number | undefined,
+    offer = true,
+  ) {
+    const before = runByCell.get(cellKey(character.id, task.id));
     try {
-      const path = `/characters/${character.id}/tasks/${task.id}/completion`;
+      const path = completionPath(character, task);
       await (done ? send("PUT", path, { difficulty_id: difficultyId ?? null }) : send("DELETE", path));
       loadWeeklyGold();
       refreshTracker();
+      if (offer) offerToggleUndo(character, task, done, before);
     } catch (e) {
       setError(describeError(e));
     }
@@ -194,16 +224,22 @@ export function useTrackerData() {
   /** Change the difficulty in a raid cell: the usual one if assigned, and this week's run if done. */
   async function chooseRaidDifficulty(character: Character, task: Task, difficultyId: number, done: boolean) {
     if (character.task_ids.includes(task.id)) await setRaidDifficulty(character, task, difficultyId);
-    if (done) await toggleRaid(character, task, true, difficultyId);
+    // Changing the difficulty of a clear isn't a tick, so no undo offer.
+    if (done) await toggleRaid(character, task, true, difficultyId, false);
   }
 
   /** Update this period's run of tiered content: runs, sands, lucky rooms. */
   async function updateRun(character: Character, task: Task, changes: RunChanges | null) {
+    const before = runByCell.get(cellKey(character.id, task.id));
     try {
-      const path = `/characters/${character.id}/tasks/${task.id}/completion`;
+      const path = completionPath(character, task);
       await (changes === null ? send("DELETE", path) : send("PUT", path, changes));
       refreshTracker();
       loadWeeklyGold();
+      // Ticking or unticking (an empty change, or removing the run) can be undone;
+      // counts, sands and lucky rooms are reversed with their own +/-.
+      if (changes === null) offerToggleUndo(character, task, false, before);
+      else if (Object.keys(changes).length === 0 && !before) offerToggleUndo(character, task, true, undefined);
     } catch (e) {
       setError(describeError(e));
     }
@@ -221,25 +257,36 @@ export function useTrackerData() {
 
   /** Tick off everything a character still has to do in a card, in one click. */
   async function completeAll(character: Character, todo: Task[]) {
+    const ticked: Task[] = [];
     try {
       for (const task of todo) {
         // Raids clear at the character's usual difficulty; everything else is a plain check.
         const body =
           task.category === "raid" && isTiered(task) ? { difficulty_id: difficultyOf(character, task)?.id ?? null } : {};
-        await send("PUT", `/characters/${character.id}/tasks/${task.id}/completion`, body);
+        await send("PUT", completionPath(character, task), body);
+        ticked.push(task);
       }
     } catch (e) {
       setError(describeError(e));
     }
     refreshTracker();
     loadWeeklyGold();
+    if (ticked.length > 0) {
+      undoable(`Marked ${ticked.length} of ${character.name}'s tasks done`, async () => {
+        for (const task of ticked) await send("DELETE", completionPath(character, task));
+      });
+    }
   }
 
   async function setBonus(character: Character, task: Task, bought: boolean) {
     try {
-      await send("PUT", `/characters/${character.id}/tasks/${task.id}/completion`, { bought_bonus: bought });
+      const path = completionPath(character, task);
+      await send("PUT", path, { bought_bonus: bought });
       loadWeeklyGold();
       refreshTracker();
+      undoable(`${bought ? "Bought" : "Removed"} the ${task.name} bonus box on ${character.name}`, () =>
+        send("PUT", path, { bought_bonus: !bought }),
+      );
     } catch (e) {
       setError(describeError(e));
     }

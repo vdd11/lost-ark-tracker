@@ -5,7 +5,9 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
 import NumberInput from "@/components/NumberInput";
+import { useUndo } from "@/components/Toast";
 import { Account, api, BalanceCheck, Character, ExpectedBalances, formatGold, parseUtc, send } from "@/lib/api";
+import { checkInBody } from "@/lib/undo";
 
 // Character-bound gold comes from Horizon Cathedral, which starts at 1700.
 const CHARACTER_BOUND_ITEM_LEVEL = 1700;
@@ -36,6 +38,7 @@ export default function GoldCheckIn({
   const target = accountId || picked || accounts[0]?.id || 0;
   const characters = allCharacters.filter((c) => !multiple || c.account_id === target);
   const [checks, setChecks] = useState<BalanceCheck[]>([]);
+  const offerUndo = useUndo();
   const [expected, setExpected] = useState<ExpectedBalances | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
@@ -92,11 +95,15 @@ export default function GoldCheckIn({
   }
 
   async function remove(check: BalanceCheck) {
-    if (!confirm("Delete this check-in?")) return;
     try {
       await send("DELETE", `/balances/${check.id}`);
       load();
       onChanged();
+      offerUndo("Deleted the check-in", async () => {
+        await send("POST", "/balances", checkInBody(check));
+        load();
+        onChanged();
+      });
     } catch (e) {
       onError(describeError(e));
     }

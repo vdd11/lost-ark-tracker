@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import { useUndo } from "@/components/Toast";
 import StackedWeeklyChart, { ChartSeries } from "@/components/StackedWeeklyChart";
 import {
   Account,
@@ -25,6 +26,7 @@ import {
   WeeklyGems,
 } from "@/lib/api";
 import { formatItemLevel } from "@/lib/raids";
+import { gemEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
 
 // Fixed order and colors; anything else folds into "Other". Ebony Cube and
@@ -77,6 +79,7 @@ export default function GemsPage() {
   const [range, setRange] = usePreference("gems-range", 12, RANGES);
   const [showTable, setShowTable] = usePreference<boolean>("gems-table", false);
   const [error, setError] = useState<string | null>(null);
+  const offerUndo = useUndo();
 
   const load = useCallback(() => {
     Promise.all([
@@ -245,7 +248,15 @@ export default function GemsPage() {
                 <td className="py-1.5 pr-3 text-muted">{entry.note}</td>
                 <td className="py-1.5 text-right">
                   <button
-                    onClick={() => mutate(() => send("DELETE", `/gem-entries/${entry.id}`))}
+                    onClick={() =>
+                      mutate(async () => {
+                        await send("DELETE", `/gem-entries/${entry.id}`);
+                        offerUndo(`Deleted the ${entry.source} gems`, async () => {
+                          await send("POST", "/gem-entries", gemEntryBody(entry));
+                          load();
+                        });
+                      })
+                    }
                     className="rounded px-1.5 text-danger hover:bg-danger/10"
                     aria-label={`Delete ${entry.source} entry`}
                   >
