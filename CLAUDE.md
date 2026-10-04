@@ -27,7 +27,8 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   message box. `--no-tray` runs it console-style (the smoke test uses it).
 - Package: `backend/.venv/Scripts/python build.py` → `dist/LostArkTracker.exe`,
   then `python scripts/smoke_test.py dist/LostArkTracker.exe` starts it and
-  checks `/api/` and `/` (CI does this on Linux, releases on all three OSes).
+  checks `/api/` and every page in its `PAGES` list (add new pages there; CI
+  does this on Linux, releases on all three OSes).
 - Reset logic lives in `backend/resets.py` (naive UTC everywhere). Completions
   are stored per reset period, never cleared, and double as gold history.
 - Changing the database (details in `migrations.py`):

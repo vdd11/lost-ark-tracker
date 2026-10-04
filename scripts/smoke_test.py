@@ -5,7 +5,8 @@
 
 Runs the binary on a free port with a throwaway data folder, waits for
 GET /api/ to answer as Lost Ark Tracker (at the expected version, if given),
-checks GET / returns the app's page, then stops it. Exits 1 with the app's
+checks GET / and every other page (static-export routes with trailing
+slashes are easy to break) return the app's page, then stops it. Exits 1 with the app's
 output and log if anything fails. Standard library only, so CI can run it on
 Windows, macOS and Linux right after build.py.
 """
@@ -24,6 +25,8 @@ import urllib.request
 from pathlib import Path
 
 APP_NAME = "Lost Ark Tracker"
+# Every page of the static export; add new ones here.
+PAGES = ["/", "/raids/", "/gold/", "/gems/", "/tools/", "/tools/prices/", "/tools/honing/", "/guides/", "/settings/"]
 
 
 def free_port() -> int:
@@ -108,9 +111,13 @@ def main() -> int:
                     raise RuntimeError(f"GET /api/ answered as {info!r}, not {APP_NAME}")
                 if args.expect_version and info.get("version") != args.expect_version:
                     raise RuntimeError(f"version is {info.get('version')!r}, expected {args.expect_version!r}")
-                status, page = get(f"{base}/")
-                if status != 200 or f"<title>{APP_NAME}</title>" not in page:
-                    raise RuntimeError(f"GET / didn't return the app's page (HTTP {status})")
+                for path in PAGES:
+                    try:
+                        status, page = get(f"{base}{path}")
+                    except urllib.error.HTTPError as error:
+                        status, page = error.code, ""
+                    if status != 200 or f"<title>{APP_NAME}</title>" not in page:
+                        raise RuntimeError(f"GET {path} didn't return the app's page (HTTP {status})")
             except Exception as error:  # noqa: BLE001 - report anything, then clean up
                 print(f"FAIL: {error}")
                 stop(process)
@@ -123,7 +130,7 @@ def main() -> int:
                 return 1
             stop(process)
 
-    print(f"OK: {APP_NAME} {info.get('version')} served /api/ and / in {time.monotonic() - started:.1f}s")
+    print(f"OK: {APP_NAME} {info.get('version')} served /api/ and {len(PAGES)} pages in {time.monotonic() - started:.1f}s")
     return 0
 
 
