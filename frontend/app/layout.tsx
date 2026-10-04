@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import Nav from "@/components/Nav";
@@ -24,7 +25,9 @@ export const metadata: Metadata = {
 // Matches usePreference("theme") in ThemeToggle: values are stored as JSON.
 const THEME_SCRIPT = `(function(){try{var t=JSON.parse(localStorage.getItem("lost-ark-tracker:theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// Typed by hand rather than with the generated LayoutProps<"/">, so
+// `tsc --noEmit` works on a fresh checkout before `next build` has run.
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html
       lang="en"

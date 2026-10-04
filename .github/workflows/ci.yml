@@ -37,9 +37,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run lint
-      # Build first: it generates the route types (e.g. LayoutProps) in .next/.
-      - run: npm run build
       - run: npx tsc --noEmit
+      - run: npm run build
 
   # Package the app the way releases do and check the binary actually starts
   # and serves the API and the page. (Windows and macOS are checked on release.)
