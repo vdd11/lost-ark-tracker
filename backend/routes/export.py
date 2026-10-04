@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from accounts import account_owner
 from database import get_db
 from gems import lv1_equivalent
-from models import Account, Character, Completion, GemEntry, GoldEntry, Task
+from models import Account, Character, Completion, GemEntry, GoldEntry, SpendingEntry, Task
 from resets import week_of
 
 router = APIRouter(prefix="/api")
@@ -113,3 +113,19 @@ def export_prices(db: Session = Depends(get_db)):
         for p in all_prices(db)
     ]
     return csv_response("lost-ark-prices.csv", ["item", "price", "per", "gold_per_unit", "updated", "kind"], rows)
+
+
+@router.get("/export/spending.csv")
+def export_spending(db: Session = Depends(get_db)):
+    names = dict(db.query(Character.id, Character.name).all())
+    account = account_names(db)
+    rows = [
+        [
+            entry.spent_at.isoformat(timespec="minutes"), week_of(entry.spent_at).isoformat(), entry.category,
+            entry.amount, entry.paid_from, names.get(entry.character_id, ""), entry.note or "",
+            account(entry.character_id, entry.account_id),
+        ]
+        for entry in db.query(SpendingEntry)
+    ]
+    header = ["time", "week", "category", "amount", "paid_from", "character", "note", "account"]
+    return csv_response("lost-ark-spending.csv", header, rows)

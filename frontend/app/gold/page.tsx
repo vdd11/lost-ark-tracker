@@ -10,6 +10,7 @@ import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import { useUndo } from "@/components/Toast";
 import GoldCheckIn from "@/components/GoldCheckIn";
 import NumberInput from "@/components/NumberInput";
+import SpendingLog from "@/components/SpendingLog";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
 import { Account, api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, Task, WeeklyGold } from "@/lib/api";
 import { GOLD_SOURCES } from "@/lib/goldSources";
@@ -43,6 +44,8 @@ export default function GoldPage() {
   const [showTable, setShowTable] = usePreference<boolean>("gold-table", false);
   const [view, setView] = usePreference("gold-view", 0, VIEW_INDEXES);
   const [error, setError] = useState<string | null>(null);
+  // Bumped when spending is logged, so the check-in recomputes what it expects.
+  const [spendingVersion, setSpendingVersion] = useState(0);
   const offerUndo = useUndo();
 
   const load = useCallback(() => {
@@ -123,7 +126,21 @@ export default function GoldPage() {
 
       <AuctionCalculator />
 
-      <GoldCheckIn characters={allCharacters} accounts={accounts} accountId={accountId} onChanged={load} onError={setError} />
+      <GoldCheckIn
+        characters={allCharacters}
+        accounts={accounts}
+        accountId={accountId}
+        onChanged={load}
+        onError={setError}
+        refreshKey={spendingVersion}
+      />
+
+      <SpendingLog
+        characters={characters}
+        accountId={accountId}
+        onChanged={() => setSpendingVersion((v) => v + 1)}
+        onError={setError}
+      />
 
       <section className="rounded-md border border-border bg-surface p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

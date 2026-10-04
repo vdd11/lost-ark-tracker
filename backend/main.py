@@ -29,6 +29,7 @@ from routes import (
     news,
     prices,
     recap,
+    spending,
     tasks,
     tracker,
 )
@@ -90,7 +91,7 @@ def platform_name() -> str:
 
 
 app.include_router(router)
-for module in (accounts, characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export, news, recap, loa_logs, history, prices):
+for module in (accounts, characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export, news, recap, loa_logs, history, prices, spending):
     app.include_router(module.router)
 
 

@@ -3,7 +3,7 @@
 A check-in records the gold on hand. The next one's *expected* balance is
 the previous check-in plus tracked earnings since, minus bonus chests bought
 since, which spend the buyer's character-bound gold first, then roster-bound,
-then tradeable (as in game). Whatever is missing from the actual balance was
+then tradeable (as in game), and logged spending. Whatever is missing from the actual balance was
 spent on things the app doesn't track.
 
 Gold is per account, so each account's check-ins form their own chain and
@@ -16,7 +16,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from accounts import account_owner
-from models import Account, BalanceCheck, Completion, GoldEntry
+from models import Account, BalanceCheck, Completion, GoldEntry, SpendingEntry
 
 
 @dataclass
@@ -74,6 +74,14 @@ def project(db: Session, start: Balances, since: datetime, until: datetime, acco
             )
     for purchase in purchases:
         spend(result, purchase.character_id, purchase.bonus_spent)
+    logged = db.query(SpendingEntry).filter(SpendingEntry.spent_at > since, SpendingEntry.spent_at <= until)
+    for entry in logged.order_by(SpendingEntry.spent_at, SpendingEntry.id):
+        if not mine(entry.character_id, entry.account_id):
+            continue
+        if entry.paid_from == "tradeable":
+            result.tradeable -= entry.amount
+        else:
+            spend(result, entry.character_id, entry.amount)
     return result
 
 

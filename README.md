@@ -88,6 +88,11 @@ sources to see your weekly gold over time.
     compares it with your last check-in plus everything it tracked since, so
     you see how much went to things it doesn't track (honing, the market, ...)
     without logging each one. The tracker reminds you after the weekly reset.
+  - **Spending**: log gold you spent (honing, gems, market, other) with an
+    optional character and note. Check-ins subtract it, so "untracked" is only
+    what you didn't log. Market purchases come out of tradeable gold; the rest
+    uses the character's bound gold first, then roster-bound, then tradeable
+    (or choose tradeable only). Totals for the last 30 days; CSV export.
 - **Gems**: Ebony Cube and Haal's Hourglass gems are counted from the tracker
   using each tier's reward table (editable on the Gems page). Log Guardian
   Raid and Field Boss drops by hand. Weekly chart and per-character totals in

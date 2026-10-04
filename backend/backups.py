@@ -32,6 +32,7 @@ from models import (
     GemEntry,
     GoldEntry,
     MarketPrice,
+    SpendingEntry,
     RaidDifficulty,
     Task,
 )
@@ -49,6 +50,7 @@ BACKUP_MODELS = {
     "gem_entries": GemEntry,
     "balance_checks": BalanceCheck,
     "market_prices": MarketPrice,
+    "spending_entries": SpendingEntry,
 }
 BACKUP_FORMAT = 1
 

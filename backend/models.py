@@ -181,6 +181,26 @@ class GemEntry(Base):
     earned_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class SpendingEntry(Base):
+    """Gold spent on something, entered by hand (or logged from a tool), so
+    check-ins can tell it apart from spending the app doesn't know about."""
+
+    __tablename__ = "spending_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    # honing, gems, market or other (schemas.SpendingCategory).
+    category: Mapped[str] = mapped_column(String(20))
+    amount: Mapped[int] = mapped_column(Integer)
+    # "bound_first": the character's bound gold, then roster-bound, then
+    # tradeable (like bonus chests); "tradeable": tradeable gold only.
+    paid_from: Mapped[str] = mapped_column(String(20), default="bound_first", server_default="bound_first")
+    character_id: Mapped[int | None] = mapped_column(ForeignKey("characters.id"), nullable=True)
+    # For spending not tied to a character; otherwise the character's account.
+    account_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    spent_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class BalanceCheck(Base):
     """Gold on hand at a moment, entered by the user. Comparing it with what
     tracked earnings and spending predict reveals untracked spending."""

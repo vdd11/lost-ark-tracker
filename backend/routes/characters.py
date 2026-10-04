@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from accounts import first_account_id
-from models import Account, Character, CharacterTask, Completion, GoldEntry, RaidDifficulty, Task
+from models import Account, Character, CharacterTask, Completion, GoldEntry, RaidDifficulty, SpendingEntry, Task
 from schemas import (
     AssignTask,
     CharacterCreate,
@@ -132,6 +132,7 @@ def delete_character(character_id: int, db: Session = Depends(get_db)):
     # Keep gold history, just detach it from the deleted character.
     db.query(Completion).filter(Completion.character_id == character_id).update({"character_id": None})
     db.query(GoldEntry).filter(GoldEntry.character_id == character_id).update({"character_id": None})
+    db.query(SpendingEntry).filter(SpendingEntry.character_id == character_id).update({"character_id": None})
     db.delete(character)
     db.commit()
 

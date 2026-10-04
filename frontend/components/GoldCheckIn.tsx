@@ -24,9 +24,12 @@ export default function GoldCheckIn({
   accountId,
   onChanged,
   onError,
+  refreshKey = 0,
 }: {
   characters: Character[];
   accounts: Account[];
+  /** Changes when something else (logged spending) moves the expected balance. */
+  refreshKey?: number;
   /** The account the page shows; 0 is all of them. */
   accountId: number;
   onChanged: () => void;
@@ -63,9 +66,10 @@ export default function GoldCheckIn({
       .catch((e) => onError(describeError(e)));
   }, [onError, accountId, target]);
 
+  // refreshKey: reload when logged spending changes what's expected.
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, refreshKey]);
 
   const counted = expected?.expected.character_bound ?? {};
   const boundCharacters = characters.filter(

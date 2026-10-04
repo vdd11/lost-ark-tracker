@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 TaskCategory = Literal["daily", "weekly", "raid"]
 BoundKind = Literal["roster", "character"]
+SpendingCategory = Literal["honing", "gems", "market", "other"]
+PaidFrom = Literal["bound_first", "tradeable"]
 
 
 class RaidChoice(BaseModel):
@@ -289,6 +291,30 @@ class PriceCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     price: float | None = Field(default=None, ge=0)
     per: int = Field(default=1, ge=1, le=100_000)
+
+
+class SpendingCreate(BaseModel):
+    category: SpendingCategory
+    amount: int = Field(gt=0)
+    # Market purchases can only use tradeable gold; the rest defaults to bound first.
+    paid_from: PaidFrom | None = None
+    character_id: int | None = None
+    account_id: int | None = None
+    note: str | None = Field(default=None, max_length=200)
+    spent_at: datetime | None = None
+
+
+class SpendingRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    category: SpendingCategory
+    amount: int
+    paid_from: PaidFrom
+    character_id: int | None
+    account_id: int | None
+    note: str | None
+    spent_at: datetime
 
 
 class BalancesOut(BaseModel):
