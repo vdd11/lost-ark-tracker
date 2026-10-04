@@ -52,6 +52,13 @@ sources to see your weekly gold over time.
     value materials. Add your own items; hide or reset any. Nothing is looked
     up online: the community price site (lostarkmarket.online) now redirects
     to an unrelated site, so there's no price fetch.
+- **Guides** (`g` `u`): a short, hand-picked list of guides, calculators
+  and databases (Maxroll, the official patch notes, honing and astrogem
+  calculators, LOA Logs, lostark.bible, ...), searchable and grouped by
+  category. Add your own links (your guild's Discord, a creator you follow),
+  hide built-in ones and bring them back. Links open in your browser; the
+  tracker loads nothing from them. On a phone or narrow window the menu shows
+  icons, with the current page's name.
 - **Paste a roster** (Settings): add many characters at once from pasted
   lines of name, class and item level, in any order (typed, or copied from a
   spreadsheet or a roster page). It previews what it read, skips duplicates,

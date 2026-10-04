@@ -238,6 +238,28 @@ class MarketPrice(Base):
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class GuideLink(Base):
+    """A link the user added to the Guides page (their guild's Discord, a
+    favorite creator, ...). The built-in links live in the frontend."""
+
+    __tablename__ = "guide_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(100))
+    url: Mapped[str] = mapped_column(String(500))
+    description: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    category: Mapped[str] = mapped_column(String(50), default="My links", server_default="My links")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
+class HiddenGuide(Base):
+    """A built-in Guides link the user hid, by its id in lib/data/guides.json."""
+
+    __tablename__ = "hidden_guides"
+
+    guide_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+
+
 class AppliedMigration(Base):
     """One-off data upgrades that already ran, so each runs only once."""
 

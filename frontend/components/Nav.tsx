@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Gem, Keyboard, LayoutGrid, Settings2, Swords, Wrench } from "lucide-react";
+import { BookOpen, Coins, Gem, Keyboard, LayoutGrid, Settings2, Swords, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,6 +17,7 @@ const LINKS: { href: string; label: string; icon: typeof Coins; key?: string }[]
   { href: "/gold", label: "Gold", icon: Coins, key: PAGE_KEYS.gold },
   { href: "/gems", label: "Gems", icon: Gem, key: PAGE_KEYS.gems },
   { href: "/tools", label: "Tools", icon: Wrench, key: PAGE_KEYS.tools },
+  { href: "/guides", label: "Guides", icon: BookOpen, key: PAGE_KEYS.guides },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
@@ -36,19 +37,26 @@ export default function Nav() {
     <header className="border-b border-border bg-surface">
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
         <span className="font-semibold text-accent">Lost Ark Tracker</span>
-        <div className="flex flex-wrap gap-1">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
-                isCurrent(link.href) ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
-              }`}
-            >
-              <link.icon size={16} />
-              {link.label}
-            </Link>
-          ))}
+        {/* On a phone the links get their own row, as icons; the current page keeps its label. */}
+        <div className="order-last flex w-full flex-wrap gap-1 md:order-none md:w-auto">
+          {links.map((link) => {
+            const current = isCurrent(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-label={link.label}
+                title={link.label}
+                aria-current={current ? "page" : undefined}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm lg:px-3 ${
+                  current ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
+                }`}
+              >
+                <link.icon size={16} />
+                <span className={current ? "" : "hidden lg:inline"}>{link.label}</span>
+              </Link>
+            );
+          })}
         </div>
         <div className="ml-auto flex items-center gap-2">
           <UpdateNotice enabled={updateCheck === "on"} />

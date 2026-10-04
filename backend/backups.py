@@ -31,6 +31,8 @@ from models import (
     Completion,
     GemEntry,
     GoldEntry,
+    GuideLink,
+    HiddenGuide,
     MarketPrice,
     SpendingEntry,
     RaidDifficulty,
@@ -51,6 +53,8 @@ BACKUP_MODELS = {
     "balance_checks": BalanceCheck,
     "market_prices": MarketPrice,
     "spending_entries": SpendingEntry,
+    "guide_links": GuideLink,
+    "hidden_guides": HiddenGuide,
 }
 BACKUP_FORMAT = 1
 

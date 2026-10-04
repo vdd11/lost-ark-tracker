@@ -317,6 +317,54 @@ class SpendingRead(BaseModel):
     spent_at: datetime
 
 
+def web_address(url: str | None) -> str | None:
+    """Links open in the browser: only http(s), never javascript: or file:.
+    "discord.gg/abc" becomes "https://discord.gg/abc"."""
+    if url is None:
+        return None
+    url = url.strip()
+    host = url.split("/")[0]
+    if "://" not in url and "." in host and ":" not in host and " " not in url:
+        url = f"https://{url}"
+    if not url.lower().startswith(("http://", "https://")) or " " in url or len(url) < 11:
+        raise ValueError("Use a web address starting with https://")
+    return url
+
+
+class GuideLinkCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    url: str = Field(min_length=1, max_length=500)
+    description: str | None = Field(default=None, max_length=300)
+    category: str = Field(default="My links", min_length=1, max_length=50)
+
+    _check_url = field_validator("url")(web_address)
+
+
+class GuideLinkUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    url: str | None = Field(default=None, min_length=1, max_length=500)
+    description: str | None = Field(default=None, max_length=300)
+    category: str | None = Field(default=None, min_length=1, max_length=50)
+
+    _check_url = field_validator("url")(web_address)
+
+
+class GuideLinkRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    url: str
+    description: str | None
+    category: str
+    position: int
+
+
+class GuidesRead(BaseModel):
+    links: list[GuideLinkRead]
+    hidden: list[str]
+
+
 class BalancesOut(BaseModel):
     tradeable: int
     roster_bound: int

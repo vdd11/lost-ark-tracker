@@ -50,7 +50,7 @@ export const WIDGET_KEYS = {
 const RETIRED_KEYS = ["widget:news"];
 
 /** Pages that can be dropped from the menu. */
-export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems", tools: "page:tools" } as const;
+export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems", tools: "page:tools", guides: "page:guides" } as const;
 
 /** Hidden until someone turns them on in Customize. */
 export const DEFAULT_HIDDEN = ["task:Guardian Raid"];

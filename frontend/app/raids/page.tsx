@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import AddRaidForm from "@/components/raids/AddRaidForm";
 import EventForm from "@/components/raids/EventForm";
+import GuideLink from "@/components/guides/GuideLink";
 import RaidCard from "@/components/raids/RaidCard";
 import { api, byPosition, Character, send, Task } from "@/lib/api";
 import { GOLD_RAIDS_PER_WEEK, isActiveRaid } from "@/lib/raids";
@@ -50,7 +51,10 @@ export default function RaidsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Raids</h1>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl font-bold">Raids</h1>
+          <GuideLink id="maxroll" label="Raid guides on Maxroll" />
+        </div>
         <p className="mt-1 max-w-3xl text-sm text-muted">
           What can be run right now, the item level each difficulty needs, and the total gold for all gates. Each
           character gets gold from {GOLD_RAIDS_PER_WEEK} raids a week (event raids aside), and raids reset Wednesday

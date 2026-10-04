@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import GuideLink from "@/components/guides/GuideLink";
 import { useUndo } from "@/components/Toast";
 import PriceRow, { PriceChange } from "@/components/tools/PriceRow";
 import { api, API_URL, send } from "@/lib/api";
@@ -74,9 +75,12 @@ export default function PricesPage() {
         <Link href="/tools" className="mb-2 inline-flex items-center gap-1 text-sm text-muted hover:text-foreground">
           <ArrowLeft size={14} /> Tools
         </Link>
-        <h1 className="mb-1 flex items-center gap-2 text-2xl font-bold">
-          <Tags size={22} /> Prices
-        </h1>
+        <div className="mb-1 flex flex-wrap items-baseline gap-3">
+          <h1 className="flex items-center gap-2 text-2xl font-bold">
+            <Tags size={22} /> Prices
+          </h1>
+          <GuideLink id="maxroll-gold" label="Gold and silver guide" />
+        </div>
         <p className="text-sm text-muted">
           What items cost on the market, as you see them in game. The honing and astrogem tools use these to put a gold
           value on materials. Type the price of a listing and how many units it&apos;s for (the market sells some items in

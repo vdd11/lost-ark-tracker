@@ -1,0 +1,260 @@
+{
+  "checked": "2026-10-04",
+  "note": "Built-in Guides page links. Every URL was opened on the date above and its page title matched. scripts/check_links.py re-checks them weekly. Left out: lostarkmarket.online (redirects to an unrelated gambling site since at least 2026-10-04) and the Fandom wiki (blocks automated checks, couldn't be verified).",
+  "guides": [
+    {
+      "id": "maxroll",
+      "title": "Maxroll: Lost Ark",
+      "url": "https://maxroll.gg/lost-ark",
+      "description": "Class builds, raid guides and a large resources section, kept up to date with patches.",
+      "category": "Start here",
+      "kind": "guide",
+      "tags": [
+        "builds",
+        "raids",
+        "classes"
+      ]
+    },
+    {
+      "id": "maxroll-t4-checklist",
+      "title": "Tier 4 checklist",
+      "url": "https://maxroll.gg/lost-ark/resources/lost-ark-tier-4-checklist",
+      "description": "What to do, in order, to get a character ready for Tier 4 content.",
+      "category": "Start here",
+      "kind": "guide",
+      "tags": [
+        "new player",
+        "alts",
+        "progression"
+      ]
+    },
+    {
+      "id": "maxroll-cheat-sheets",
+      "title": "One-page cheat sheets",
+      "url": "https://maxroll.gg/lost-ark/resources/lost-ark-cheat-sheet-collection",
+      "description": "Single-image summaries of systems and raid mechanics to keep open while you play.",
+      "category": "Start here",
+      "kind": "guide",
+      "tags": [
+        "cheat sheet",
+        "mechanics"
+      ]
+    },
+    {
+      "id": "official-news",
+      "title": "Official news and patch notes",
+      "url": "https://www.playlostark.com/en-us/news",
+      "description": "Amazon Games' announcements, weekly updates and full patch notes for NA and EU.",
+      "category": "Start here",
+      "kind": "news",
+      "tags": [
+        "patch notes",
+        "updates",
+        "maintenance"
+      ]
+    },
+    {
+      "id": "maxroll-honing",
+      "title": "Gear honing system",
+      "url": "https://maxroll.gg/lost-ark/resources/gear-honing-system",
+      "description": "How honing, Artisan's Energy and advanced honing work, and what to hone first.",
+      "category": "Honing and gear",
+      "kind": "guide",
+      "tags": [
+        "honing",
+        "item level",
+        "artisan's energy"
+      ]
+    },
+    {
+      "id": "maxroll-ark-passive",
+      "title": "Ark Passive guide",
+      "url": "https://maxroll.gg/lost-ark/resources/ark-passive-system-guide",
+      "description": "The Evolution, Enlightenment and Leap trees and how to earn their points.",
+      "category": "Honing and gear",
+      "kind": "guide",
+      "tags": [
+        "ark passive",
+        "progression"
+      ]
+    },
+    {
+      "id": "maxroll-ark-grid",
+      "title": "Ark Grid guide",
+      "url": "https://maxroll.gg/lost-ark/resources/ark-grid-system-guide",
+      "description": "Cores, astrogems and how to fill the Ark Grid.",
+      "category": "Honing and gear",
+      "kind": "guide",
+      "tags": [
+        "ark grid",
+        "astrogems",
+        "cores"
+      ]
+    },
+    {
+      "id": "maxroll-upgrade-calculator",
+      "title": "Maxroll upgrade calculator",
+      "url": "https://maxroll.gg/lost-ark/upgrade-calculator",
+      "description": "Materials and gold for a range of honing levels.",
+      "category": "Honing and gear",
+      "kind": "tool",
+      "tags": [
+        "honing",
+        "calculator",
+        "materials"
+      ]
+    },
+    {
+      "id": "honing-forecast",
+      "title": "Honing Forecast",
+      "url": "https://honing-forecast.pages.dev/",
+      "description": "Open-source honing cost forecaster.",
+      "category": "Honing and gear",
+      "kind": "tool",
+      "tags": [
+        "honing",
+        "calculator",
+        "open source"
+      ]
+    },
+    {
+      "id": "peepobus-honing",
+      "title": "Peepobus honing calculator",
+      "url": "https://peepobus.com/en/honing/calculator",
+      "description": "Average and worst-case materials, breath use and gold value for honing.",
+      "category": "Honing and gear",
+      "kind": "tool",
+      "tags": [
+        "honing",
+        "calculator",
+        "breath"
+      ]
+    },
+    {
+      "id": "lootcalc-honing",
+      "title": "LootCalc honing calculator",
+      "url": "https://lootcalc.com/games/lost-ark/honing-calculator",
+      "description": "Models one honing attempt from the success chance and costs you copy from the game.",
+      "category": "Honing and gear",
+      "kind": "tool",
+      "tags": [
+        "honing",
+        "calculator"
+      ]
+    },
+    {
+      "id": "loseii-astrogems",
+      "title": "Loseii astrogem calculator",
+      "url": "https://www.loseii.com/loa-astrogem-calc/",
+      "description": "Grades astrogem loadouts, with cut, fuse and throw tables and a processing advisor.",
+      "category": "Honing and gear",
+      "kind": "tool",
+      "tags": [
+        "astrogems",
+        "ark grid",
+        "calculator"
+      ]
+    },
+    {
+      "id": "meta-game",
+      "title": "Lost Ark Meta Game",
+      "url": "https://lostark.meta-game.gg/",
+      "description": "Armory lookups and an ability stone faceting calculator.",
+      "category": "Honing and gear",
+      "kind": "tool",
+      "tags": [
+        "ability stone",
+        "calculator"
+      ]
+    },
+    {
+      "id": "maxroll-gold",
+      "title": "How to make gold and silver",
+      "url": "https://maxroll.gg/lost-ark/resources/how-to-make-gold-silver",
+      "description": "Where gold and silver come from each week and which activities are worth your time.",
+      "category": "Gold and market",
+      "kind": "guide",
+      "tags": [
+        "gold",
+        "silver",
+        "weekly"
+      ]
+    },
+    {
+      "id": "loa-logs",
+      "title": "LOA Logs",
+      "url": "https://github.com/snoww/loa-logs",
+      "description": "The DPS meter many raiders run. The tracker can import your clears from it (Settings).",
+      "category": "Raids",
+      "kind": "tool",
+      "tags": [
+        "dps meter",
+        "logs",
+        "raids"
+      ]
+    },
+    {
+      "id": "shotgun175",
+      "title": "shotgun175's tools",
+      "url": "https://shotgun175.github.io/",
+      "description": "An Ark Grid optimizer, raid overlays and a cash-shop value calculator.",
+      "category": "Raids",
+      "kind": "tool",
+      "tags": [
+        "raids",
+        "cash shop"
+      ]
+    },
+    {
+      "id": "lostark-bible",
+      "title": "lostark.bible",
+      "url": "https://lostark.bible/",
+      "description": "Look up any NA or EU character's gear, gems and engravings.",
+      "category": "Lookup",
+      "kind": "database",
+      "tags": [
+        "characters",
+        "roster",
+        "armory"
+      ]
+    },
+    {
+      "id": "lostark-codex",
+      "title": "Lost Ark Codex",
+      "url": "https://lostarkcodex.com/us/",
+      "description": "Database of items, quests and where things come from.",
+      "category": "Lookup",
+      "kind": "database",
+      "tags": [
+        "items",
+        "quests",
+        "collectibles"
+      ]
+    },
+    {
+      "id": "reddit",
+      "title": "r/lostarkgame",
+      "url": "https://www.reddit.com/r/lostarkgame/",
+      "description": "The main Lost Ark subreddit: news, discussion and questions.",
+      "category": "Community",
+      "kind": "community",
+      "tags": [
+        "reddit",
+        "discussion"
+      ]
+    },
+    {
+      "id": "neria",
+      "title": "Neria",
+      "url": "https://neria.lol/",
+      "description": "Another raid and gold tracker, online, with LOA Logs and lostark.bible sync.",
+      "category": "Community",
+      "kind": "tool",
+      "tags": [
+        "tracker",
+        "raids",
+        "gold"
+      ]
+    }
+  ]
+}

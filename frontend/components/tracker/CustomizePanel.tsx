@@ -83,6 +83,7 @@ export default function CustomizePanel({
         { key: PAGE_KEYS.gold, label: "Gold page in the menu" },
         { key: PAGE_KEYS.gems, label: "Gems page in the menu" },
         { key: PAGE_KEYS.tools, label: "Tools page in the menu" },
+        { key: PAGE_KEYS.guides, label: "Guides page in the menu" },
       ],
     },
   ].filter((group) => group.items.length > 0);
