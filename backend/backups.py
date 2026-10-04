@@ -23,7 +23,18 @@ from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime
 
-from models import Account, BalanceCheck, Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
+from models import (
+    Account,
+    BalanceCheck,
+    Character,
+    CharacterTask,
+    Completion,
+    GemEntry,
+    GoldEntry,
+    MarketPrice,
+    RaidDifficulty,
+    Task,
+)
 from version import APP_NAME
 
 # Restore order: parents before children. Deletes run in reverse.
@@ -37,6 +48,7 @@ BACKUP_MODELS = {
     "gold_entries": GoldEntry,
     "gem_entries": GemEntry,
     "balance_checks": BalanceCheck,
+    "market_prices": MarketPrice,
 }
 BACKUP_FORMAT = 1
 

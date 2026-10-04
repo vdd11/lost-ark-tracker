@@ -264,6 +264,33 @@ class GoldEntryRead(BaseModel):
     earned_at: datetime
 
 
+class PriceRead(BaseModel):
+    key: str
+    name: str
+    price: float | None
+    per: int
+    # Gold per single unit, or None while no price is set.
+    unit_price: float | None
+    hidden: bool
+    builtin: bool
+    tools: list[str] = []
+    updated_at: datetime | None
+
+
+class PriceUpdate(BaseModel):
+    price: float | None = Field(default=None, ge=0)
+    per: int | None = Field(default=None, ge=1, le=100_000)
+    hidden: bool | None = None
+    # Custom items only.
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+
+
+class PriceCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    price: float | None = Field(default=None, ge=0)
+    per: int = Field(default=1, ge=1, le=100_000)
+
+
 class BalancesOut(BaseModel):
     tradeable: int
     roster_bound: int

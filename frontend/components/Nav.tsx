@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Gem, Keyboard, LayoutGrid, Settings2, Swords } from "lucide-react";
+import { Coins, Gem, Keyboard, LayoutGrid, Settings2, Swords, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,6 +16,7 @@ const LINKS: { href: string; label: string; icon: typeof Coins; key?: string }[]
   { href: "/raids", label: "Raids", icon: Swords },
   { href: "/gold", label: "Gold", icon: Coins, key: PAGE_KEYS.gold },
   { href: "/gems", label: "Gems", icon: Gem, key: PAGE_KEYS.gems },
+  { href: "/tools", label: "Tools", icon: Wrench, key: PAGE_KEYS.tools },
   { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
@@ -25,7 +26,9 @@ export default function Nav() {
   const [hiddenRaw] = usePreference<string>(HIDDEN_PREFERENCE, DEFAULT_HIDDEN_RAW);
   const hidden = parseHidden(hiddenRaw);
   // A hidden page still shows while you're on it, so a bookmark isn't a dead end.
-  const links = LINKS.filter((link) => !link.key || !hidden.has(link.key) || pathname === link.href);
+  // A section's sub-pages (/tools/prices) count as being on it.
+  const isCurrent = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+  const links = LINKS.filter((link) => !link.key || !hidden.has(link.key) || isCurrent(link.href));
   const [updateCheck, setUpdateCheck] = useUpdateCheck();
   const openShortcuts = useShortcutHelp();
 
@@ -39,7 +42,7 @@ export default function Nav() {
               key={link.href}
               href={link.href}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
-                pathname === link.href ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
+                isCurrent(link.href) ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
               }`}
             >
               <link.icon size={16} />

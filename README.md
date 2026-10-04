@@ -46,6 +46,12 @@ sources to see your weekly gold over time.
   and each one's 3 best-paying raids and difficulties, shows the gain against
   your current setup, and applies it in one click (with Undo). Bound gold can
   count fully, half, or not at all.
+- **Tools** (`g` `o`): planners that use your own characters and gold.
+  - **Prices**: market prices you type in from the game (price and bundle
+    size per item, with when you last updated it), used by the other tools to
+    value materials. Add your own items; hide or reset any. Nothing is looked
+    up online: the community price site (lostarkmarket.online) now redirects
+    to an unrelated site, so there's no price fetch.
 - **Paste a roster** (Settings): add many characters at once from pasted
   lines of name, class and item level, in any order (typed, or copied from a
   spreadsheet or a roster page). It previews what it read, skips duplicates,

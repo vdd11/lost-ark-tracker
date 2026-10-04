@@ -200,6 +200,24 @@ class BalanceCheck(Base):
     account_id: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
 
+class MarketPrice(Base):
+    """What an item costs on the market, typed in by the user (Tools → Prices).
+
+    Built-in items (price_items.py) only get a row once something about them
+    is set; custom items ("custom-<n>") always have one and carry their name.
+    """
+
+    __tablename__ = "market_prices"
+
+    key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Gold for `per` units (the market sells some items in bundles).
+    price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    per: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class AppliedMigration(Base):
     """One-off data upgrades that already ran, so each runs only once."""
 

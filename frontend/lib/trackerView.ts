@@ -50,7 +50,7 @@ export const WIDGET_KEYS = {
 const RETIRED_KEYS = ["widget:news"];
 
 /** Pages that can be dropped from the menu. */
-export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems" } as const;
+export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems", tools: "page:tools" } as const;
 
 /** Hidden until someone turns them on in Customize. */
 export const DEFAULT_HIDDEN = ["task:Guardian Raid"];
@@ -86,6 +86,7 @@ export function styleHidden(style: Style, tasks: Task[]): Set<string> {
     STAT_KEYS.total,
     STAT_KEYS.leftToUse,
     PAGE_KEYS.gems,
+    PAGE_KEYS.tools,
     ...Object.values(WIDGET_KEYS),
     ...tasks.filter((t) => t.category !== "raid" && sectionOf(t) === "week").map(viewKey),
   ]);

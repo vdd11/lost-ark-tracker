@@ -14,7 +14,8 @@ def fixture(version: int) -> dict:
 
 
 def tables(backup: dict) -> dict:
-    return {key: backup[key] for key in backups.BACKUP_MODELS}
+    # Tables added after a fixture was made are missing from it and restore empty.
+    return {key: backup.get(key, []) for key in backups.BACKUP_MODELS}
 
 
 def test_format_1_fixture_restores_every_table(client):
@@ -24,7 +25,9 @@ def test_format_1_fixture_restores_every_table(client):
     restored = client.get("/api/backup").json()
     # A round trip: what comes back out is exactly what went in.
     assert tables(restored) == tables(original)
-    assert all(original[key] for key in backups.BACKUP_MODELS), "the fixture should cover every table"
+    old_tables = [key for key in backups.BACKUP_MODELS if key in original]
+    assert all(original[key] for key in old_tables), "the fixture should cover every table it has"
+    assert all(restored[key] == [] for key in backups.BACKUP_MODELS if key not in original)
 
     characters = {c["name"]: c for c in client.get("/api/characters").json()}
     accounts = {a["id"]: a["name"] for a in client.get("/api/accounts").json()}

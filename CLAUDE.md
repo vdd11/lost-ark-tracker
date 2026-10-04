@@ -49,6 +49,9 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   startup. Only add numbers from official NA patch notes or the user. Use
   `None` for unknown gold. Values a user edited are never overwritten. Keep
   `legacy_names` when renaming so existing columns are adopted.
+- Tools live under `app/tools/<tool>/` with their maths in `lib/<tool>.ts`
+  and a card in `lib/tools.ts`. Market prices are user-entered (`MarketPrice`
+  rows); `price_items.py` only names built-in items, each with a cited source.
 - Event raids (Extreme) are user-created via `/api/event-raids`, not
   cataloged: they're tasks with `ends_on`, `roster_limited` and
   `gold_for_everyone`.

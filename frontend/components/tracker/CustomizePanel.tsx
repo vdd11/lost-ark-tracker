@@ -82,6 +82,7 @@ export default function CustomizePanel({
         { key: FINISHED_ROWS_KEY, label: "Characters who are all done" },
         { key: PAGE_KEYS.gold, label: "Gold page in the menu" },
         { key: PAGE_KEYS.gems, label: "Gems page in the menu" },
+        { key: PAGE_KEYS.tools, label: "Tools page in the menu" },
       ],
     },
   ].filter((group) => group.items.length > 0);

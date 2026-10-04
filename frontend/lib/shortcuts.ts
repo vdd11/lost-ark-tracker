@@ -41,6 +41,7 @@ export const GO_TO: Record<string, { path: string; label: string }> = {
   g: { path: "/gold/", label: "Gold" },
   m: { path: "/gems/", label: "Gems" },
   r: { path: "/raids/", label: "Raids" },
+  o: { path: "/tools/", label: "Tools" },
   s: { path: "/settings/", label: "Settings" },
 };
 

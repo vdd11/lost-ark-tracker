@@ -66,6 +66,7 @@ describe("play styles", () => {
     expect(hidden.has(SECTION_KEYS.today)).toBe(true);
     expect(hidden.has(STAT_KEYS.raidsLeft)).toBe(false);
     expect(hidden.has(PAGE_KEYS.gems)).toBe(true);
+    expect(hidden.has(PAGE_KEYS.tools)).toBe(true);
     expect(hidden.has(WIDGET_KEYS.gems)).toBe(true);
     expect(styleHidden("regular", tasks).has(WIDGET_KEYS.goldMonth)).toBe(false);
     expect(styleHidden("everything", tasks).size).toBe(0);
