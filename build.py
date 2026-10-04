@@ -41,11 +41,15 @@ def build_executable():
     if not (out / "index.html").is_file():
         sys.exit("frontend/out is missing. Build the frontend first.")
 
+    # Windows runs from the system tray (backend/tray.py), so no console window.
+    # pystray picks its backend at runtime, so name the Windows one.
+    windows = ["--noconsole", "--hidden-import", "pystray._win32"] if sys.platform == "win32" else []
     run([
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
         "--clean",
         "--onefile",
+        *windows,
         "--name", NAME,
         "--paths", str(BACKEND),
         "--add-data", f"{out}{os.pathsep}frontend",

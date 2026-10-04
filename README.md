@@ -95,9 +95,14 @@ sources to see your weekly gold over time.
    - Windows: `LostArkTracker-windows.exe`
    - macOS: `LostArkTracker-macos`
    - Linux: `LostArkTracker-linux`
-2. Run it. A small window opens and the tracker appears in your browser at
-   <http://127.0.0.1:8777>. Keep that window open while you use it; close it
-   to stop. Running it again while it's open just reopens the browser tab.
+2. Run it. The tracker appears in your browser at <http://127.0.0.1:8777>.
+   - **Windows:** it runs from a gold "LA" icon in the system tray (near the
+     clock). Right-click it to open the tracker, your data folder or the log,
+     or to **Quit**. If something goes wrong, a message box says so.
+   - **macOS / Linux:** a terminal window opens; keep it open while you use
+     the tracker and close it to stop.
+
+   Running it again while it's open just reopens the browser tab.
 3. First time: add your characters in **Settings**. Their usual raids are
    picked from item level, and you can adjust them before adding.
 

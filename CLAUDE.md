@@ -17,6 +17,9 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   (vitest covers the pure logic in `lib/`; keep component-free code there.
   Interactive components have React Testing Library tests in
   `components/__tests__/`, which start with `// @vitest-environment jsdom`)
+- The packaged Windows app is windowed (no console) and lives in the system
+  tray (`backend/tray.py`, pystray + Pillow, Windows-only deps); errors go to a
+  message box. `--no-tray` runs it console-style (the smoke test uses it).
 - Package: `backend/.venv/Scripts/python build.py` → `dist/LostArkTracker.exe`,
   then `python scripts/smoke_test.py dist/LostArkTracker.exe` starts it and
   checks `/api/` and `/` (CI does this on Linux, releases on all three OSes).

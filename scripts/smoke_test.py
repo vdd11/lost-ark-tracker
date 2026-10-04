@@ -95,7 +95,8 @@ def main() -> int:
         started = time.monotonic()
         with open(output_path, "wb") as output:
             process = subprocess.Popen(
-                [str(binary), "--no-browser", "--port", str(port), "--data-dir", str(data_dir)],
+                # --no-tray: CI machines may not have a tray to put an icon in.
+                [str(binary), "--no-browser", "--no-tray", "--port", str(port), "--data-dir", str(data_dir)],
                 stdin=subprocess.DEVNULL,  # an error prompt ("press Enter") can't hang the run
                 stdout=output,
                 stderr=subprocess.STDOUT,
