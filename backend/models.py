@@ -238,6 +238,24 @@ class MarketPrice(Base):
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class HoningPlan(Base):
+    """A character's honing plan (Tools → Honing): a target and the steps to
+    get there, with chances and costs the user copied from the game."""
+
+    __tablename__ = "honing_plans"
+
+    character_id: Mapped[int] = mapped_column(ForeignKey("characters.id"), primary_key=True)
+    # Item level when the plan was saved, for the progress line on the tracker.
+    start_item_level: Mapped[float] = mapped_column(Float, default=0, server_default="0")
+    target_item_level: Mapped[float | None] = mapped_column(Float, nullable=True)
+    notes: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    # {"steps": [...], "owned": {price key: amount}} (schemas.HoningPlanData).
+    plan: Mapped[dict] = mapped_column(JSON)
+    # Which gold pays: "tradeable", "roster" (+ roster-bound) or "all" (+ character-bound).
+    bound_mode: Mapped[str] = mapped_column(String(20), default="roster", server_default="roster")
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class GuideLink(Base):
     """A link the user added to the Guides page (their guild's Discord, a
     favorite creator, ...). The built-in links live in the frontend."""

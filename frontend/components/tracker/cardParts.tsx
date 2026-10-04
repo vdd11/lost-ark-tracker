@@ -1,8 +1,10 @@
-import { Check, CheckCheck, Swords, TrendingUp } from "lucide-react";
+import { Check, CheckCheck, Hammer, Swords, TrendingUp } from "lucide-react";
+import Link from "next/link";
 
 import { ExtraColumn } from "@/components/tracker/TaskTable";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, formatGold, Task, WeeklyGold } from "@/lib/api";
+import { goalProgress, HoningGoal } from "@/lib/honing";
 import { formatGap, nextUnlock } from "@/lib/itemLevelGoals";
 import { formatItemLevel, GOLD_RAIDS_PER_WEEK, goldRaidWeek, paidRaids } from "@/lib/raids";
 import { cellKey } from "@/lib/trackerSections";
@@ -97,6 +99,30 @@ export function NextUnlockNote({ character, tasks }: { character: Character; tas
       <TrendingUp size={12} />
       Next: {task.name} {difficulty.name} at {formatItemLevel(difficulty.min_item_level)} ({formatGap(gap)})
     </div>
+  );
+}
+
+/** "Plan: 1720 ▬▬": progress toward the character's honing plan, if it has a target. */
+export function HoningGoalNote({ character, goals }: { character: Character; goals: HoningGoal[] }) {
+  const goal = goals.find((g) => g.character_id === character.id);
+  const progress = goal ? goalProgress(character.item_level, goal) : null;
+  if (!goal || progress === null || goal.target_item_level == null) return null;
+  return (
+    <Link
+      href="/tools/honing"
+      className="mt-0.5 flex items-center gap-1 text-[11px] text-muted hover:text-accent"
+      title={`Honing plan: ${formatItemLevel(goal.start_item_level)} → ${formatItemLevel(goal.target_item_level)}`}
+    >
+      <Hammer size={12} />
+      Plan: {formatItemLevel(goal.target_item_level)}
+      {progress >= 1 ? (
+        <span className="text-done">reached</span>
+      ) : (
+        <span className="ml-0.5 inline-block h-1 w-10 overflow-hidden rounded bg-surface-2" aria-label={`${Math.round(progress * 100)}% of the way`}>
+          <span className="block h-full bg-accent" style={{ width: `${Math.round(progress * 100)}%` }} />
+        </span>
+      )}
+    </Link>
   );
 }
 

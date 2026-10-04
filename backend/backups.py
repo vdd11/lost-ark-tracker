@@ -32,6 +32,7 @@ from models import (
     GemEntry,
     GoldEntry,
     GuideLink,
+    HoningPlan,
     HiddenGuide,
     MarketPrice,
     SpendingEntry,
@@ -55,6 +56,7 @@ BACKUP_MODELS = {
     "spending_entries": SpendingEntry,
     "guide_links": GuideLink,
     "hidden_guides": HiddenGuide,
+    "honing_plans": HoningPlan,
 }
 BACKUP_FORMAT = 1
 

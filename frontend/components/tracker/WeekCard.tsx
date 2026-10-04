@@ -6,6 +6,7 @@ import {
   FinishedNote,
   GoldRaidNote,
   MarkAllButton,
+  HoningGoalNote,
   NextUnlockNote,
 } from "@/components/tracker/cardParts";
 import { cellKeyboard } from "@/components/tracker/cellKeys";
@@ -63,7 +64,12 @@ export default function WeekCard({
               }
         }
         characterNote={(character) => <GoldRaidNote character={character} data={data} />}
-        characterGoal={(character) => <NextUnlockNote character={character} tasks={data.tasks} />}
+        characterGoal={(character) => (
+          <>
+            <NextUnlockNote character={character} tasks={data.tasks} />
+            <HoningGoalNote character={character} goals={data.honingGoals} />
+          </>
+        )}
         characterAction={
           editMode
             ? undefined

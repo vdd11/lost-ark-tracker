@@ -52,6 +52,9 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - Tools live under `app/tools/<tool>/` with their maths in `lib/<tool>.ts`
   and a card in `lib/tools.ts`. Market prices are user-entered (`MarketPrice`
   rows); `price_items.py` only names built-in items, each with a cited source.
+  The honing planner (`lib/honing.ts`) has no game numbers at all: users
+  enter chances and costs from their honing panel. Keep it that way unless
+  the user supplies sourced values.
 - Guides page links are data (`frontend/lib/data/guides.json`, with a
   `checked` date). Check new ones with `python scripts/check_links.py`; a
   weekly workflow (`links.yml`) runs it and opens an issue for dead links or

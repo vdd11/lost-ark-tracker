@@ -22,6 +22,7 @@ import {
   WeeklyGold,
   WeekRecap,
 } from "@/lib/api";
+import { HoningGoal } from "@/lib/honing";
 import { difficultyOf } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
 import { restoreRunBody } from "@/lib/undo";
@@ -46,6 +47,7 @@ export function useTrackerData() {
   // undefined until loaded, null if there has never been a gold check-in.
   const [lastCheckIn, setLastCheckIn] = useState<string | null | undefined>(undefined);
   const [recap, setRecap] = useState<WeekRecap | null>(null);
+  const [honingGoals, setHoningGoals] = useState<HoningGoal[]>([]);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
   const offerUndo = useUndo();
@@ -72,6 +74,9 @@ export function useTrackerData() {
       .catch(() => {});
     api<WeekRecap>("/recap")
       .then(setRecap)
+      .catch(() => {});
+    api<HoningGoal[]>("/honing-plans")
+      .then(setHoningGoals)
       .catch(() => {});
     api<ExpectedBalances | null>(`/balances/expected?${accountQuery}`)
       .then((data) => {
@@ -335,6 +340,7 @@ export function useTrackerData() {
     balance,
     lastCheckIn,
     recap,
+    honingGoals,
     now,
     error,
     setError,

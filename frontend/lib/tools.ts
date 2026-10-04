@@ -14,4 +14,10 @@ export const TOOLS: Tool[] = [
     description: "Market prices you type in from the game, used by the other tools to put a gold value on materials.",
     icon: "prices",
   },
+  {
+    href: "/tools/honing",
+    title: "Honing planner",
+    description: "What a target item level costs, as a range, and how many weeks of your own gold it takes. Compare characters.",
+    icon: "honing",
+  },
 ];

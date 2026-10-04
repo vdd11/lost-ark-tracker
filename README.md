@@ -52,6 +52,16 @@ sources to see your weekly gold over time.
     value materials. Add your own items; hide or reset any. Nothing is looked
     up online: the community price site (lostarkmarket.online) now redirects
     to an unrelated site, so there's no price fetch.
+  - **Honing planner**: pick a character and a target item level, then enter
+    each upgrade with the numbers your in-game honing panel shows (chance,
+    any increase per failure or guaranteed attempt, gold, silver and
+    materials per try) and what you already own. It shows the cost as a
+    range (good luck, typical, unlucky), how many weeks your own average
+    income takes to pay for it (choose whether bound gold counts), a "what if
+    I earned more" slider, and which character reaches their goal first.
+    Nothing about honing is built in, since the rules change with patches.
+    Saved plans show a progress line on the tracker; "Log this honing"
+    records the spending.
 - **Guides** (`g` `u`): a short, hand-picked list of guides, calculators
   and databases (Maxroll, the official patch notes, honing and astrogem
   calculators, LOA Logs, lostark.bible, ...), searchable and grouped by
