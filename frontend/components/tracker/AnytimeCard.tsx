@@ -1,5 +1,6 @@
 import { Box } from "lucide-react";
 
+import { cellKeyboard } from "@/components/tracker/cellKeys";
 import TaskTable from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
 import TrackerCell from "@/components/tracker/TrackerCell";
@@ -30,6 +31,7 @@ export default function AnytimeCard({
           <TrackerCell character={character} task={task} data={data} editMode={editMode} compact={!view.isShown(RAID_PICKERS_KEY)} />
         )}
         onItemLevel={data.actions.updateItemLevel}
+        cellKeyboard={(character, task) => cellKeyboard(character, task, data, editMode)}
       />
     </TrackerCard>
   );

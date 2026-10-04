@@ -1,14 +1,15 @@
 import { Flame, Sun } from "lucide-react";
 
 import { FinishedNote, MarkAllButton } from "@/components/tracker/cardParts";
+import { cellKeyboard } from "@/components/tracker/cellKeys";
 import TaskTable from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
 import TrackerCell from "@/components/tracker/TrackerCell";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { parseUtc } from "@/lib/api";
-import { formatCountdown, SectionData } from "@/lib/trackerSections";
-import { appliesTo, FINISHED_ROWS_KEY, RAID_PICKERS_KEY } from "@/lib/trackerView";
+import { cellKey, formatCountdown, SectionData } from "@/lib/trackerSections";
+import { appliesTo, FINISHED_ROWS_KEY, RAID_PICKERS_KEY, remainingFor } from "@/lib/trackerView";
 
 /** Dailies, reset every day, with how many rested runs are waiting. */
 export default function TodayCard({
@@ -50,6 +51,15 @@ export default function TodayCard({
           <TrackerCell character={character} task={task} data={data} editMode={editMode} compact={!view.isShown(RAID_PICKERS_KEY)} />
         )}
         onItemLevel={data.actions.updateItemLevel}
+        cellKeyboard={(character, task) => cellKeyboard(character, task, data, editMode)}
+        onRowAll={
+          editMode
+            ? undefined
+            : (character) => {
+                const todo = remainingFor(character, section.columns, (t) => data.completed.has(cellKey(character.id, t.id)));
+                if (todo.length > 0) data.actions.completeAll(character, todo);
+              }
+        }
         hideWhenEmpty={section.finished.length > 0}
         characterAction={
           editMode

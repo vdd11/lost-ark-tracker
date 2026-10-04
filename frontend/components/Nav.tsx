@@ -1,9 +1,10 @@
 "use client";
 
-import { Coins, Gem, LayoutGrid, Settings2, Swords } from "lucide-react";
+import { Coins, Gem, Keyboard, LayoutGrid, Settings2, Swords } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useShortcutHelp } from "@/components/KeyboardShortcuts";
 import ThemeToggle from "@/components/ThemeToggle";
 import UpdateNotice, { UpdateCheckPrompt, useUpdateCheck } from "@/components/UpdateNotice";
 import { DEFAULT_HIDDEN_RAW, HIDDEN_PREFERENCE, PAGE_KEYS, parseHidden } from "@/lib/trackerView";
@@ -26,6 +27,7 @@ export default function Nav() {
   // A hidden page still shows while you're on it, so a bookmark isn't a dead end.
   const links = LINKS.filter((link) => !link.key || !hidden.has(link.key) || pathname === link.href);
   const [updateCheck, setUpdateCheck] = useUpdateCheck();
+  const openShortcuts = useShortcutHelp();
 
   return (
     <header className="border-b border-border bg-surface">
@@ -47,6 +49,14 @@ export default function Nav() {
         </div>
         <div className="ml-auto flex items-center gap-2">
           <UpdateNotice enabled={updateCheck === "on"} />
+          <button
+            onClick={openShortcuts}
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts (?)"
+            className="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-foreground"
+          >
+            <Keyboard size={18} />
+          </button>
           <ThemeToggle />
         </div>
       </nav>

@@ -29,6 +29,9 @@ sources to see your weekly gold over time.
     any gold raids left unrun.
   - On a phone or narrow window, each character gets a stacked block instead
     of a wide table.
+  - Mistakes can be undone from the toast that follows a tick, "All" or a
+    delete. Press **?** for keyboard shortcuts: arrows move between cells,
+    Space ticks, `a` marks a character done, `g` then a letter jumps pages.
 - **Accounts**: play more than one account? Add accounts in Settings and put
   each character on one. Each account is its own roster (up to 6 gold earners,
   its own event clears, its own gold and check-ins). The tracker, Gold and

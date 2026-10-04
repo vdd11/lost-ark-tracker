@@ -1,14 +1,15 @@
 import { CalendarDays } from "lucide-react";
 
 import { characterBoundColumn, eventNote, FinishedNote, GoldRaidNote, MarkAllButton } from "@/components/tracker/cardParts";
+import { cellKeyboard } from "@/components/tracker/cellKeys";
 import TaskTable from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
 import TrackerCell from "@/components/tracker/TrackerCell";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { parseUtc } from "@/lib/api";
-import { formatCountdown, SectionData } from "@/lib/trackerSections";
-import { appliesTo, CHARACTER_BOUND_KEY, FINISHED_ROWS_KEY, RAID_PICKERS_KEY } from "@/lib/trackerView";
+import { cellKey, formatCountdown, SectionData } from "@/lib/trackerSections";
+import { appliesTo, CHARACTER_BOUND_KEY, FINISHED_ROWS_KEY, RAID_PICKERS_KEY, remainingFor } from "@/lib/trackerView";
 
 /** Raids and weeklies, reset Wednesday. */
 export default function WeekCard({
@@ -45,6 +46,15 @@ export default function WeekCard({
         )}
         columnNote={eventNote}
         onItemLevel={data.actions.updateItemLevel}
+        cellKeyboard={(character, task) => cellKeyboard(character, task, data, editMode)}
+        onRowAll={
+          editMode
+            ? undefined
+            : (character) => {
+                const todo = remainingFor(character, section.columns, (t) => data.completed.has(cellKey(character.id, t.id)));
+                if (todo.length > 0) data.actions.completeAll(character, todo);
+              }
+        }
         characterNote={(character) => <GoldRaidNote character={character} data={data} />}
         characterAction={
           editMode
