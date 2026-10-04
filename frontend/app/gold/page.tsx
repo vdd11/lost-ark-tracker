@@ -13,6 +13,7 @@ import NumberInput from "@/components/NumberInput";
 import SpendingLog from "@/components/SpendingLog";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
 import { Account, api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, Task, WeeklyGold } from "@/lib/api";
+import { goldBySource } from "@/lib/goldBySource";
 import { GOLD_SOURCES } from "@/lib/goldSources";
 import { goldEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
@@ -80,6 +81,7 @@ export default function GoldPage() {
     }
   }
 
+  const sourceRows = goldBySource(weeks);
   const characterName = (id: number | null) => characters.find((c) => c.id === id)?.name ?? "";
   const thisWeek = weeks.at(-1);
   const lastWeek = weeks.at(-2);
@@ -238,18 +240,31 @@ export default function GoldPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="rounded-md border border-border bg-surface p-4">
-          <h2 className="mb-3 font-semibold">This week by source</h2>
-          <ul className="space-y-1.5 text-sm">
-            {thisWeek && thisWeek.raid_gold > 0 && (
-              <li className="flex justify-between"><span>Raids</span><span className="tabular-nums">{formatGold(thisWeek.raid_gold)}</span></li>
-            )}
-            {Object.entries(thisWeek?.by_source ?? {})
-              .sort(([, a], [, b]) => b - a)
-              .map(([source, amount]) => (
-                <li key={source} className="flex justify-between"><span>{source}</span><span className="tabular-nums">{formatGold(amount)}</span></li>
-              ))}
-            {!thisWeek?.total && <li className="text-muted">Nothing yet this week.</li>}
-          </ul>
+          <h2 className="mb-3 font-semibold">By source</h2>
+          {sourceRows.length ? (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted">
+                  <th className="py-1 font-medium">Source</th>
+                  <th className="py-1 text-right font-medium">This week</th>
+                  <th className="py-1 text-right font-medium" title="The last 4 finished weeks together">4 weeks</th>
+                  <th className="py-1 text-right font-medium" title={`Average of the finished weeks in the last ${range}`}>Avg / week</th>
+                </tr>
+              </thead>
+              <tbody className="tabular-nums">
+                {sourceRows.map((row) => (
+                  <tr key={row.source} className="border-b border-border last:border-b-0">
+                    <td className="py-1.5 pr-2">{row.source}</td>
+                    <td className="py-1.5 text-right">{formatGold(row.thisWeek)}</td>
+                    <td className="py-1.5 text-right">{formatGold(row.lastFour)}</td>
+                    <td className="py-1.5 text-right text-muted">{formatGold(Math.round(row.average))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-sm text-muted">No gold yet.</p>
+          )}
         </section>
 
         <section className="overflow-x-auto rounded-md border border-border bg-surface p-4 lg:col-span-2">
