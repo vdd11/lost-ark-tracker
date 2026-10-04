@@ -20,4 +20,10 @@ export const TOOLS: Tool[] = [
     description: "What a target item level costs, as a range, and how many weeks of your own gold it takes. Compare characters.",
     icon: "honing",
   },
+  {
+    href: "/tools/astrogems",
+    title: "Astrogem cutting",
+    description: "Keep it open beside the game while processing: enter the 4 options and it says process, refresh or stop, from the official odds.",
+    icon: "astrogems",
+  },
 ];

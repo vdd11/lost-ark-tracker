@@ -67,7 +67,17 @@ sources to see your weekly gold over time.
     I earned more" slider, and which character reaches their goal first.
     Nothing about honing is built in, since the rules change with patches.
     Saved plans show a progress line on the tracker; "Log this honing"
-    records the spending.
+    records the spending. Honing fees use the character's bound gold first,
+    then roster-bound, then tradeable, like the game.
+  - **Astrogem cutting**: keep it beside the game while you process a gem.
+    Set the gem's levels, attempts and refreshes, click the 4 options the game
+    shows, and it says **process**, **refresh** or **stop** (goal met, or out
+    of reach), with your chance of reaching the goal (total points, plus
+    minimum levels if you want) and the gold it'll take. Click the option the
+    game applied (or press 1-4; r = refresh used, u = undo, f = finish).
+    A session log counts gems, grades and gold, and "Log as spending" adds it
+    to the Gold page. Odds are Smilegate's official table (one of the 4 shown
+    options is applied, 25% each); every number is editable, with Reset.
 - **Guides** (`g` `u`): a short, hand-picked list of guides, calculators
   and databases (Maxroll, the official patch notes, honing and astrogem
   calculators, LOA Logs, lostark.bible, ...), searchable and grouped by

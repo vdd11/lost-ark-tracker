@@ -55,7 +55,10 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   rows); `price_items.py` only names built-in items, each with a cited source.
   The honing planner (`lib/honing.ts`) has no game numbers at all: users
   enter chances and costs from their honing panel. Keep it that way unless
-  the user supplies sourced values.
+  the user supplies sourced values. Astrogem odds live in
+  `lib/data/astrogems.ts` with their sources (official KR probability page,
+  NA release notes, Maxroll); `lib/astrogems.ts` solves the best play with a
+  seeded, memoized estimate.
 - Guides page links are data (`frontend/lib/data/guides.json`, with a
   `checked` date). Check new ones with `python scripts/check_links.py`; a
   weekly workflow (`links.yml`) runs it and opens an issue for dead links or
