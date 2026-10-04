@@ -24,6 +24,9 @@ sources to see your weekly gold over time.
     status and official announcements, with the official X accounts
     (@LAGameStatus, @playlostark) a tab away. **Edit who does what** sets each
     character's usual raids and tasks; the pencil by an item level updates it.
+  - **What's left** switches the cards to a list of only unfinished tasks per
+    character, richest first, with one-click ticks and **Copy as text** for
+    Discord.
   - **All** beside a character ticks off everything they have left in that
     card. After the Wednesday reset, a recap shows last week's gold, gems and
     any gold raids left unrun.

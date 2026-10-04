@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Settings2 } from "lucide-react";
+import { ListTodo, Pencil, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -15,16 +15,23 @@ import ToolbarButton from "@/components/tracker/ToolbarButton";
 import { useTrackerData } from "@/components/tracker/useTrackerData";
 import { useTrackerView } from "@/components/tracker/useTrackerView";
 import WeekCard from "@/components/tracker/WeekCard";
+import WhatsLeft from "@/components/tracker/WhatsLeft";
 import WidgetGrid from "@/components/tracker/WidgetGrid";
 import { isActiveRaid } from "@/lib/raids";
 import { buildSection } from "@/lib/trackerSections";
 import { SECTION_KEYS } from "@/lib/trackerView";
+import { usePreference } from "@/lib/usePreference";
+
+const MODES = ["grid", "left"] as const;
 
 export default function TrackerPage() {
   const data = useTrackerData();
   const view = useTrackerView(data.tasks);
   const [editMode, setEditMode] = useState(false);
   const [customizing, setCustomizing] = useState(false);
+  // The full grid, or only what's left (remembered in this browser).
+  const [mode, setMode] = usePreference<(typeof MODES)[number]>("tracker-mode", "grid", MODES);
+  const showLeft = mode === "left" && !editMode;
 
   const sectionInput = { tasks: data.tasks, roster: data.roster, completed: data.completed, hidden: view.hidden, editMode };
   const week = buildSection("week", sectionInput);
@@ -42,6 +49,13 @@ export default function TrackerPage() {
           <AccountTabs accounts={data.accounts} value={data.accountId} onChange={data.setAccountId} />
         </div>
         <div className="flex flex-wrap gap-2">
+          <ToolbarButton
+            active={mode === "left"}
+            onClick={() => setMode(mode === "left" ? "grid" : "left")}
+            icon={<ListTodo size={16} />}
+          >
+            What&apos;s left
+          </ToolbarButton>
           <ToolbarButton active={customizing} onClick={() => setCustomizing((v) => !v)} icon={<Settings2 size={16} />}>
             Customize
           </ToolbarButton>
@@ -84,9 +98,13 @@ export default function TrackerPage() {
         </p>
       ) : (
         <>
-          <WeekCard section={week} {...cardProps} />
+          {showLeft ? (
+            <WhatsLeft data={data} columns={[...week.columns, ...(showToday ? today.columns : [])]} />
+          ) : (
+            <WeekCard section={week} {...cardProps} />
+          )}
 
-          {(showToday || showAnytime) && (
+          {!showLeft && (showToday || showAnytime) && (
             <div className={`grid gap-4 ${showToday && showAnytime ? "lg:grid-cols-2" : ""}`}>
               {showToday && <TodayCard section={today} {...cardProps} />}
               {showAnytime && <AnytimeCard section={anytime} {...cardProps} />}
