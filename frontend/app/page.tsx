@@ -1,6 +1,6 @@
 "use client";
 
-import { ListTodo, Pencil, Settings2 } from "lucide-react";
+import { FileSearch, ListTodo, Pencil, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -9,6 +9,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import AnytimeCard from "@/components/tracker/AnytimeCard";
 import { TrackerBanners, WelcomeStyle } from "@/components/tracker/Banners";
 import CustomizePanel from "@/components/tracker/CustomizePanel";
+import LoaImportDialog from "@/components/tracker/LoaImportDialog";
 import StatRow from "@/components/tracker/StatRow";
 import TodayCard from "@/components/tracker/TodayCard";
 import ToolbarButton from "@/components/tracker/ToolbarButton";
@@ -18,6 +19,7 @@ import WeekCard from "@/components/tracker/WeekCard";
 import WhatsLeft from "@/components/tracker/WhatsLeft";
 import WidgetGrid from "@/components/tracker/WidgetGrid";
 import { isActiveRaid } from "@/lib/raids";
+import { LOA_KEYS } from "@/lib/loaLogs";
 import { buildSection } from "@/lib/trackerSections";
 import { SECTION_KEYS } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
@@ -32,6 +34,8 @@ export default function TrackerPage() {
   // The full grid, or only what's left (remembered in this browser).
   const [mode, setMode] = usePreference<(typeof MODES)[number]>("tracker-mode", "grid", MODES);
   const showLeft = mode === "left" && !editMode;
+  const [loaEnabled] = usePreference<boolean>(LOA_KEYS.enabled, false);
+  const [importing, setImporting] = useState(false);
 
   const sectionInput = { tasks: data.tasks, roster: data.roster, completed: data.completed, hidden: view.hidden, editMode };
   const week = buildSection("week", sectionInput);
@@ -49,6 +53,11 @@ export default function TrackerPage() {
           <AccountTabs accounts={data.accounts} value={data.accountId} onChange={data.setAccountId} />
         </div>
         <div className="flex flex-wrap gap-2">
+          {loaEnabled && (
+            <ToolbarButton active={importing} onClick={() => setImporting(true)} icon={<FileSearch size={16} />}>
+              Import clears
+            </ToolbarButton>
+          )}
           <ToolbarButton
             active={mode === "left"}
             onClick={() => setMode(mode === "left" ? "grid" : "left")}
@@ -66,6 +75,8 @@ export default function TrackerPage() {
       </div>
 
       {data.allCharacters.length > 0 && !view.styleChosen && <WelcomeStyle view={view} />}
+
+      {importing && <LoaImportDialog data={data} onClose={() => setImporting(false)} />}
 
       <StatRow data={data} view={view} />
 

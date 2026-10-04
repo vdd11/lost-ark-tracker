@@ -22,6 +22,7 @@ from routes import (
     export,
     gems,
     gold,
+    loa_logs,
     news,
     recap,
     tasks,
@@ -75,7 +76,7 @@ def root():
 
 
 app.include_router(router)
-for module in (accounts, characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export, news, recap):
+for module in (accounts, characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export, news, recap, loa_logs):
     app.include_router(module.router)
 
 

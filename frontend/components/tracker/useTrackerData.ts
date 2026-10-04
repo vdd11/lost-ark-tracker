@@ -339,6 +339,7 @@ export function useTrackerData() {
     error,
     setError,
     loadWeeklyGold,
+    refreshTracker,
     actions: {
       toggleCompletion,
       toggleRaid,

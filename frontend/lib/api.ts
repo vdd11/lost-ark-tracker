@@ -300,3 +300,26 @@ export type NewsFeed = {
   news: NewsItem[];
   news_error: string | null;
 };
+
+/** A cleared raid found in LOA Logs, matched to a character and raid. */
+export type LoaClear = {
+  fight_start: string;
+  boss: string;
+  difficulty: string | null;
+  character_id: number;
+  character_name: string;
+  task_id: number;
+  task_name: string;
+  difficulty_id: number | null;
+  already_done: boolean;
+};
+
+export type LoaPreview = {
+  path: string;
+  since: string;
+  clears: LoaClear[];
+  unknown_bosses: string[];
+  unknown_players: string[];
+  suggested_mapping: Record<string, number>;
+  raid_map_found: boolean;
+};

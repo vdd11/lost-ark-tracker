@@ -10,6 +10,7 @@ import AddCharacterForm from "@/components/settings/AddCharacterForm";
 import BackupSection from "@/components/settings/BackupSection";
 import CharacterRow from "@/components/settings/CharacterRow";
 import GoldOptimizer from "@/components/settings/GoldOptimizer";
+import LoaLogsSection from "@/components/settings/LoaLogsSection";
 import OnlineSection from "@/components/settings/OnlineSection";
 import RemindersSection from "@/components/settings/RemindersSection";
 import { AddTaskForm, TaskGroup } from "@/components/settings/TaskLists";
@@ -179,6 +180,8 @@ export default function SettingsPage() {
       </section>
 
       <RemindersSection />
+
+      <LoaLogsSection />
 
       <OnlineSection />
 

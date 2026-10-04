@@ -398,3 +398,41 @@ class WeekRecap(BaseModel):
     week: date
     # character_id -> raid clears that paid gold last week.
     paid_raids: dict[int, int] = {}
+
+
+class LoaLogsPath(BaseModel):
+    path: str | None
+    exists: bool
+
+
+class LoaPreviewRequest(BaseModel):
+    # encounters.db; the usual install location when empty.
+    path: str | None = None
+    # Only clears after this (the last import); never before this week's reset.
+    since: datetime | None = None
+    # LOA Logs boss name -> task id (0 = ignore), on top of the suggested mapping.
+    mapping: dict[str, int] | None = None
+
+
+class LoaClear(BaseModel):
+    fight_start: datetime
+    boss: str
+    difficulty: str | None
+    character_id: int
+    character_name: str
+    task_id: int
+    task_name: str
+    # None when LOA Logs' difficulty name isn't one of the raid's.
+    difficulty_id: int | None
+    already_done: bool
+
+
+class LoaPreview(BaseModel):
+    path: str
+    since: datetime
+    clears: list[LoaClear]
+    unknown_bosses: list[str]
+    unknown_players: list[str]
+    suggested_mapping: dict[str, int]
+    # Whether LOA Logs' encounters.json was found to suggest boss -> raid.
+    raid_map_found: bool

@@ -38,6 +38,10 @@ sources to see your weekly gold over time.
   - Optional **reminders** (Settings) nudge you a few hours before the weekly
     reset if gold raids are left, and before the daily reset if a rest gauge is
     full. They come as browser notifications (or a banner) while the app is open.
+- **Import clears from LOA Logs** (opt-in, Settings): if you run the LOA Logs
+  DPS meter (Windows/Linux), the tracker reads the raids it saw you clear this
+  week, read-only, matches bosses to raids and names to characters, and ticks
+  the ones you keep after you review them (with Undo).
 - **Suggest my gold setup** (Settings) picks, per account, the 6 gold earners
   and each one's 3 best-paying raids and difficulties, shows the gain against
   your current setup, and applies it in one click (with Undo). Bound gold can
@@ -138,6 +142,10 @@ requests, and only these:
 | Update check | `api.github.com` (this repo's latest release) | Once per browser session | Asked on first launch; existing users keep it on |
 | Lost Ark updates widget | `www.playlostark.com` (server status page) and `api.steampowered.com` (Lost Ark news), fetched by the app | When the widget is on screen, then every 10 minutes while the tracker is open | Off |
 | The widget's "On X" tab | `platform.twitter.com` / `x.com` (X's embed) | Only after you open that tab | Off (the widget is off) |
+
+The optional **LOA Logs import** (Settings) only reads that meter's
+`encounters.db` on your computer, read-only, when you click Import clears;
+it never goes online.
 
 Turn each one on or off in **Settings → Online features** (the widget also
 in **Customize**). Links you click (patch notes, the status page) open in

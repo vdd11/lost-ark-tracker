@@ -50,6 +50,8 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - `news.py` fetches server status (playlostark.com) and Steam announcements,
   cached 10 minutes, using certifi's certificates. Tests never hit the network:
   monkeypatch `news.fetch_text`.
+- `loa_logs.py` reads LOA Logs' `encounters.db` strictly read-only (`mode=ro`)
+  for the opt-in clear import; tests build their own small databases.
 - Anything that goes online must be opt-in, off by default (see
   `frontend/lib/online.ts`), labeled in the UI, and listed in the README's
   "Privacy and network" table.
