@@ -9,6 +9,10 @@ so no server components with dynamic data, rewrites, or route handlers), served
 by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 `build.py` runs PyInstaller. All API routes live under `/api`.
 
+- The server has no login, so `hosts.py` refuses any request whose `Host`
+  isn't `127.0.0.1`, `localhost` or `[::1]` (any port): DNS rebinding
+  protection. Tests use `TestClient(main.app, base_url="http://127.0.0.1")`;
+  the default `testserver` host gets 400.
 - Backend: `main.py` sets up the app; endpoints live in `routes/<area>.py`
   (one router each, all under `/api`). Domain logic stays out of routes:
   `raids.py` (catalog), `rest.py`, `gems.py`, `resets.py`.

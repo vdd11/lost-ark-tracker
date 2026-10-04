@@ -153,12 +153,12 @@ def test_guild_weekly_is_removed_once_on_upgrade(client):
     client.post("/api/tasks", json={"name": "Guild Weekly", "category": "weekly"})
     with engine.begin() as connection:
         connection.execute(text("DELETE FROM applied_migrations"))
-    with TestClient(main.app) as restarted:
+    with TestClient(main.app, base_url="http://127.0.0.1") as restarted:
         assert all(t["name"] != "Guild Weekly" for t in restarted.get("/api/tasks").json())
 
     # ...but one added back afterwards on purpose stays.
     client.post("/api/tasks", json={"name": "Guild Weekly", "category": "weekly"})
-    with TestClient(main.app) as restarted:
+    with TestClient(main.app, base_url="http://127.0.0.1") as restarted:
         assert any(t["name"] == "Guild Weekly" for t in restarted.get("/api/tasks").json())
 
 

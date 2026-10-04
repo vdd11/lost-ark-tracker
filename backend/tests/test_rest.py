@@ -106,5 +106,5 @@ def test_upgrading_an_old_database_adds_rest_rules(client):
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE tasks DROP COLUMN rest_max"))
 
-    with TestClient(main.app) as restarted:
+    with TestClient(main.app, base_url="http://127.0.0.1") as restarted:
         assert chaos_task(restarted)["rest_max"] == 200

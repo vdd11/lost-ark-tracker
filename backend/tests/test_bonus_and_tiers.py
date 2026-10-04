@@ -96,7 +96,7 @@ def test_upgrade_hides_unas_tasks_and_splits_bound_gold(client, set_now):
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE completions DROP COLUMN character_bound_gold"))
 
-    with TestClient(main.app) as restarted:
+    with TestClient(main.app, base_url="http://127.0.0.1") as restarted:
         assert all(t["name"] != "Una's Dailies" for t in restarted.get("/api/tasks").json())
         assert restarted.get("/api/gold/weekly?weeks=1").json()[0]["character_bound_gold"] == 50000
 

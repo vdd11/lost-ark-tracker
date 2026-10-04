@@ -85,7 +85,7 @@ def build(client: TestClient) -> dict:
 
 
 if __name__ == "__main__":
-    with TestClient(main.app) as client:
+    with TestClient(main.app, base_url="http://127.0.0.1") as client:
         freeze_clock()
         backup = build(client)
     path = HERE / f"backup-format-{BACKUP_FORMAT}.json"

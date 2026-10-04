@@ -19,7 +19,7 @@ from database import Base, engine  # noqa: E402
 @pytest.fixture
 def client():
     Base.metadata.drop_all(bind=engine)
-    with TestClient(main.app) as test_client:
+    with TestClient(main.app, base_url="http://127.0.0.1") as test_client:
         yield test_client
 
 

@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from accounts import ensure_accounts
+from hosts import LocalHostOnlyMiddleware
 from database import Base, SessionLocal, add_missing_columns, backup_database, engine
 from migrations import run_once, run_schema_migrations
 from raids import backfill_bound_gold, backfill_character_bound_gold, retire_old_tasks, sync_catalog
@@ -58,6 +59,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION, lifespan=lifespan)
+
+# Refuse requests for any host but this computer (see hosts.py).
+app.add_middleware(LocalHostOnlyMiddleware)
 
 # Allow the Next.js frontend to communicate with our API.
 app.add_middleware(

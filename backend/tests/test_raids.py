@@ -286,7 +286,7 @@ def test_upgrade_backfills_bound_gold_on_past_clears(client, set_now):
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE completions DROP COLUMN bound_gold"))
 
-    with TestClient(main.app) as restarted:
+    with TestClient(main.app, base_url="http://127.0.0.1") as restarted:
         assert restarted.get("/api/gold/weekly?weeks=1").json()[0]["bound_gold"] == 50000
 
 
