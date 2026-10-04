@@ -1,56 +1,16 @@
-"""Export and restore all data as JSON."""
-
-from datetime import date, datetime
+"""Export and restore all data as JSON (format and upgrades: backups.py)."""
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Response
-from sqlalchemy import Date, DateTime
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from accounts import ensure_accounts
+from backups import BACKUP_FORMAT, BACKUP_MODELS, BackupError, deserialize_row, serialize_row, upgrade_backup
 from database import get_db
-from models import Account, BalanceCheck, Character, CharacterTask, Completion, GemEntry, GoldEntry, RaidDifficulty, Task
 from resets import utc_now
 from version import APP_NAME
 
 router = APIRouter(prefix="/api")
-
-
-# Restore order: parents before children. Deletes run in reverse.
-BACKUP_MODELS = {
-    "accounts": Account,
-    "characters": Character,
-    "tasks": Task,
-    "raid_difficulties": RaidDifficulty,
-    "character_tasks": CharacterTask,
-    "completions": Completion,
-    "gold_entries": GoldEntry,
-    "gem_entries": GemEntry,
-    "balance_checks": BalanceCheck,
-}
-BACKUP_FORMAT = 1
-
-
-def serialize_row(row) -> dict:
-    values = {}
-    for column in row.__table__.columns:
-        value = getattr(row, column.name)
-        values[column.name] = value.isoformat() if isinstance(value, (date, datetime)) else value
-    return values
-
-
-def deserialize_row(model, values: dict):
-    kwargs = {}
-    for column in model.__table__.columns:
-        if column.name not in values:
-            continue
-        value = values[column.name]
-        if value is not None and isinstance(column.type, DateTime):
-            value = datetime.fromisoformat(value)
-        elif value is not None and isinstance(column.type, Date):
-            value = date.fromisoformat(value)
-        kwargs[column.name] = value
-    return model(**kwargs)
 
 
 @router.get("/backup")
@@ -63,9 +23,11 @@ def export_backup(db: Session = Depends(get_db)):
 
 @router.post("/backup", status_code=204)
 def restore_backup(backup: dict = Body(...), db: Session = Depends(get_db)):
-    """Replace all data with the contents of a backup file."""
-    if backup.get("app") != APP_NAME or backup.get("format") != BACKUP_FORMAT:
-        raise HTTPException(status_code=400, detail="This isn't a Lost Ark Tracker backup file.")
+    """Replace all data with the contents of a backup file (older formats are upgraded first)."""
+    try:
+        backup = upgrade_backup(backup)
+    except BackupError as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
     try:
         for model in reversed(BACKUP_MODELS.values()):
