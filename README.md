@@ -38,6 +38,10 @@ sources to see your weekly gold over time.
   - Optional **reminders** (Settings) nudge you a few hours before the weekly
     reset if gold raids are left, and before the daily reset if a rest gauge is
     full. They come as browser notifications (or a banner) while the app is open.
+- **Suggest my gold setup** (Settings) picks, per account, the 6 gold earners
+  and each one's 3 best-paying raids and difficulties, shows the gain against
+  your current setup, and applies it in one click (with Undo). Bound gold can
+  count fully, half, or not at all.
 - **Accounts**: play more than one account? Add accounts in Settings and put
   each character on one. Each account is its own roster (up to 6 gold earners,
   its own event clears, its own gold and check-ins). The tracker, Gold and

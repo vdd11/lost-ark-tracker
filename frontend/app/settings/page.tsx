@@ -9,6 +9,7 @@ import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import AddCharacterForm from "@/components/settings/AddCharacterForm";
 import BackupSection from "@/components/settings/BackupSection";
 import CharacterRow from "@/components/settings/CharacterRow";
+import GoldOptimizer from "@/components/settings/GoldOptimizer";
 import OnlineSection from "@/components/settings/OnlineSection";
 import RemindersSection from "@/components/settings/RemindersSection";
 import { AddTaskForm, TaskGroup } from "@/components/settings/TaskLists";
@@ -94,6 +95,8 @@ export default function SettingsPage() {
             {multipleAccounts ? ", or move some to another account" : ""} so your possible gold stays accurate.
           </p>
         ))}
+
+        <GoldOptimizer characters={characters} tasks={tasks} accounts={accounts} onApplied={load} onError={setError} />
 
         <AddCharacterForm
           accounts={multipleAccounts ? accounts : []}
