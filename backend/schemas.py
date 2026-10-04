@@ -375,6 +375,35 @@ class HoningPlanRead(BaseModel):
     updated_at: datetime
 
 
+class CounterCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    value: int = Field(default=0, ge=0, le=1_000_000_000)
+    target: int | None = Field(default=None, ge=1, le=1_000_000_000)
+    character_id: int | None = None
+    account_id: int | None = None
+
+
+class CounterUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    value: int | None = Field(default=None, ge=0, le=1_000_000_000)
+    target: int | None = Field(default=None, ge=1, le=1_000_000_000)
+    # Change the value by this much (the +1 / -1 buttons); never below 0.
+    add: int | None = Field(default=None, ge=-1_000_000, le=1_000_000)
+    position: int | None = None
+
+
+class CounterRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    value: int
+    target: int | None
+    character_id: int | None
+    account_id: int | None
+    position: int
+
+
 class GuideLinkCreate(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     url: str = Field(min_length=1, max_length=500)

@@ -1,11 +1,12 @@
 "use client";
 
-import { Gem, LucideIcon, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { Clock, Gem, LucideIcon, Target, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { ReactNode } from "react";
 
 import NumberInput from "@/components/NumberInput";
 import { formatCombinedGems, formatGold, usableGold, WeeklyGems, WeeklyGold } from "@/lib/api";
+import { describeReset } from "@/lib/resetClock";
 import {
   compactGold,
   dailyRate,
@@ -16,7 +17,7 @@ import {
   percentChange,
 } from "@/lib/insights";
 
-function Widget({ icon: Icon, title, action, children }: { icon: LucideIcon; title: string; action?: ReactNode; children: ReactNode }) {
+export function Widget({ icon: Icon, title, action, children }: { icon: LucideIcon; title: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section className="flex min-w-0 flex-col rounded-lg border border-border bg-surface p-4">
       <header className="mb-3 flex items-center justify-between gap-2">
@@ -224,6 +225,32 @@ export function GemWidget({ weeks, daysIntoWeek, levels = [9, 10] }: { weeks: We
           </p>
         </>
       )}
+    </Widget>
+  );
+}
+
+/** When the next daily and weekly resets are, in your own time and in UTC. */
+export function ResetClockWidget({ nextDaily, nextWeekly, now }: { nextDaily: string; nextWeekly: string; now: Date }) {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const rows = [
+    { label: "Daily reset", reset: describeReset(nextDaily, now) },
+    { label: "Weekly reset", reset: describeReset(nextWeekly, now) },
+  ];
+  return (
+    <Widget icon={Clock} title="Resets">
+      <table className="w-full text-sm">
+        <tbody>
+          {rows.map(({ label, reset }) => (
+            <tr key={label}>
+              <td className="py-1 pr-2 text-muted">{label}</td>
+              <td className="py-1 pr-2 font-medium">{reset.local}</td>
+              <td className="py-1 pr-2 text-xs text-muted">{reset.utc} UTC</td>
+              <td className="py-1 text-right tabular-nums">in {reset.countdown}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-xs text-muted">Your time zone: {zone}.</p>
     </Widget>
   );
 }

@@ -256,6 +256,22 @@ class HoningPlan(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class Counter(Base):
+    """A progress counter the user keeps by hand (collectibles, tokens,
+    reputation, ...): a name, a value and an optional target, for a character,
+    an account, or everyone. No game data, so nothing to go out of date."""
+
+    __tablename__ = "counters"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    value: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    target: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    character_id: Mapped[int | None] = mapped_column(ForeignKey("characters.id"), nullable=True)
+    account_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
 class GuideLink(Base):
     """A link the user added to the Guides page (their guild's Discord, a
     favorite creator, ...). The built-in links live in the frontend."""

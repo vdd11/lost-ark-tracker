@@ -20,7 +20,11 @@ sources to see your weekly gold over time.
     browser). The top boxes count gold raids left and log other gold in one
     step. Optional widgets chart the past month of gold, project a gold goal
     (from your last check-in) and show when your tracked gems add up to the
-    next Lv9 / Lv10. A **Lost Ark updates** widget shows live NA/EU server
+    next Lv9 / Lv10. Two more you can turn on under Customize: a **reset
+    clock** (next daily and weekly reset in your time and UTC) and
+    **counters** you keep by hand (collectibles, tokens, reputation: a name,
+    a number, an optional target and +1 / −1, for a character, an account or
+    everyone). A **Lost Ark updates** widget shows live NA/EU server
     status and official announcements, with the official X accounts
     (@LAGameStatus, @playlostark) a tab away. **Edit who does what** sets each
     character's usual raids and tasks; the pencil by an item level updates it.
@@ -96,7 +100,9 @@ sources to see your weekly gold over time.
     the raid, check the pre-filled difficulties, done. Events are one clear
     per account, pay any character, and disappear when they end.
 - **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly gold
-  (raid clears + logged gold). A **weekly history** grid shows each character's paid
+  (raid clears + logged gold). **By source** shows what each source (raids,
+  Chaos Gate, ...) paid this week, over the last 4 weeks and per week on
+  average. A **weekly history** grid shows each character's paid
   gold raids and gold over the last 8 weeks. An **auction calculator** gives the break-even and
   recommended bid for a raid drop (4 or 8 players, with or without the 5%
   market fee).
@@ -116,7 +122,8 @@ sources to see your weekly gold over time.
   terms of what your gems combine into (3 of a level make the next, so 15 Lv1
   gems are a Lv3 + 2× Lv2).
 - **Export**: "Export CSV" on the Gold and Gems pages downloads your full
-  history for a spreadsheet.
+  history for a spreadsheet; the spending log, prices and honing plans have
+  their own exports.
 - **Settings**: add characters (their usual raids are pre-selected from item
   level), edit daily/weekly columns, and download/restore backups.
 

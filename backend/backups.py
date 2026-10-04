@@ -29,6 +29,7 @@ from models import (
     Character,
     CharacterTask,
     Completion,
+    Counter,
     GemEntry,
     GoldEntry,
     GuideLink,
@@ -57,6 +58,7 @@ BACKUP_MODELS = {
     "guide_links": GuideLink,
     "hidden_guides": HiddenGuide,
     "honing_plans": HoningPlan,
+    "counters": Counter,
 }
 BACKUP_FORMAT = 1
 

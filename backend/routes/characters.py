@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from accounts import first_account_id
-from models import Account, Character, CharacterTask, Completion, GoldEntry, HoningPlan, RaidDifficulty, SpendingEntry, Task
+from models import Account, Character, CharacterTask, Completion, Counter, GoldEntry, HoningPlan, RaidDifficulty, SpendingEntry, Task
 from schemas import (
     AssignTask,
     CharacterCreate,
@@ -134,6 +134,7 @@ def delete_character(character_id: int, db: Session = Depends(get_db)):
     db.query(GoldEntry).filter(GoldEntry.character_id == character_id).update({"character_id": None})
     db.query(SpendingEntry).filter(SpendingEntry.character_id == character_id).update({"character_id": None})
     db.query(HoningPlan).filter(HoningPlan.character_id == character_id).delete()
+    db.query(Counter).filter(Counter.character_id == character_id).delete()
     db.delete(character)
     db.commit()
 
