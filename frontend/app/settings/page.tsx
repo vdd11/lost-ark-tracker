@@ -9,6 +9,7 @@ import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import AddCharacterForm from "@/components/settings/AddCharacterForm";
 import BackupSection from "@/components/settings/BackupSection";
 import CharacterRow from "@/components/settings/CharacterRow";
+import OnlineSection from "@/components/settings/OnlineSection";
 import { AddTaskForm, TaskGroup } from "@/components/settings/TaskLists";
 import { useDragReorder } from "@/components/useDragReorder";
 import { Account, api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task } from "@/lib/api";
@@ -172,6 +173,8 @@ export default function SettingsPage() {
           ))}
         </div>
       </section>
+
+      <OnlineSection />
 
       <BackupSection
         onError={setError}

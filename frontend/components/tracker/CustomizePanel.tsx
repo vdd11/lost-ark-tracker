@@ -2,6 +2,8 @@ import { X } from "lucide-react";
 
 import StyleChooser from "@/components/tracker/StyleChooser";
 import { Task } from "@/lib/api";
+import { NEWS_PREFERENCE } from "@/lib/online";
+import { usePreference } from "@/lib/usePreference";
 import {
   CHARACTER_BOUND_KEY,
   FINISHED_ROWS_KEY,
@@ -30,6 +32,10 @@ export default function CustomizePanel({
   onStyle: (style: Style) => void;
   onClose: () => void;
 }) {
+  // The news widget goes online, so it has its own opt-in switch rather than a spot in the hidden set.
+  const [newsOn, setNewsOn] = usePreference<boolean>(NEWS_PREFERENCE, false);
+  const isChecked = (key: string) => (key === NEWS_PREFERENCE ? newsOn : !hidden.has(key));
+  const toggle = (key: string, on: boolean) => (key === NEWS_PREFERENCE ? setNewsOn(on) : onChange(key, on));
   const taskItems = (section: string) =>
     tasks.filter((t) => sectionOf(t) === section).map((t) => ({ key: viewKey(t), label: t.name }));
 
@@ -66,7 +72,7 @@ export default function CustomizePanel({
         { key: WIDGET_KEYS.goldMonth, label: "Gold, past month" },
         { key: WIDGET_KEYS.goldGoal, label: "Gold goal" },
         { key: WIDGET_KEYS.gems, label: "Gem progress (Lv9 / Lv10)" },
-        { key: WIDGET_KEYS.news, label: "Lost Ark news & servers" },
+        { key: NEWS_PREFERENCE, label: "Lost Ark news & servers (goes online)" },
       ],
     },
     {
@@ -106,8 +112,8 @@ export default function CustomizePanel({
                   <label className={`flex cursor-pointer items-center gap-2 text-sm ${"strong" in item ? "font-medium" : ""}`}>
                     <input
                       type="checkbox"
-                      checked={!hidden.has(item.key)}
-                      onChange={(e) => onChange(item.key, e.target.checked)}
+                      checked={isChecked(item.key)}
+                      onChange={(e) => toggle(item.key, e.target.checked)}
                       className="h-4 w-4"
                     />
                     {item.label}

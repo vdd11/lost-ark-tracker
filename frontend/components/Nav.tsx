@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import ThemeToggle from "@/components/ThemeToggle";
-import UpdateNotice from "@/components/UpdateNotice";
+import UpdateNotice, { UpdateCheckPrompt, useUpdateCheck } from "@/components/UpdateNotice";
 import { DEFAULT_HIDDEN_RAW, HIDDEN_PREFERENCE, PAGE_KEYS, parseHidden } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 
@@ -25,6 +25,7 @@ export default function Nav() {
   const hidden = parseHidden(hiddenRaw);
   // A hidden page still shows while you're on it, so a bookmark isn't a dead end.
   const links = LINKS.filter((link) => !link.key || !hidden.has(link.key) || pathname === link.href);
+  const [updateCheck, setUpdateCheck] = useUpdateCheck();
 
   return (
     <header className="border-b border-border bg-surface">
@@ -45,10 +46,11 @@ export default function Nav() {
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <UpdateNotice />
+          <UpdateNotice enabled={updateCheck === "on"} />
           <ThemeToggle />
         </div>
       </nav>
+      {updateCheck === "ask" && <UpdateCheckPrompt onChoose={setUpdateCheck} />}
     </header>
   );
 }

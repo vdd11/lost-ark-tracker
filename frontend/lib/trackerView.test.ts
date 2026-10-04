@@ -41,6 +41,10 @@ describe("tracker sections", () => {
     expect(parseHidden("").size).toBe(0);
   });
 
+  it("drops the news widget, which is opt-in now", () => {
+    expect(parseHidden("widget:news|task:x").has("widget:news")).toBe(false);
+  });
+
   it("turns the old gold-summary switch into the separate gold boxes", () => {
     const hidden = parseHidden("section:gold|task:x");
     expect(hidden.has(SECTION_KEYS.gold)).toBe(false);

@@ -81,9 +81,9 @@ sources to see your weekly gold over time.
 3. First time: add your characters in **Settings**. Their usual raids are
    picked from item level, and you can adjust them before adding.
 
-Everything stays on your computer. There are no accounts and none of your data is sent anywhere. The only
-network request is a check of this repo's latest GitHub release, which shows "Update available" in the menu
-when there's a newer version.
+Everything stays on your computer. There are no accounts and none of your data is sent anywhere. See
+[Privacy and network](#privacy-and-network) for the few optional things that go online.
+
 Your data is saved here:
 
 | System  | Location |
@@ -111,6 +111,22 @@ the newest file from `backups` over `database.db`.
 
 Options: `--port 9000` to use another port, `--no-browser` to skip opening a
 tab, `--data-dir PATH` to keep the database somewhere else.
+
+## Privacy and network
+
+Your roster, clears, gold and check-ins are stored only in the database on
+your computer and are never uploaded. The app makes exactly these internet
+requests, and only these:
+
+| What | Contacts | When | Default |
+|------|----------|------|---------|
+| Update check | `api.github.com` (this repo's latest release) | Once per browser session | Asked on first launch; existing users keep it on |
+| Lost Ark updates widget | `www.playlostark.com` (server status page) and `api.steampowered.com` (Lost Ark news), fetched by the app | When the widget is on screen, then every 10 minutes while the tracker is open | Off |
+| The widget's "On X" tab | `platform.twitter.com` / `x.com` (X's embed) | Only after you open that tab | Off (the widget is off) |
+
+Turn each one on or off in **Settings → Online features** (the widget also
+in **Customize**). Links you click (patch notes, the status page) open in
+your browser as usual. Fonts and everything else ship inside the app.
 
 ## Development
 

@@ -36,5 +36,8 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - `news.py` fetches server status (playlostark.com) and Steam announcements,
   cached 10 minutes, using certifi's certificates. Tests never hit the network:
   monkeypatch `news.fetch_text`.
+- Anything that goes online must be opt-in, off by default (see
+  `frontend/lib/online.ts`), labeled in the UI, and listed in the README's
+  "Privacy and network" table.
 - Version lives in `backend/version.py`; releases are cut by pushing a `v*` tag.
 - Commit style: conventional commits (`feat:`, `fix:`, `chore:`).

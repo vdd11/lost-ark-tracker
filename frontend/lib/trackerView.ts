@@ -45,8 +45,9 @@ export const WIDGET_KEYS = {
   goldMonth: "widget:gold-month",
   goldGoal: "widget:gold-goal",
   gems: "widget:gems",
-  news: "widget:news",
 } as const;
+/** Older versions kept the (then default-on) news widget in the hidden set; it's opt-in now (lib/online.ts). */
+const RETIRED_KEYS = ["widget:news"];
 
 /** Pages that can be dropped from the menu. */
 export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems" } as const;
@@ -58,7 +59,7 @@ export const DEFAULT_HIDDEN_RAW = DEFAULT_HIDDEN.join("|");
 export const HIDDEN_PREFERENCE = "tracker-hidden";
 
 export function parseHidden(raw: string) {
-  const hidden = new Set(raw.split("|").filter(Boolean));
+  const hidden = new Set(raw.split("|").filter((key) => key && !RETIRED_KEYS.includes(key)));
   // Older versions had one switch for all the gold boxes.
   if (hidden.delete(SECTION_KEYS.gold)) Object.values(STAT_KEYS).forEach((key) => hidden.add(key));
   return hidden;
@@ -69,7 +70,7 @@ export type Style = "casual" | "regular" | "everything";
 export const STYLES: { id: Style; label: string; description: string }[] = [
   { id: "casual", label: "Just raids", description: "Weekly raids, gold raids left and raid gold. Nothing else." },
   { id: "regular", label: "Raids + dailies", description: "Raids, Hourglass, Ebony Cube and Chaos Dungeon, with gold totals and charts." },
-  { id: "everything", label: "Everything", description: "Every task, gold box, chart and page, including Guardian Raid and char-bound gold." },
+  { id: "everything", label: "Everything", description: "Every task, gold box, chart and page, including Guardian Raid and char-bound gold. (Online extras stay off until you turn them on.)" },
 ];
 
 /** What a play style hides, given today's tasks. */

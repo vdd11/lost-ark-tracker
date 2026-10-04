@@ -74,7 +74,7 @@ export default function NewsWidget() {
         <div role="tablist" className="flex gap-0.5">
           {tabButton("servers", "Servers")}
           {tabButton("news", "News")}
-          {tabButton("x", "On X")}
+          {tabButton("x", "On X (loads x.com)")}
         </div>
       </header>
 
