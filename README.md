@@ -166,7 +166,11 @@ With the backend venv active, from the repo root:
 
 ```sh
 python build.py               # exports the frontend, then packages dist/LostArkTracker(.exe)
+python scripts/smoke_test.py dist/LostArkTracker.exe   # starts it and checks the API and page
 ```
+
+CI builds and smoke-tests the Linux binary on every push; the Release
+workflow smoke-tests all three before attaching them.
 
 PyInstaller only builds for the system it runs on. To publish downloads for
 all three systems, bump `APP_VERSION` in `backend/version.py`, then push a

@@ -46,6 +46,12 @@ jobs:
         working-directory: backend
       - run: python build.py
 
+      # Start the real binary and make sure it serves the API and the page,
+      # at the version stamped from the tag, before anything is uploaded.
+      - name: Smoke-test the binary
+        shell: bash
+        run: python scripts/smoke_test.py "${{ matrix.binary }}" --expect-version "${GITHUB_REF_NAME#v}"
+
       - name: Rename binary
         shell: bash
         run: mv "${{ matrix.binary }}" "dist/${{ matrix.asset }}"
