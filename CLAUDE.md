@@ -14,7 +14,9 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   `raids.py` (catalog), `rest.py`, `gems.py`, `resets.py`.
 - Backend checks: `cd backend && .venv/Scripts/python -m ruff check . && .venv/Scripts/python -m pytest -q`
 - Frontend checks: `cd frontend && npm test && npx tsc --noEmit && npm run lint && npm run build`
-  (vitest covers the pure logic in `lib/`; keep component-free code there)
+  (vitest covers the pure logic in `lib/`; keep component-free code there.
+  Interactive components have React Testing Library tests in
+  `components/__tests__/`, which start with `// @vitest-environment jsdom`)
 - Package: `backend/.venv/Scripts/python build.py` → `dist/LostArkTracker.exe`,
   then `python scripts/smoke_test.py dist/LostArkTracker.exe` starts it and
   checks `/api/` and `/` (CI does this on Linux, releases on all three OSes).
