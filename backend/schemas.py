@@ -436,3 +436,18 @@ class LoaPreview(BaseModel):
     suggested_mapping: dict[str, int]
     # Whether LOA Logs' encounters.json was found to suggest boss -> raid.
     raid_map_found: bool
+
+
+class CharacterWeek(BaseModel):
+    week: date
+    # Raid clears, and how many paid gold (event raids don't use a slot).
+    raids: int = 0
+    paid_raids: int = 0
+    # Raid gold after bonus boxes, plus gold logged for the character.
+    gold: int = 0
+
+
+class WeeklyHistory(BaseModel):
+    weeks: list[date]
+    # character_id -> one entry per week (only characters with any history).
+    characters: dict[int, list[CharacterWeek]] = {}

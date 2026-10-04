@@ -5,12 +5,13 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
 import AuctionCalculator from "@/components/AuctionCalculator";
+import HistoryGrid from "@/components/HistoryGrid";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import { useUndo } from "@/components/Toast";
 import GoldCheckIn from "@/components/GoldCheckIn";
 import NumberInput from "@/components/NumberInput";
 import WeeklyGoldChart, { SeriesKey } from "@/components/WeeklyGoldChart";
-import { Account, api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, WeeklyGold } from "@/lib/api";
+import { Account, api, API_URL, Character, formatGold, GoldEntry, goldSplit, parseUtc, send, Task, WeeklyGold } from "@/lib/api";
 import { GOLD_SOURCES } from "@/lib/goldSources";
 import { goldEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
@@ -36,6 +37,7 @@ export default function GoldPage() {
   const accountQuery = accountId ? `&account_id=${accountId}` : "";
   const characters = accountId ? allCharacters.filter((c) => c.account_id === accountId) : allCharacters;
   const [entries, setEntries] = useState<GoldEntry[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [weeks, setWeeks] = useState<WeeklyGold[]>([]);
   const [range, setRange] = usePreference("gold-range", 12, RANGES);
   const [showTable, setShowTable] = usePreference<boolean>("gold-table", false);
@@ -49,9 +51,11 @@ export default function GoldPage() {
       api<GoldEntry[]>(`/gold-entries?limit=50${accountQuery}`),
       api<WeeklyGold[]>(`/gold/weekly?weeks=${range}${accountQuery}`),
       api<Account[]>("/accounts"),
+      api<Task[]>("/tasks"),
     ])
-      .then(([characterData, entryData, weekData, accountData]) => {
+      .then(([characterData, entryData, weekData, accountData, taskData]) => {
         setCharacters(characterData);
+        setTasks(taskData);
         setAccounts(accountData);
         setEntries(entryData);
         setWeeks(weekData);
@@ -183,6 +187,8 @@ export default function GoldPage() {
           <WeeklyGoldChart weeks={weeks} show={VIEWS[view].show} />
         )}
       </section>
+
+      <HistoryGrid characters={characters} tasks={tasks} />
 
       <section className="overflow-x-auto rounded-md border border-border bg-surface p-4">
         <h2 className="mb-3 font-semibold">By character</h2>

@@ -323,3 +323,24 @@ def test_recap_counts_last_weeks_paying_clears(client, set_now):
     recap = client.get("/api/recap").json()
     assert recap["paid_raids"] == {str(main["id"]): 2}
     assert recap["week"] < NOW.date().isoformat()
+
+
+def test_weekly_history_per_character(client, set_now):
+    serca, act4 = task_named(client, "Serca"), task_named(client, "Act 4")
+    main = add_character(client, 1775, [{"task_id": serca["id"]}, {"task_id": act4["id"]}])
+    alt = add_character(client, 1775, name="Alt", is_gold_earner=False)
+    set_now(NOW - timedelta(days=7))
+    complete(client, main["id"], serca["id"])
+    set_now(NOW)
+    complete(client, main["id"], serca["id"])
+    complete(client, main["id"], act4["id"])
+    complete(client, alt["id"], act4["id"])  # a raid that doesn't pay gold
+    client.post("/api/gold-entries", json={"source": "Trade", "amount": 500, "character_id": main["id"]})
+
+    history = client.get("/api/history/weekly?weeks=2").json()
+    assert len(history["weeks"]) == 2
+    last_week, this_week = history["characters"][str(main["id"])]
+    assert (last_week["raids"], last_week["paid_raids"], last_week["gold"]) == (1, 1, 54000)
+    assert (this_week["raids"], this_week["paid_raids"], this_week["gold"]) == (2, 2, 54000 + 38000 + 500)
+    alt_week = history["characters"][str(alt["id"])][1]
+    assert (alt_week["raids"], alt_week["paid_raids"], alt_week["gold"]) == (1, 0, 0)

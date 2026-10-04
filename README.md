@@ -69,7 +69,8 @@ sources to see your weekly gold over time.
     the raid, check the pre-filled difficulties, done. Events are one clear
     per account, pay any character, and disappear when they end.
 - **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly gold
-  (raid clears + logged gold). An **auction calculator** gives the break-even and
+  (raid clears + logged gold). A **weekly history** grid shows each character's paid
+  gold raids and gold over the last 8 weeks. An **auction calculator** gives the break-even and
   recommended bid for a raid drop (4 or 8 players, with or without the 5%
   market fee).
   - **Gold on hand**: once a week (or whenever you like), enter how much
