@@ -32,6 +32,7 @@ export default function TaskTable({
   onItemLevel,
   characterNote,
   characterAction,
+  characterGoal,
   applies,
   cellKeyboard,
   onRowAll,
@@ -46,6 +47,8 @@ export default function TaskTable({
   characterNote?: (character: Character) => ReactNode;
   /** A small button beside the name, e.g. "mark all done". */
   characterAction?: (character: Character) => ReactNode;
+  /** Under the item level, e.g. the next unlock. */
+  characterGoal?: (character: Character) => ReactNode;
   /** In the stacked layout, tasks that don't apply to a character are left out. */
   applies?: (character: Character, task: Task) => boolean;
   cellKeyboard?: (character: Character, task: Task) => CellKeyboard;
@@ -126,6 +129,7 @@ export default function TaskTable({
         {character.class_name} ·{" "}
         <ItemLevelEdit value={character.item_level} characterName={character.name} onSave={(value) => onItemLevel(character, value)} />
       </div>
+      {characterGoal?.(character)}
       {characterNote?.(character)}
     </>
   );

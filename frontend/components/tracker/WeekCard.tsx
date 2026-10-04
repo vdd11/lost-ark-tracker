@@ -1,6 +1,13 @@
 import { CalendarDays } from "lucide-react";
 
-import { characterBoundColumn, eventNote, FinishedNote, GoldRaidNote, MarkAllButton } from "@/components/tracker/cardParts";
+import {
+  characterBoundColumn,
+  eventNote,
+  FinishedNote,
+  GoldRaidNote,
+  MarkAllButton,
+  NextUnlockNote,
+} from "@/components/tracker/cardParts";
 import { cellKeyboard } from "@/components/tracker/cellKeys";
 import TaskTable from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
@@ -56,6 +63,7 @@ export default function WeekCard({
               }
         }
         characterNote={(character) => <GoldRaidNote character={character} data={data} />}
+        characterGoal={(character) => <NextUnlockNote character={character} tasks={data.tasks} />}
         characterAction={
           editMode
             ? undefined

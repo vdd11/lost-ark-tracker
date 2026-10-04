@@ -1,9 +1,10 @@
-import { Check, CheckCheck, Swords } from "lucide-react";
+import { Check, CheckCheck, Swords, TrendingUp } from "lucide-react";
 
 import { ExtraColumn } from "@/components/tracker/TaskTable";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, formatGold, Task, WeeklyGold } from "@/lib/api";
-import { GOLD_RAIDS_PER_WEEK, goldRaidWeek, paidRaids } from "@/lib/raids";
+import { formatGap, nextUnlock } from "@/lib/itemLevelGoals";
+import { formatItemLevel, GOLD_RAIDS_PER_WEEK, goldRaidWeek, paidRaids } from "@/lib/raids";
 import { cellKey } from "@/lib/trackerSections";
 import { remainingFor } from "@/lib/trackerView";
 
@@ -78,6 +79,23 @@ export function GoldRaidNote({ character, data }: { character: Character; data: 
   ) : (
     <div className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-accent" title={title}>
       <Swords size={12} /> {left} gold raid{left === 1 ? "" : "s"} left
+    </div>
+  );
+}
+
+/** "Next: The Final Day Hard at 1730 (+5)": what the character's next upgrade unlocks. */
+export function NextUnlockNote({ character, tasks }: { character: Character; tasks: Task[] }) {
+  const next = nextUnlock(character, tasks);
+  if (!next) return null;
+  const { task, difficulty, gap } = next;
+  const pays = difficulty.gold ? ` It pays ${formatGold(difficulty.gold)} gold.` : "";
+  return (
+    <div
+      className="mt-0.5 flex items-center gap-1 text-[11px] text-muted"
+      title={`${task.name} ${difficulty.name} needs item level ${formatItemLevel(difficulty.min_item_level)}.${pays}`}
+    >
+      <TrendingUp size={12} />
+      Next: {task.name} {difficulty.name} at {formatItemLevel(difficulty.min_item_level)} ({formatGap(gap)})
     </div>
   );
 }
