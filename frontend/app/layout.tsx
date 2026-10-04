@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import Nav from "@/components/Nav";
+import ResetReminders from "@/components/ResetReminders";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ToastProvider>
           <KeyboardShortcuts>
             <Nav />
+            <ResetReminders />
             <main className="mx-auto w-full min-w-0 max-w-7xl px-4 py-6">{children}</main>
           </KeyboardShortcuts>
         </ToastProvider>

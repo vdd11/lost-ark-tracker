@@ -10,6 +10,7 @@ import AddCharacterForm from "@/components/settings/AddCharacterForm";
 import BackupSection from "@/components/settings/BackupSection";
 import CharacterRow from "@/components/settings/CharacterRow";
 import OnlineSection from "@/components/settings/OnlineSection";
+import RemindersSection from "@/components/settings/RemindersSection";
 import { AddTaskForm, TaskGroup } from "@/components/settings/TaskLists";
 import { useDragReorder } from "@/components/useDragReorder";
 import { Account, api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task } from "@/lib/api";
@@ -173,6 +174,8 @@ export default function SettingsPage() {
           ))}
         </div>
       </section>
+
+      <RemindersSection />
 
       <OnlineSection />
 

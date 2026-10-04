@@ -32,6 +32,9 @@ sources to see your weekly gold over time.
   - Mistakes can be undone from the toast that follows a tick, "All" or a
     delete. Press **?** for keyboard shortcuts: arrows move between cells,
     Space ticks, `a` marks a character done, `g` then a letter jumps pages.
+  - Optional **reminders** (Settings) nudge you a few hours before the weekly
+    reset if gold raids are left, and before the daily reset if a rest gauge is
+    full. They come as browser notifications (or a banner) while the app is open.
 - **Accounts**: play more than one account? Add accounts in Settings and put
   each character on one. Each account is its own roster (up to 6 gold earners,
   its own event clears, its own gold and check-ins). The tracker, Gold and
