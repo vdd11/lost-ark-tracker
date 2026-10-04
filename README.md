@@ -122,7 +122,7 @@ Each day you open the app it also saves a copy in a `backups` folder next to
 copy it over `database.db`. **Settings → Download backup** gives you a file
 that restores your data on another computer, or after a reinstall.
 
-**First-run warnings.** The downloads aren't code-signed, so:
+**First-run warnings.** The downloads aren't code-signed (what that would take: `docs/signing.md`), so:
 - **Windows** SmartScreen may say "Windows protected your PC". Click
   *More info → Run anyway*.
 - **macOS**: run `chmod +x LostArkTracker-macos && xattr -d com.apple.quarantine LostArkTracker-macos`
