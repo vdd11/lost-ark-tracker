@@ -160,3 +160,9 @@ def test_guild_weekly_is_removed_once_on_upgrade(client):
     client.post("/api/tasks", json={"name": "Guild Weekly", "category": "weekly"})
     with TestClient(main.app) as restarted:
         assert any(t["name"] == "Guild Weekly" for t in restarted.get("/api/tasks").json())
+
+
+def test_root_reports_version_and_platform(client):
+    info = client.get("/api/").json()
+    assert info["app"] == "Lost Ark Tracker"
+    assert info["platform"] in {"windows", "macos", "linux"}

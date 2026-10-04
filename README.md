@@ -129,7 +129,16 @@ that restores your data on another computer, or after a reinstall.
   once in Terminal, then open it (or right-click → Open).
 - **Linux**: `chmod +x LostArkTracker-linux` once, then run it.
 
-**If it won't start or something breaks,** the window says so and stays open.
+**Updating.** With the update check on, the nav shows *Update available*
+when there's a new release; click it for what's new, the download for your
+system and the steps: quit the tracker, replace the old file with the new one,
+run it. Your data stays where it is (above), so nothing is lost. The first run
+after an update says so, with a link to what changed. The app doesn't download
+or replace itself: unsigned files that swap themselves out are exactly what
+antivirus tools flag (see `docs/signing.md`).
+
+**If it won't start or something breaks,** a message box says so (Windows), or
+the terminal window says so and stays open (macOS / Linux).
 The details are in `tracker.log` in the same data folder, so send that file to
 whoever's helping. If the database itself got damaged, close the app and copy
 the newest file from `backups` over `database.db`.
@@ -145,7 +154,7 @@ requests, and only these:
 
 | What | Contacts | When | Default |
 |------|----------|------|---------|
-| Update check | `api.github.com` (this repo's latest release) | Once per browser session | Asked on first launch; existing users keep it on |
+| Update check | `api.github.com` (this repo's latest release, its notes and download links) | Once per browser session | Asked on first launch; existing users keep it on |
 | Lost Ark updates widget | `www.playlostark.com` (server status page) and `api.steampowered.com` (Lost Ark news), fetched by the app | When the widget is on screen, then every 10 minutes while the tracker is open | Off |
 | The widget's "On X" tab | `platform.twitter.com` / `x.com` (X's embed) | Only after you open that tab | Off (the widget is off) |
 

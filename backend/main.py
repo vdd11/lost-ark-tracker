@@ -1,4 +1,5 @@
 import os
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -73,7 +74,14 @@ router = APIRouter(prefix="/api")
 
 @router.get("/")
 def root():
-    return {"app": APP_NAME, "version": APP_VERSION}
+    # The platform lets the update dialog offer the right download.
+    return {"app": APP_NAME, "version": APP_VERSION, "platform": platform_name()}
+
+
+def platform_name() -> str:
+    if sys.platform == "win32":
+        return "windows"
+    return "macos" if sys.platform == "darwin" else "linux"
 
 
 app.include_router(router)
