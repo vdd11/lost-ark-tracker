@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
+import AuctionCalculator from "@/components/AuctionCalculator";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import { useUndo } from "@/components/Toast";
 import GoldCheckIn from "@/components/GoldCheckIn";
@@ -115,6 +116,8 @@ export default function GoldPage() {
         <Tile label="Last week" value={lastWeek?.net ?? 0} />
         <Tile label={`Average, last ${range} weeks`} value={average} />
       </div>
+
+      <AuctionCalculator />
 
       <GoldCheckIn characters={allCharacters} accounts={accounts} accountId={accountId} onChanged={load} onError={setError} />
 
