@@ -12,6 +12,7 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - Backend: `main.py` sets up the app; endpoints live in `routes/<area>.py`
   (one router each, all under `/api`). Domain logic stays out of routes:
   `raids.py` (catalog), `rest.py`, `gems.py`, `resets.py`.
+- All checks at once: `powershell -File scripts\check.ps1` (or `sh scripts/check.sh`).
 - Backend checks: `cd backend && .venv/Scripts/python -m ruff check . && .venv/Scripts/python -m pytest -q`
 - Frontend checks: `cd frontend && npm test && npx tsc --noEmit && npm run lint && npm run build`
   (vitest covers the pure logic in `lib/`; keep component-free code there.
@@ -58,5 +59,8 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - Anything that goes online must be opt-in, off by default (see
   `frontend/lib/online.ts`), labeled in the UI, and listed in the README's
   "Privacy and network" table.
-- Version lives in `backend/version.py`; releases are cut by pushing a `v*` tag.
+- Version lives in `backend/version.py`; releases are cut by pushing a `v*` tag,
+  only when the user asks: follow `.claude/skills/release/SKILL.md` (notes
+  drafted by `scripts/release_notes.py` become the annotated tag's message and
+  the GitHub release body). Ask before pushing the tag.
 - Commit style: conventional commits (`feat:`, `fix:`, `chore:`).

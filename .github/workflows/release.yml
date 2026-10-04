@@ -65,6 +65,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      # The release notes are the annotated tag's message (see the release
+      # skill). Checkout can leave the tag without its annotation, so fetch it.
+      - name: Notes from the tag message
+        run: |
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+          git tag -l "${GITHUB_REF_NAME}" --format='%(contents)' > release-notes.md
+          cat release-notes.md
       - uses: actions/download-artifact@v4
         with:
           path: assets
@@ -72,4 +80,5 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: assets/*
+          body_path: release-notes.md
           generate_release_notes: true
