@@ -89,8 +89,12 @@ The screenshots use made-up characters.
     up online: the community price site (lostarkmarket.online) now redirects
     to an unrelated site, so there's no price fetch.
   - **Astrogem cutting**: keep it beside the game while you process a gem.
-    A panel laid out like the game's (original artwork): pick the gem type
-    (Order or Chaos, with its willpower cost) and its two effects, set the
+    It looks like the game's dark **Processing** window (original artwork):
+    the grade (Uncommon 5, Rare 7, Epic 9 attempts), the gem type (Order:
+    Stability, Solidity, Immutability; Chaos: Corrosion, Distortion,
+    Destruction), Willpower Efficiency and Points above and below a dial with
+    the two effects either side, then the 4 options offered, the processing
+    cost and attempts left. Pick the gem type and its two effects, set the
     levels, attempts and refreshes, pick the 4 options the game offers from
     dropdowns, and it says **process**, **refresh** or **stop** (goal met, or out
     of reach), with your chance of reaching the goal (total points, plus

@@ -102,6 +102,25 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/*
+ * The astrogem tool's Processing window looks like the game's in both themes:
+ * dark, with gold trim. Redefining the tokens here restyles everything inside.
+ */
+.game-window {
+  color-scheme: dark;
+  --background: #0f1218;
+  --foreground: #e8e4d8;
+  --surface: #161a22;
+  --surface-2: #1f2430;
+  --border: #3a3f4c;
+  --muted: #a39f93;
+  --accent: #e0b44c;
+  color: var(--foreground);
+  background: linear-gradient(180deg, #1a1f29, #10131a);
+  border: 1px solid #8a7444;
+  box-shadow: 0 0 0 1px #000 inset, 0 6px 24px rgb(0 0 0 / 0.35);
+}
+
 /* In the base layer so Tailwind utilities on a field can override these. */
 @layer base {
   input,

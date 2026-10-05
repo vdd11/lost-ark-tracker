@@ -24,6 +24,8 @@ export const ICON_FILES: Record<string, string> = {
 
 /** Names that borrow another icon until they get their own. */
 const ALIASES: Record<string, string> = {
+  // The bundled Order icon is Stability's.
+  "astrogem-stability": "astrogem-order",
   "gold-roster": "gold",
   "gold-character": "gold",
 };
@@ -38,6 +40,12 @@ const LABELS: Record<string, string> = {
   blazing: "Blazing gem",
   "astrogem-order": "Order astrogem",
   "astrogem-chaos": "Chaos astrogem",
+  "astrogem-stability": "Order Astrogem: Stability",
+  "astrogem-solidity": "Order Astrogem: Solidity",
+  "astrogem-immutability": "Order Astrogem: Immutability",
+  "astrogem-corrosion": "Chaos Astrogem: Corrosion",
+  "astrogem-distortion": "Chaos Astrogem: Distortion",
+  "astrogem-destruction": "Chaos Astrogem: Destruction",
   "ebony-cube": "Ebony Cube ticket",
   "haals-hourglass": "Haal's Hourglass",
   "chaos-dungeon": "Chaos Dungeon",
@@ -80,6 +88,11 @@ export function taskIconName(task: { catalog_key: string | null; name: string })
 /** Logged gold and gem sources ("Field Boss", "Chaos Gate", ...). */
 export function sourceIconName(source: string) {
   return slug(source);
+}
+
+/** "chaos-distortion" (lib/data/astrogems.ts GEM_TYPES) -> "astrogem-distortion". */
+export function astrogemIconName(gemTypeKey: string) {
+  return `astrogem-${gemTypeKey.split("-").pop()}`;
 }
 
 export function classIconName(className: string) {

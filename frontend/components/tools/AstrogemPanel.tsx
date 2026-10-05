@@ -1,81 +1,135 @@
 "use client";
 
+import { Coins, Gem, RefreshCw } from "lucide-react";
+
+import GameIcon from "@/components/GameIcon";
+import { formatGold } from "@/lib/api";
 import { Advice, attemptCost, canAppear, resultGrade, total } from "@/lib/astrogems";
 import { Session } from "@/lib/astrogemSession";
-import { EFFECTS, EffectKey, GEM_TYPES, ProcessingOption, RESULT_GRADES, StatKey } from "@/lib/data/astrogems";
-import { formatGold } from "@/lib/api";
+import { astrogemIconName } from "@/lib/data/icons";
+import {
+  BUILT_IN_GRADES,
+  EFFECTS,
+  EffectKey,
+  GEM_TYPES,
+  Grade,
+  ProcessingOption,
+  RESULT_GRADES,
+  StatKey,
+} from "@/lib/data/astrogems";
 
 const pct = (p: number) => `${(p * 100).toFixed(p > 0 && p < 0.1 ? 1 : 0)}%`;
+const GRADES = Object.keys(BUILT_IN_GRADES) as Grade[];
 
-/** One corner of the gem: a coloured badge with the stat's name, level and (for effects) which effect. */
+/** Each corner's colour, like the game's: willpower red, effects green and blue, points gold. */
+const TONES: Record<StatKey, { fill: string; text: string }> = {
+  willpower: { fill: "#d2493f", text: "text-[#ff8a7a]" },
+  effect1: { fill: "#45a85a", text: "text-[#7fdc8f]" },
+  effect2: { fill: "#3b82d6", text: "text-[#82b8ff]" },
+  points: { fill: "#d99a2b", text: "text-[#f3c66b]" },
+};
+
+/** A faceted diamond (our own drawing), filled with a stat's colour; grey when empty. */
+function Diamond({ fill, size = 52 }: { fill: string | null; size?: number }) {
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden className="shrink-0">
+      <polygon points="50,2 98,50 50,98 2,50" fill="#c9a96a" opacity={fill ? 0.9 : 0.35} />
+      <polygon points="50,12 88,50 50,88 12,50" fill={fill ?? "#4a4f5a"} stroke="#1b1f27" strokeWidth="2" />
+      <polygon points="50,12 88,50 50,50" fill="#fff" opacity="0.18" />
+      <polygon points="12,50 50,88 50,50" fill="#000" opacity="0.15" />
+    </svg>
+  );
+}
+
+/** Which corner an option changes, for its little diamond. */
+function optionTone(option: ProcessingOption | undefined): string | null {
+  if (!option) return null;
+  const effect = option.effect;
+  if (effect.kind === "stat") return TONES[effect.stat].fill;
+  if (effect.kind === "changeEffect") return TONES[effect.which === 1 ? "effect1" : "effect2"].fill;
+  return "#8b8f99";
+}
+
+/** One corner of the gem: its diamond, name (or effect picker) and a level badge. */
 function Node({
   stat,
   label,
-  tone,
   session,
   onLevel,
   effect,
 }: {
   stat: StatKey;
   label: string;
-  tone: string;
   session: Session;
   onLevel: (stat: StatKey, level: number) => void;
   effect?: { value: EffectKey | null; choices: EffectKey[]; onChange: (e: EffectKey | null) => void; label: string };
 }) {
   const level = session.gem.levels[stat];
+  const tone = TONES[stat];
   return (
-    <div className={`flex w-full max-w-40 flex-col items-center gap-1 rounded-lg border-2 bg-surface px-2 py-1.5 text-center ${tone}`}>
-      <span className="text-xs font-medium leading-tight text-muted">{label}</span>
-      <select
-        value={level}
-        onChange={(e) => onLevel(stat, Number(e.target.value))}
-        aria-label={`${label} level`}
-        className="w-16 py-0.5 text-center text-lg font-semibold tabular-nums"
-      >
-        {[1, 2, 3, 4, 5].map((n) => (
-          <option key={n} value={n}>{n}</option>
-        ))}
-      </select>
-      {effect && (
+    <div className="flex w-36 flex-col items-center gap-1 text-center">
+      <Diamond fill={tone.fill} />
+      {effect ? (
         <select
           value={effect.value ?? ""}
           onChange={(e) => effect.onChange((e.target.value || null) as EffectKey | null)}
           aria-label={effect.label}
-          className="w-full truncate py-0.5 text-xs"
+          className={`field-sizing-content max-w-full truncate border-transparent bg-transparent px-1 py-0 text-sm font-medium ${tone.text}`}
         >
-          <option value="">Which effect?</option>
+          <option value="">{label}?</option>
           {effect.choices.map((key) => (
             <option key={key} value={key}>{EFFECTS[key]}</option>
           ))}
         </select>
+      ) : (
+        <span className={`text-sm font-medium leading-tight ${tone.text}`}>{label}</span>
       )}
+      <select
+        value={level}
+        onChange={(e) => onLevel(stat, Number(e.target.value))}
+        aria-label={`${effect?.value ? EFFECTS[effect.value] : label} level`}
+        className="rounded border-[#8a7444] bg-[#2a2418] px-1.5 py-0 text-center text-sm font-semibold tabular-nums text-[#f3d58e]"
+      >
+        {[1, 2, 3, 4, 5].map((n) => (
+          <option key={n} value={n}>{effect ? `Lv. ${n}` : n}</option>
+        ))}
+      </select>
     </div>
   );
 }
 
 /**
- * The cutting screen, laid out like the game's: gem type on top, Willpower
- * Efficiency and Order/Chaos Points above and below the gem, the two effects
- * either side, then attempts, refreshes and cost, then the 4 options offered.
- * Original artwork; nothing from the game client.
+ * The cutting screen, laid out like the game's Processing window: grade and
+ * gem type on top, the gem's four corners around a dial (Willpower
+ * Efficiency above, the two effects either side, Order/Chaos Points below),
+ * then the four options offered, the processing cost and attempts. Original
+ * artwork; only item icons come from the game (see public/game-icons).
  */
 export default function AstrogemPanel({
   session,
   options,
   baseCost,
+  maxAttempts,
+  maxRefreshes,
   advice,
   save,
   onApply,
+  onNewGem,
+  onRefresh,
 }: {
   session: Session;
   options: ProcessingOption[];
   baseCost: number;
+  /** A new gem's attempts and refreshes at this grade. */
+  maxAttempts: number;
+  maxRefreshes: number;
   /** Advice for the 4 options on screen, once all 4 are entered. */
   advice: Advice | null;
   save: (next: Session) => void;
   /** The game applied the option in this slot. */
   onApply: (slot: number) => void;
+  onNewGem: (grade: Grade) => void;
+  onRefresh: () => void;
 }) {
   const gem = session.gem;
   const type = GEM_TYPES.find((t) => t.key === session.gemType) ?? null;
@@ -98,132 +152,176 @@ export default function AstrogemPanel({
   };
 
   return (
-    <div className="space-y-3">
-      <label className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted">Astrogem</span>
-        <select
-          value={session.gemType ?? ""}
-          onChange={(e) => save({ ...session, gemType: e.target.value || undefined, effects: [null, null] })}
-          aria-label="Astrogem type"
-          className="min-w-56"
-        >
-          <option value="">Choose the gem type…</option>
-          {(["Order", "Chaos"] as const).map((family) => (
-            <optgroup key={family} label={family}>
-              {GEM_TYPES.filter((t) => t.family === family).map((t) => (
-                <option key={t.key} value={t.key}>
-                  {family} · {t.name} ({t.willpower} willpower)
-                </option>
-              ))}
-            </optgroup>
+    <div className="game-window @container rounded-xl p-1">
+      <div className="rounded-lg border border-[#5c4d31] px-3 pb-3 pt-2 sm:px-4">
+        <h2 className="mb-2 text-center font-serif text-xl font-semibold tracking-wide text-[#efe3c2]">Processing</h2>
+
+        <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5 rounded-md border border-border bg-surface-2/60 px-2 py-1.5 text-sm">
+          <span className="mr-1 text-xs uppercase tracking-wide text-muted">New gem</span>
+          {GRADES.map((g) => (
+            <button
+              key={g}
+              onClick={() => onNewGem(g)}
+              aria-pressed={session.grade === g}
+              className={`rounded border px-2 py-0.5 ${session.grade === g ? "border-accent bg-accent/20 text-foreground" : "border-border text-muted hover:text-foreground"}`}
+            >
+              {BUILT_IN_GRADES[g].label} ({BUILT_IN_GRADES[g].attempts})
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
 
-      {/* The gem: willpower on top, points below, effects either side. */}
-      <div className="grid grid-cols-[1fr_auto_1fr] grid-rows-[auto_auto_auto] items-center justify-items-center gap-2">
-        <div className="col-start-2 row-start-1">
-          <Node stat="willpower" label="Willpower Efficiency" tone="border-danger/60" session={session} onLevel={setLevel} />
+        <div className="flex flex-col items-center gap-1">
+          <label className="flex items-center gap-2">
+            <GameIcon name={type ? astrogemIconName(type.key) : "astrogem-order"} size={36} fallback={Gem} alt="" />
+            <select
+              value={session.gemType ?? ""}
+              onChange={(e) => save({ ...session, gemType: e.target.value || undefined, effects: [null, null] })}
+              aria-label="Astrogem type"
+              className={`font-semibold ${type?.family === "Chaos" ? "text-[#c99bff]" : type ? "text-[#ff9d8a]" : ""}`}
+            >
+              <option value="">Choose the gem type…</option>
+              {(["Order", "Chaos"] as const).map((family) => (
+                <optgroup key={family} label={`${family} Astrogem`}>
+                  {GEM_TYPES.filter((t) => t.family === family).map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {family}: {t.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          <p className="text-sm text-foreground" aria-label={`Total ${points} points, ${resultGrade(points, RESULT_GRADES)}`}>
+            {points} Astrogem Points <span className="text-muted">· {resultGrade(points, RESULT_GRADES)}</span>
+            {type && <span className="text-muted"> · {type.willpower} willpower</span>}
+          </p>
+          <div className="mt-1 flex w-full max-w-72 items-center gap-1.5">
+            <button
+              onClick={onRefresh}
+              disabled={gem.refreshesLeft <= 0}
+              title="You used a refresh in game (r): the 4 options are replaced"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded border border-border bg-surface-2 py-1 text-sm hover:border-accent disabled:opacity-50"
+            >
+              <RefreshCw size={13} /> Refresh ({gem.refreshesLeft}/{maxRefreshes})
+            </button>
+            <select
+              value={gem.refreshesLeft}
+              onChange={(e) => save({ ...session, gem: { ...gem, refreshesLeft: Number(e.target.value) } })}
+              aria-label="Refreshes left"
+              title="Refreshes left"
+              className="py-0.5 text-sm tabular-nums"
+            >
+              {Array.from({ length: Math.max(maxRefreshes + 4, gem.refreshesLeft) + 1 }, (_, n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="col-start-1 row-start-2 w-full justify-self-end">
-          <Node
-            stat="effect1"
-            label="Effect 1"
-            tone="border-done/60"
-            session={session}
-            onLevel={setLevel}
-            effect={{ value: effects[0], choices, onChange: setEffect(0), label: "First effect" }}
-          />
-        </div>
-        <svg viewBox="0 0 100 100" className="col-start-2 row-start-2 h-24 w-24" role="img" aria-label={`Total ${points} points, ${resultGrade(points, RESULT_GRADES)}`}>
-          <polygon points="50,4 96,50 50,96 4,50" className="fill-surface-2 stroke-accent" strokeWidth="3" />
-          <polygon points="50,18 82,50 50,82 18,50" className="fill-accent/15 stroke-accent/40" strokeWidth="1.5" />
-          <text x="50" y="50" textAnchor="middle" dominantBaseline="central" className="fill-foreground text-[22px] font-semibold tabular-nums">
-            {points}
-          </text>
-          <text x="50" y="70" textAnchor="middle" className="fill-muted text-[9px]">
-            {resultGrade(points, RESULT_GRADES)}
-          </text>
-        </svg>
-        <div className="col-start-3 row-start-2 w-full justify-self-start">
-          <Node
-            stat="effect2"
-            label="Effect 2"
-            tone="border-series-1/70"
-            session={session}
-            onLevel={setLevel}
-            effect={{ value: effects[1], choices, onChange: setEffect(1), label: "Second effect" }}
-          />
-        </div>
-        <div className="col-start-2 row-start-3">
-          <Node stat="points" label={pointsLabel} tone="border-accent/70" session={session} onLevel={setLevel} />
-        </div>
-      </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
-        <label className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
-          <span className="text-xs text-muted">Attempts</span>
-          <select value={gem.attemptsLeft} onChange={(e) => save({ ...session, gem: { ...gem, attemptsLeft: Number(e.target.value) } })} aria-label="Attempts left" className="border-0 py-0 tabular-nums">
-            {Array.from({ length: 13 }, (_, n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
-          <span className="text-xs text-muted">Refreshes</span>
-          <select value={gem.refreshesLeft} onChange={(e) => save({ ...session, gem: { ...gem, refreshesLeft: Number(e.target.value) } })} aria-label="Refreshes left" className="border-0 py-0 tabular-nums">
-            {Array.from({ length: 11 }, (_, n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
-          <span className="text-xs text-muted">Cost</span>
-          <select value={gem.costStep} onChange={(e) => save({ ...session, gem: { ...gem, costStep: Number(e.target.value) } })} aria-label="Cost modifier" className="border-0 py-0">
-            <option value={-1}>−100% (free)</option>
-            <option value={0}>Normal</option>
-            <option value={1}>+100%</option>
-          </select>
-        </label>
-        <span className="text-xs text-muted tabular-nums">next {formatGold(attemptCost(gem, baseCost))} · spent {formatGold(session.gold)}</span>
-      </div>
+        {/* The dial: willpower on top, points below, the two effects either side. */}
+        <div className="relative mx-auto my-3 grid max-w-md grid-cols-3 grid-rows-[auto_auto_auto] place-items-center">
+          <svg viewBox="0 0 300 300" className="pointer-events-none absolute inset-0 m-auto h-full max-h-72 w-full" aria-hidden>
+            <circle cx="150" cy="150" r="104" fill="none" stroke="#7d8495" strokeWidth="1.5" strokeDasharray="5 7" opacity="0.6" />
+            <circle cx="150" cy="150" r="70" fill="none" stroke="#7d8495" strokeWidth="1" opacity="0.5" />
+          </svg>
+          <div className="relative col-start-2 row-start-1">
+            <Node stat="willpower" label="Willpower Efficiency" session={session} onLevel={setLevel} />
+          </div>
+          <div className="relative col-start-1 row-start-2">
+            <Node stat="effect1" label="Effect 1" session={session} onLevel={setLevel} effect={{ value: effects[0], choices, onChange: setEffect(0), label: "First effect" }} />
+          </div>
+          <div className="relative col-start-3 row-start-2">
+            <Node stat="effect2" label="Effect 2" session={session} onLevel={setLevel} effect={{ value: effects[1], choices, onChange: setEffect(1), label: "Second effect" }} />
+          </div>
+          <div className="relative col-start-2 row-start-3">
+            <Node stat="points" label={pointsLabel} session={session} onLevel={setLevel} />
+          </div>
+        </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {[0, 1, 2, 3].map((slot) => {
-          const key = session.shown[slot] ?? "";
-          const option = options.find((o) => o.key === key);
-          return (
-            <div key={slot} className="flex flex-col gap-1 rounded-md border border-border p-1.5">
-              <select
-                value={key}
-                onChange={(e) => setSlot(slot, e.target.value)}
-                aria-label={`Option ${slot + 1} offered`}
-                className="w-full py-1 text-sm"
-              >
-                <option value="">Option {slot + 1}…</option>
-                {options.map((o) => (
-                  <option
-                    key={o.key}
-                    value={o.key}
-                    // Options this gem can't be offered, or already in another slot, can't be picked.
-                    disabled={o.key !== key && (!canAppear(o, gem) || session.shown.includes(o.key))}
+        <div className="border-t border-border pt-2">
+          <p className="mb-2 text-center text-sm text-foreground">One of the following is randomly applied.</p>
+          <div className="grid grid-cols-2 gap-2 @xl:grid-cols-4">
+            {[0, 1, 2, 3].map((slot) => {
+              const key = session.shown[slot] ?? "";
+              const option = options.find((o) => o.key === key);
+              return (
+                <div key={slot} className="flex flex-col items-center gap-1 rounded-md border border-border bg-surface-2/50 p-1.5">
+                  <Diamond fill={optionTone(option)} size={28} />
+                  <select
+                    value={key}
+                    onChange={(e) => setSlot(slot, e.target.value)}
+                    aria-label={`Option ${slot + 1} offered`}
+                    className="w-full py-0.5 text-center text-xs"
                   >
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => onApply(slot)}
-                disabled={!option}
-                title="The game applied this one"
-                className="rounded border border-border px-1 py-1 text-xs hover:border-accent disabled:opacity-40"
+                    <option value="">Option {slot + 1}…</option>
+                    {options.map((o) => (
+                      <option
+                        key={o.key}
+                        value={o.key}
+                        // Options this gem can't be offered, or already in another slot, can't be picked.
+                        disabled={o.key !== key && (!canAppear(o, gem) || session.shown.includes(o.key))}
+                      >
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => onApply(slot)}
+                    disabled={!option}
+                    title="The game applied this one"
+                    className="w-full rounded border border-border px-1 py-0.5 text-xs hover:border-accent disabled:opacity-40"
+                  >
+                    Applied ({slot + 1})
+                    {/* Always takes its line, so the cards don't grow when the advice arrives. */}
+                    <span className="block text-xs text-muted">{option && advice ? `then ${pct(advice.after[slot])}` : "\u00a0"}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <dl className="mt-3 space-y-1 border-t border-border pt-2 text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <dt>Processing cost</dt>
+            <dd className="flex items-center gap-1.5 tabular-nums">
+              <select
+                value={gem.costStep}
+                onChange={(e) => save({ ...session, gem: { ...gem, costStep: Number(e.target.value) } })}
+                aria-label="Cost modifier"
+                className="py-0 text-xs"
               >
-                Applied ({slot + 1})
-                {option && advice ? <span className="block text-xs text-muted">then {pct(advice.after[slot])}</span> : null}
-              </button>
-            </div>
-          );
-        })}
+                <option value={-1}>−100%</option>
+                <option value={0}>Normal</option>
+                <option value={1}>+100%</option>
+              </select>
+              {formatGold(attemptCost(gem, baseCost))}
+              <GameIcon name="gold" size={18} fallback={Coins} alt="gold" />
+            </dd>
+          </div>
+          <div className="flex items-center justify-between gap-2 text-muted">
+            <dt>Spent on this gem so far</dt>
+            <dd className="flex items-center gap-1.5 tabular-nums">
+              {formatGold(session.gold)}
+              <GameIcon name="gold" size={18} fallback={Coins} alt="gold" />
+            </dd>
+          </div>
+        </dl>
+
+        <label className="mt-3 flex items-center justify-center gap-2 rounded-md border border-border bg-surface-2 py-1.5 text-sm">
+          Process
+          <select
+            value={gem.attemptsLeft}
+            onChange={(e) => save({ ...session, gem: { ...gem, attemptsLeft: Number(e.target.value) } })}
+            aria-label="Attempts left"
+            className="py-0 tabular-nums"
+          >
+            {Array.from({ length: Math.max(maxAttempts, gem.attemptsLeft) + 1 }, (_, n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+          <span className="tabular-nums text-muted">/ {maxAttempts} left</span>
+        </label>
       </div>
     </div>
   );
