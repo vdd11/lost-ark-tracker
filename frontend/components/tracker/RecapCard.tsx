@@ -3,10 +3,13 @@ import { ReactNode } from "react";
 
 import { Character, formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
 import { percentChange } from "@/lib/insights";
+import { formatShortGold } from "@/lib/raids";
+import { topSources } from "@/lib/recap";
 
 /**
  * Last week at a glance, shown once after the Wednesday reset: gold against
- * the week before, gems, and gold raids that were left unrun.
+ * the week before and where it came from, gems by source, and gold raids
+ * that were left unrun.
  */
 export default function RecapCard({
   week,
@@ -25,6 +28,8 @@ export default function RecapCard({
   onDismiss: () => void;
 }) {
   const change = gold && previousGold ? percentChange(previousGold.net, gold.net) : null;
+  const goldSources = gold ? topSources({ Raids: gold.raid_gold, ...gold.by_source }) : [];
+  const gemSources = gems ? topSources(gems.by_source) : [];
   const totalMissed = missed.reduce((sum, row) => sum + row.missed, 0);
   const start = new Date(`${week}T00:00:00`);
   const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
@@ -57,9 +62,15 @@ export default function RecapCard({
               {change}% vs the week before
             </span>
           )}
+          {goldSources.length > 0 && (
+            <p className="mt-0.5 text-xs text-muted tabular-nums">{goldSources.map(([name, amount]) => `${name} ${formatShortGold(amount)}`).join(" · ")}</p>
+          )}
         </Fact>
         <Fact icon={<Gem size={14} />} label="Gems">
           <span className="text-sm font-medium">{gems && gems.total > 0 ? formatCombinedGems(gems.total) : "None tracked"}</span>
+          {gemSources.length > 0 && (
+            <p className="mt-0.5 text-xs text-muted">{gemSources.map(([name, amount]) => `${name}: ${formatCombinedGems(amount)}`).join(" · ")}</p>
+          )}
         </Fact>
         <Fact icon={<Swords size={14} />} label="Gold raids">
           {totalMissed === 0 ? (

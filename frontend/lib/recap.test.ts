@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Character, Task } from "./api";
-import { missedGoldRaids } from "./recap";
+import { missedGoldRaids, topSources } from "./recap";
 
 const raid = (id: number, gold: number) =>
   ({
@@ -20,5 +20,16 @@ describe("missedGoldRaids", () => {
 
   it("never asks for more than a character can enter", () => {
     expect(missedGoldRaids([who(1, { item_level: 1600 })], raids, {})).toEqual([]);
+  });
+});
+
+describe("topSources", () => {
+  it("lists the biggest sources first and leaves out empty ones", () => {
+    expect(topSources({ Raids: 300000, "Chaos Gate": 12000, "Field Boss": 30000, Other: 0, Fate: 500 }, 3)).toEqual([
+      ["Raids", 300000],
+      ["Field Boss", 30000],
+      ["Chaos Gate", 12000],
+    ]);
+    expect(topSources({})).toEqual([]);
   });
 });
