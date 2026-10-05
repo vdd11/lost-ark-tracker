@@ -4,11 +4,13 @@ import { applyOption } from "./astrogems";
 import {
   applied,
   BUILT_IN_ODDS,
+  Effects,
   finish,
   newSession,
   optionsWith,
   parseOdds,
   refreshed,
+  Session,
   sessionTotals,
   undo,
 } from "./astrogemSession";
@@ -71,5 +73,23 @@ describe("odds settings", () => {
   it("apply the user's weights to the options", () => {
     const odds = parseOdds(JSON.stringify({ weights: { keep: 50 } }));
     expect(optionsWith(odds).find((o) => o.key === "keep")!.weight).toBe(50);
+  });
+});
+
+describe("gem type and effects", () => {
+  it("forgets an effect the game just changed, and undo brings it back", () => {
+    let s: Session = { ...newSession("epic", BUILT_IN_ODDS), gemType: "order-stability", effects: ["attack", "brand"] };
+    s = applied(s, option("change2"), applyOption, 900);
+    expect(s.effects).toEqual(["attack", null]);
+    s = applied(s, option("points+1"), applyOption, 900);
+    expect(s.effects).toEqual(["attack", null]);
+    s = undo(undo(s));
+    expect(s.effects).toEqual(["attack", "brand"]);
+  });
+
+  it("keeps the gem type for the next gem but not its effects", () => {
+    const s = finish({ ...newSession("rare", BUILT_IN_ODDS), gemType: "chaos-distortion", effects: ["boss", "attack"] as Effects }, BUILT_IN_ODDS);
+    expect(s.gemType).toBe("chaos-distortion");
+    expect(s.effects).toEqual([null, null]);
   });
 });

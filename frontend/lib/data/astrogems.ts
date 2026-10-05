@@ -86,3 +86,37 @@ export const RESULT_GRADES = [
 ];
 
 export const ODDS_CHECKED = "2026-10-04";
+
+/**
+ * Astrogem types and the side-node effects each can roll.
+ * - Names and willpower cost: Maxroll's Ark Grid guide (community, 2026-06-13).
+ * - Effects per type (each of the 4 at 25%): Smilegate's official probability
+ *   disclosure (Korea, 2025-08-20), "젬 가공: 사용 (분배)", matched to NA names
+ *   (안정 Stability, 견고 Solidity, 불변 Immutability, 침식 Corrosion,
+ *   왜곡 Distortion, 붕괴 Destruction).
+ * Checked 2026-10-04.
+ */
+export const EFFECTS = {
+  attack: "Attack Power",
+  additional: "Additional Damage",
+  boss: "Boss Damage",
+  allyDamage: "Ally Damage Enh.",
+  brand: "Brand Power",
+  allyAttack: "Ally Attack Power Enh.",
+} as const;
+export type EffectKey = keyof typeof EFFECTS;
+
+export type GemType = { key: string; family: "Order" | "Chaos"; name: string; willpower: number; effects: EffectKey[] };
+
+const STABLE: EffectKey[] = ["attack", "additional", "allyDamage", "brand"];
+const SOLID: EffectKey[] = ["attack", "boss", "allyDamage", "allyAttack"];
+const IMMUTABLE: EffectKey[] = ["additional", "boss", "brand", "allyAttack"];
+
+export const GEM_TYPES: GemType[] = [
+  { key: "order-stability", family: "Order", name: "Stability", willpower: 8, effects: STABLE },
+  { key: "order-solidity", family: "Order", name: "Solidity", willpower: 9, effects: SOLID },
+  { key: "order-immutability", family: "Order", name: "Immutability", willpower: 10, effects: IMMUTABLE },
+  { key: "chaos-corrosion", family: "Chaos", name: "Corrosion", willpower: 8, effects: STABLE },
+  { key: "chaos-distortion", family: "Chaos", name: "Distortion", willpower: 9, effects: SOLID },
+  { key: "chaos-destruction", family: "Chaos", name: "Destruction", willpower: 10, effects: IMMUTABLE },
+];

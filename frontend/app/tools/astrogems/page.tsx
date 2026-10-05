@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import AstrogemOdds from "@/components/tools/AstrogemOdds";
+import AstrogemPanel from "@/components/tools/AstrogemPanel";
 import GuideLink from "@/components/guides/GuideLink";
 import { useUndo } from "@/components/Toast";
 import { formatGold, send } from "@/lib/api";
-import { Advice, advise, applyOption, attemptCost, canAppear, createSolver, goalMet, Goal, resultGrade, simulateRest, total } from "@/lib/astrogems";
+import { Advice, advise, applyOption, createSolver, goalMet, Goal, simulateRest } from "@/lib/astrogems";
 import { applied, finish, newSession, optionsWith, parseOdds, refreshed, Session, sessionTotals, undo } from "@/lib/astrogemSession";
-import { BUILT_IN_GRADES, Grade, RESULT_GRADES, StatKey, STATS } from "@/lib/data/astrogems";
+import { BUILT_IN_GRADES, Grade, RESULT_GRADES, STATS } from "@/lib/data/astrogems";
 import { usePreference } from "@/lib/usePreference";
 
 const GRADES = Object.keys(BUILT_IN_GRADES) as Grade[];
@@ -53,7 +54,9 @@ export default function AstrogemsPage() {
 
   const solver = useMemo(() => createSolver(options, goal, 64), [options, goal]);
   const gem = session.gem;
-  const shownOptions = session.shown.map((key) => options.find((o) => o.key === key)!).filter(Boolean);
+  // Slot n holds the nth option on the game's screen (empty slots are "").
+  const slotOptions = [0, 1, 2, 3].map((i) => options.find((o) => o.key === session.shown[i]));
+  const shownOptions = slotOptions.filter((o): o is NonNullable<typeof o> => !!o);
   // The game always has more than 4 options that can appear, so a turn shows exactly 4.
   const turnReady = shownOptions.length === 4;
 
@@ -74,23 +77,13 @@ export default function AstrogemsPage() {
   }, [resultKey, solver]);
   const fresh = result?.key === resultKey ? result : null;
 
-  function setLevel(stat: StatKey, level: number) {
-    save({ ...session, history: [], gem: { ...gem, levels: { ...gem.levels, [stat]: level } } });
-  }
-  const setGem = (change: Partial<typeof gem>) => save({ ...session, gem: { ...gem, ...change } });
-
-  function pickOption(key: string) {
-    if (session.shown.includes(key)) save({ ...session, shown: session.shown.filter((k) => k !== key) });
-    else if (session.shown.length < 4) save({ ...session, shown: [...session.shown, key] });
-  }
-
   function applySlot(index: number) {
-    const option = shownOptions[index];
+    const option = slotOptions[index];
     if (option) save(applied(session, option, applyOption, odds.baseCost));
   }
 
   function newGemOf(grade: Grade) {
-    save({ ...newSession(grade, odds), finished: session.finished, logged: session.logged });
+    save({ ...newSession(grade, odds), finished: session.finished, logged: session.logged, gemType: session.gemType });
   }
 
   async function logSpending() {
@@ -119,7 +112,6 @@ export default function AstrogemsPage() {
     return () => document.removeEventListener("keydown", onKey);
   });
 
-  const points = total(gem);
   const totals = sessionTotals(session);
   const advice = fresh?.advice;
 
@@ -141,97 +133,42 @@ export default function AstrogemsPage() {
         </p>
       </div>
 
-      <section className="grid gap-4 rounded-md border border-border bg-surface p-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-1 text-sm">
-            New gem:
-            {GRADES.map((g) => (
-              <button
-                key={g}
-                onClick={() => newGemOf(g)}
-                className={`rounded-md border px-2.5 py-1 ${session.grade === g ? "border-accent bg-accent/15" : "border-border hover:bg-surface-2"}`}
-              >
-                {BUILT_IN_GRADES[g].label}
-              </button>
-            ))}
-          </div>
-          {STATS.map((stat) => (
-            <div key={stat.key} className="flex items-center gap-2 text-sm">
-              <span className="w-24 text-muted">{stat.short}</span>
-              {[1, 2, 3, 4, 5].map((level) => (
-                <button
-                  key={level}
-                  onClick={() => setLevel(stat.key, level)}
-                  aria-label={`${stat.label} ${level}`}
-                  aria-pressed={gem.levels[stat.key] === level}
-                  className={`h-8 w-8 rounded-md border text-sm font-medium ${
-                    gem.levels[stat.key] === level ? "border-accent bg-accent text-background" : level < gem.levels[stat.key] ? "border-accent/40 bg-accent/15" : "border-border"
-                  }`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
+      <section className="space-y-3 rounded-md border border-border bg-surface p-4">
+        <div className="flex flex-wrap items-center gap-1 text-sm">
+          New gem:
+          {GRADES.map((g) => (
+            <button
+              key={g}
+              onClick={() => newGemOf(g)}
+              className={`rounded-md border px-2.5 py-1 ${session.grade === g ? "border-accent bg-accent/15" : "border-border hover:bg-surface-2"}`}
+            >
+              {BUILT_IN_GRADES[g].label}
+            </button>
           ))}
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <label className="flex items-center gap-1">
-              Attempts left
-              <input type="number" min={0} max={20} value={gem.attemptsLeft} onChange={(e) => setGem({ attemptsLeft: Math.max(0, Number(e.target.value)) })} className="w-14 text-right" aria-label="Attempts left" />
-            </label>
-            <label className="flex items-center gap-1">
-              Refreshes
-              <input type="number" min={0} max={20} value={gem.refreshesLeft} onChange={(e) => setGem({ refreshesLeft: Math.max(0, Number(e.target.value)) })} className="w-14 text-right" aria-label="Refreshes left" />
-            </label>
-            <select value={gem.costStep} onChange={(e) => setGem({ costStep: Number(e.target.value) })} aria-label="Cost modifier">
-              <option value={-1}>Cost −100%</option>
-              <option value={0}>Normal cost</option>
-              <option value={1}>Cost +100%</option>
-            </select>
-          </div>
-          <p className="text-sm">
-            Total <span className="font-semibold">{points}</span> ({resultGrade(points, RESULT_GRADES)}) · next attempt{" "}
-            {formatGold(attemptCost(gem, odds.baseCost))} gold · spent {formatGold(session.gold)}
-          </p>
         </div>
 
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Options on screen (click to add, up to 4)</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {[0, 1, 2, 3].map((slot) => {
-              const option = shownOptions[slot];
-              return (
-                <button
-                  key={slot}
-                  onClick={() => applySlot(slot)}
-                  disabled={!option}
-                  title={option ? "This one was applied" : undefined}
-                  className="flex min-h-12 flex-col items-start rounded-md border border-border px-2 py-1 text-left text-sm hover:border-accent disabled:opacity-50"
-                >
-                  <span className="text-xs text-muted">{slot + 1}</span>
-                  <span className="font-medium">{option?.label ?? "—"}</span>
-                  {option && advice && <span className="text-xs text-muted">then {pct(advice.after[slot])} to reach goal</span>}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-xs text-muted">Processed? Click the option the game applied (or press 1–4). Each is 25%.</p>
-          <div className="flex flex-wrap gap-1.5 text-sm">
-            <button onClick={() => save(refreshed(session))} disabled={gem.refreshesLeft <= 0} className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 hover:bg-surface-2 disabled:opacity-50">
-              <RefreshCw size={13} /> Used a refresh (r)
-            </button>
-            <button onClick={() => save(undo(session))} disabled={!session.history.length} className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 hover:bg-surface-2 disabled:opacity-50">
-              <Undo2 size={13} /> Undo (u)
-            </button>
-            <button onClick={() => save({ ...session, shown: [] })} disabled={!session.shown.length} className="rounded-md border border-border px-2.5 py-1 hover:bg-surface-2 disabled:opacity-50">
-              Clear options
-            </button>
-            <button onClick={() => save(finish(session, odds))} className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 hover:bg-surface-2">
-              <RotateCcw size={13} /> Finish gem (f)
-            </button>
-          </div>
+        <AstrogemPanel session={session} options={options} baseCost={odds.baseCost} advice={advice ?? null} save={save} onApply={applySlot} />
+
+        <p className="text-xs text-muted">
+          Pick the 4 options the game offers, then click the one it applied (or press 1–4); each is 25%. After &ldquo;Change
+          effect&rdquo;, choose the effect the game gave.
+        </p>
+        <div className="flex flex-wrap gap-1.5 text-sm">
+          <button onClick={() => save(refreshed(session))} disabled={gem.refreshesLeft <= 0} className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 hover:bg-surface-2 disabled:opacity-50">
+            <RefreshCw size={13} /> Used a refresh (r)
+          </button>
+          <button onClick={() => save(undo(session))} disabled={!session.history.length} className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 hover:bg-surface-2 disabled:opacity-50">
+            <Undo2 size={13} /> Undo (u)
+          </button>
+          <button onClick={() => save({ ...session, shown: [] })} disabled={!session.shown.length} className="rounded-md border border-border px-2.5 py-1 hover:bg-surface-2 disabled:opacity-50">
+            Clear options
+          </button>
+          <button onClick={() => save(finish(session, odds))} className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 hover:bg-surface-2">
+            <RotateCcw size={13} /> Finish gem (f)
+          </button>
         </div>
 
-        <div className="rounded-md border border-accent/40 bg-accent/10 p-3 md:col-span-2" aria-live="polite">
+        <div className="rounded-md border border-accent/40 bg-accent/10 p-3" aria-live="polite">
           {!fresh ? (
             <p className="text-sm text-muted">Working out the odds…</p>
           ) : goalMet(gem, goal) ? (
@@ -255,24 +192,6 @@ export default function AstrogemsPage() {
               {formatGold(fresh.rest.unluckyGold)}).
             </p>
           )}
-        </div>
-      </section>
-
-      <section className="rounded-md border border-border bg-surface p-4">
-        <p className="mb-2 text-sm font-medium">Add an option on screen</p>
-        <div className="flex flex-wrap gap-1">
-          {options.map((o) => (
-            <button
-              key={o.key}
-              onClick={() => pickOption(o.key)}
-              // Options the game can't show for this gem (e.g. "-1" at level 1) are greyed out.
-              disabled={!session.shown.includes(o.key) && !canAppear(o, gem)}
-              aria-pressed={session.shown.includes(o.key)}
-              className={`rounded border px-2 py-0.5 text-xs disabled:opacity-30 ${session.shown.includes(o.key) ? "border-accent bg-accent/15" : "border-border hover:bg-surface-2"}`}
-            >
-              {o.label}
-            </button>
-          ))}
         </div>
       </section>
 

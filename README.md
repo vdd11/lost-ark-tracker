@@ -82,8 +82,10 @@ sources to see your weekly gold over time.
     records the spending. Honing fees use the character's bound gold first,
     then roster-bound, then tradeable, like the game.
   - **Astrogem cutting**: keep it beside the game while you process a gem.
-    Set the gem's levels, attempts and refreshes, click the 4 options the game
-    shows, and it says **process**, **refresh** or **stop** (goal met, or out
+    A panel laid out like the game's (original artwork): pick the gem type
+    (Order or Chaos, with its willpower cost) and its two effects, set the
+    levels, attempts and refreshes, pick the 4 options the game offers from
+    dropdowns, and it says **process**, **refresh** or **stop** (goal met, or out
     of reach), with your chance of reaching the goal (total points, plus
     minimum levels if you want) and the gold it'll take. Click the option the
     game applied (or press 1-4; r = refresh used, u = undo, f = finish).

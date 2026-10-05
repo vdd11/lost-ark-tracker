@@ -1,6 +1,6 @@
 /** The cutting companion's session state: the gem on screen, what it cost, and the gems finished. */
 import { attemptCost, GemState, total } from "./astrogems";
-import { BUILT_IN_COST, BUILT_IN_GRADES, BUILT_IN_OPTIONS, Grade, ProcessingOption, RESULT_GRADES } from "./data/astrogems";
+import { BUILT_IN_COST, EffectKey, BUILT_IN_GRADES, BUILT_IN_OPTIONS, Grade, ProcessingOption, RESULT_GRADES } from "./data/astrogems";
 
 export type OddsSettings = {
   /** Option key -> weight (percent). */
@@ -52,12 +52,19 @@ export type Session = {
   /** Gold spent on the gem on screen. */
   gold: number;
   /** Earlier states of this gem, for Undo. */
-  history: { gem: GemState; shown: string[]; gold: number }[];
+  history: { gem: GemState; shown: string[]; gold: number; effects?: Effects }[];
   /** Gems finished this session. */
   finished: { points: number; grade: string; gold: number; levels: GemState["levels"] }[];
   /** Gold of finished gems already sent to the spending log. */
   logged: number;
+  /** The gem type (GEM_TYPES key), remembered for the next gem. */
+  gemType?: string;
+  /** The two side-node effects; null when unknown (e.g. just changed). */
+  effects?: Effects;
 };
+
+export type Effects = [EffectKey | null, EffectKey | null];
+const NO_EFFECTS: Effects = [null, null];
 
 export function newGem(grade: Grade, odds: OddsSettings): GemState {
   return {
@@ -72,7 +79,15 @@ export function newSession(grade: Grade, odds: OddsSettings): Session {
   return { grade, gem: newGem(grade, odds), shown: [], gold: 0, history: [], finished: [], logged: 0 };
 }
 
-const remember = (s: Session) => [...s.history, { gem: s.gem, shown: s.shown, gold: s.gold }].slice(-50);
+const remember = (s: Session) => [...s.history, { gem: s.gem, shown: s.shown, gold: s.gold, effects: s.effects }].slice(-50);
+
+/** After "Change effect N", that effect is unknown until the user picks what the game rolled. */
+function effectsAfter(effects: Effects | undefined, option: ProcessingOption): Effects | undefined {
+  if (option.effect.kind !== "changeEffect") return effects;
+  const next: Effects = [...(effects ?? NO_EFFECTS)];
+  next[option.effect.which - 1] = null;
+  return next;
+}
 
 /** The game applied the option in slot `index`: pay for the attempt and change the gem. */
 export function applied(session: Session, option: ProcessingOption, apply: (gem: GemState, o: ProcessingOption) => GemState, baseCost: number): Session {
@@ -82,6 +97,7 @@ export function applied(session: Session, option: ProcessingOption, apply: (gem:
     history: remember(session),
     gold: session.gold + attemptCost(session.gem, baseCost),
     gem: apply(session.gem, option),
+    effects: effectsAfter(session.effects, option),
     shown: [],
   };
 }
@@ -106,6 +122,7 @@ export function finish(session: Session, odds: OddsSettings): Session {
     ...session,
     finished: [...session.finished, { points, grade, gold: session.gold, levels: session.gem.levels }],
     gem: newGem(session.grade, odds),
+    effects: NO_EFFECTS,
     shown: [],
     gold: 0,
     history: [],
