@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ReactNode, useState } from "react";
 
 import AccountTabs from "@/components/AccountTabs";
+import { Skeleton } from "@/components/Skeleton";
 import { ArrangeableList, PAGE_BLOCKS, PAGE_ORDER_PREFERENCE, useSavedOrder } from "@/components/tracker/arrange";
 import GoldEarnerCount from "@/components/tracker/GoldEarnerCount";
 import ErrorBanner from "@/components/ErrorBanner";
@@ -129,7 +130,20 @@ export default function TrackerPage() {
         </p>
       )}
 
-      {data.characters.length === 0 && !data.error ? (
+      {!data.loaded ? (
+        <div className="space-y-4" role="status" aria-label="Loading the tracker">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <Skeleton className="h-72" />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-48" />
+            <Skeleton className="h-48" />
+          </div>
+        </div>
+      ) : data.characters.length === 0 && !data.error ? (
         <p className="rounded-lg border border-border bg-surface p-8 text-center text-muted">
           {data.allCharacters.length > 0 ? "No characters on this account yet." : "No characters yet."}{" "}
           <Link href="/settings" className="underline">Add your roster in Settings</Link>.

@@ -53,6 +53,7 @@ export function useTrackerData() {
   const [honingGoals, setHoningGoals] = useState<HoningGoal[]>([]);
   const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const offerUndo = useUndo();
 
   // Which account's roster to show; 0 is all of them.
@@ -118,8 +119,12 @@ export function useTrackerData() {
         setTracker(trackerData);
         setCompleted(new Set(trackerData.completed.map(([c, t]) => cellKey(c, t))));
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
     loadWeeklyGold();
   }, [loadWeeklyGold]);
 
@@ -372,6 +377,7 @@ export function useTrackerData() {
     boundGold,
     now,
     error,
+    loaded,
     setError,
     loadWeeklyGold,
     refreshTracker,

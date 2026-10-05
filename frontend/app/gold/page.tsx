@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
+import { PageSkeleton } from "@/components/Skeleton";
 import AuctionCalculator from "@/components/AuctionCalculator";
 import HistoryGrid from "@/components/HistoryGrid";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
@@ -45,6 +46,8 @@ export default function GoldPage() {
   const [showTable, setShowTable] = usePreference<boolean>("gold-table", false);
   const [view, setView] = usePreference("gold-view", 0, VIEW_INDEXES);
   const [error, setError] = useState<string | null>(null);
+  // Until the first load finishes (or fails), show a skeleton instead of empty states.
+  const [loaded, setLoaded] = useState(false);
   // Bumped when spending is logged, so the check-in recomputes what it expects.
   const [spendingVersion, setSpendingVersion] = useState(0);
   const offerUndo = useUndo();
@@ -64,8 +67,12 @@ export default function GoldPage() {
         setEntries(entryData);
         setWeeks(weekData);
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
   }, [range, accountQuery]);
 
   useEffect(() => {
@@ -95,6 +102,8 @@ export default function GoldPage() {
     }))
     .filter((row) => row.thisWeek > 0 || row.average > 0)
     .sort((a, b) => b.average - a.average);
+
+  if (!loaded) return <PageSkeleton title="Gold" />;
 
   return (
     <div className="space-y-8">

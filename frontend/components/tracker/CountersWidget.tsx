@@ -87,6 +87,7 @@ export default function CountersWidget({
     <Widget
       icon={ListChecks}
       title="Counters"
+      hint="Anything you count by hand: collectibles, tokens, reputation."
       action={
         <button onClick={() => setAdding(!adding)} className="text-xs text-muted underline hover:text-foreground">
           {adding ? "Done" : "Add / edit"}

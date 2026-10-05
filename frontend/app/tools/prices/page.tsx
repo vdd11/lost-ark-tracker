@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import { PageSkeleton } from "@/components/Skeleton";
 import GuideLink from "@/components/guides/GuideLink";
 import { useUndo } from "@/components/Toast";
 import PriceRow, { PriceChange } from "@/components/tools/PriceRow";
@@ -14,6 +15,8 @@ import { parsePrice, Price, STALE_AFTER_DAYS } from "@/lib/prices";
 export default function PricesPage() {
   const [prices, setPrices] = useState<Price[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Until the first load finishes (or fails), show a skeleton instead of empty states.
+  const [loaded, setLoaded] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
@@ -25,8 +28,12 @@ export default function PricesPage() {
       .then((data) => {
         setPrices(data);
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -67,6 +74,8 @@ export default function PricesPage() {
 
   const shown = prices.filter((p) => showHidden || !p.hidden);
   const hiddenCount = prices.filter((p) => p.hidden).length;
+
+  if (!loaded) return <PageSkeleton title="Prices" />;
 
   return (
     <div className="space-y-6">

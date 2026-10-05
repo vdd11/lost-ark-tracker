@@ -4,6 +4,7 @@ import { BookOpen, Plus, RotateCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import { PageSkeleton } from "@/components/Skeleton";
 import GuideCard from "@/components/guides/GuideCard";
 import GuideLinkForm, { GuideLinkDraft } from "@/components/guides/GuideLinkForm";
 import { useUndo } from "@/components/Toast";
@@ -27,6 +28,8 @@ export default function GuidesPage() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Until the first load finishes (or fails), show a skeleton instead of empty states.
+  const [loaded, setLoaded] = useState(false);
   const offerUndo = useUndo();
 
   const load = useCallback(() => {
@@ -34,8 +37,12 @@ export default function GuidesPage() {
       .then((result) => {
         setData(result);
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -81,6 +88,8 @@ export default function GuidesPage() {
   }
 
   const linkOf = (guide: Guide) => data.links.find((l) => l.id === guide.linkId);
+
+  if (!loaded) return <PageSkeleton title="Guides" />;
 
   return (
     <div className="space-y-6">

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import { PageSkeleton } from "@/components/Skeleton";
 import AddRaidForm from "@/components/raids/AddRaidForm";
 import EventForm from "@/components/raids/EventForm";
 import GuideLink from "@/components/guides/GuideLink";
@@ -17,6 +18,8 @@ export default function RaidsPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [tab, setTab] = useState<Tab>("raids");
   const [error, setError] = useState<string | null>(null);
+  // Until the first load finishes (or fails), show a skeleton instead of empty states.
+  const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(() => {
     Promise.all([api<Task[]>("/tasks?include_archived=true"), api<Character[]>("/characters")])
@@ -24,8 +27,12 @@ export default function RaidsPage() {
         setTasks(taskData.filter((t) => t.category === "raid").sort(byPosition));
         setCharacters(characterData.sort(byPosition));
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -47,6 +54,8 @@ export default function RaidsPage() {
   const inactive = shown.filter((t) => !isActiveRaid(t));
   const unknownGold = active.flatMap((t) => t.difficulties.filter((d) => d.gold === null).map((d) => `${t.name} ${d.name}`));
   const liveEvents = tasks.filter((t) => t.ends_on && isActiveRaid(t)).length;
+
+  if (!loaded) return <PageSkeleton title="Raids" />;
 
   return (
     <div className="space-y-6">

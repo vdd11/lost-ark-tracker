@@ -111,6 +111,7 @@ export default function RaidGroupsWidget({
     <Widget
       icon={Users}
       title="Raid groups"
+      hint="Your statics, and which of your characters in each still need the raid."
       action={
         <button onClick={() => startEdit(null)} className="text-xs text-muted underline hover:text-foreground">
           Add group

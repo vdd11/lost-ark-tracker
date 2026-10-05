@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import AccountTabs, { useAccountChoice } from "@/components/AccountTabs";
+import { PageSkeleton } from "@/components/Skeleton";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import { useUndo } from "@/components/Toast";
 import StackedWeeklyChart, { ChartSeries } from "@/components/StackedWeeklyChart";
@@ -79,6 +80,8 @@ export default function GemsPage() {
   const [range, setRange] = usePreference("gems-range", 12, RANGES);
   const [showTable, setShowTable] = usePreference<boolean>("gems-table", false);
   const [error, setError] = useState<string | null>(null);
+  // Until the first load finishes (or fails), show a skeleton instead of empty states.
+  const [loaded, setLoaded] = useState(false);
   const offerUndo = useUndo();
 
   const load = useCallback(() => {
@@ -96,8 +99,12 @@ export default function GemsPage() {
         setWeeks(weekData);
         setRewardTasks(taskData.filter((t) => t.category !== "raid" && t.difficulties.length > 0).sort(byPosition));
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
   }, [range, accountQuery]);
 
   useEffect(() => {
@@ -125,6 +132,8 @@ export default function GemsPage() {
       average: weeks.reduce((sum, w) => sum + (w.by_character[name] ?? 0), 0) / Math.max(1, weeks.length),
     }))
     .filter((row) => row.thisWeek > 0 || row.average > 0);
+
+  if (!loaded) return <PageSkeleton title="Gems" />;
 
   return (
     <div className="space-y-8">

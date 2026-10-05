@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import AccountsBar from "@/components/AccountsBar";
+import { PageSkeleton } from "@/components/Skeleton";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import AddCharacterForm from "@/components/settings/AddCharacterForm";
 import BackupSection from "@/components/settings/BackupSection";
@@ -27,6 +28,8 @@ export default function SettingsPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Until the first load finishes (or fails), show a skeleton instead of empty states.
+  const [loaded, setLoaded] = useState(false);
   // Bumped after a restore so rows drop their drafts of the old data.
   const [dataVersion, setDataVersion] = useState(0);
 
@@ -37,8 +40,12 @@ export default function SettingsPage() {
         setTasks(taskData.sort(byPosition));
         setAccounts(accountData);
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -72,6 +79,8 @@ export default function SettingsPage() {
   }
 
   const characterDrag = useDragReorder(characters, (ordered) => saveOrder(ordered, "/characters", setCharacters));
+
+  if (!loaded) return <PageSkeleton title="Settings" />;
 
   return (
     <div className="space-y-10">

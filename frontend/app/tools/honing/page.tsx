@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
+import { PageSkeleton } from "@/components/Skeleton";
 import GuideLink from "@/components/guides/GuideLink";
 import NumberInput from "@/components/NumberInput";
 import { useUndo } from "@/components/Toast";
@@ -63,6 +64,8 @@ export default function HoningPage() {
   const [extraWeekly, setExtraWeekly] = useState(0);
   const [logAmount, setLogAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Until the first load finishes (or fails), show a skeleton instead of empty states.
+  const [loaded, setLoaded] = useState(false);
   const offerUndo = useUndo();
 
   const load = useCallback(() => {
@@ -72,8 +75,12 @@ export default function HoningPage() {
         setPrices(priceData);
         setPlans(planData);
         setError(null);
+        setLoaded(true);
       })
-      .catch((e) => setError(describeError(e)));
+      .catch((e) => {
+        setError(describeError(e));
+        setLoaded(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -193,6 +200,8 @@ export default function HoningPage() {
     .sort((a, b) => (a.weeks ?? Infinity) - (b.weeks ?? Infinity));
 
   const nameOf = (key: string) => prices.find((p) => p.key === key)?.name ?? key;
+
+  if (!loaded) return <PageSkeleton title="Honing planner" />;
 
   return (
     <div className="space-y-6">

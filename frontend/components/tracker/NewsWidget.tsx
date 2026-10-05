@@ -64,7 +64,7 @@ export default function NewsWidget() {
 
   return (
     <section className="flex min-w-0 flex-col rounded-lg border border-border bg-surface p-4">
-      <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <header className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/15 text-accent">
             <Newspaper size={16} />
@@ -77,6 +77,7 @@ export default function NewsWidget() {
           {tabButton("x", "On X (loads x.com)")}
         </div>
       </header>
+      <p className="mb-3 text-[11px] text-muted">Server status and official news, fetched online only because you turned this on.</p>
 
       {tab === "x" ? (
         <XTimeline />
