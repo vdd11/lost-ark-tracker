@@ -10,25 +10,29 @@ import { ICON_FILES } from "@/lib/data/icons";
 
 import { character, task } from "./fixtures";
 
+const BUNDLED = { ...ICON_FILES };
+
 afterEach(() => {
   cleanup();
   for (const key of Object.keys(ICON_FILES)) delete ICON_FILES[key];
+  Object.assign(ICON_FILES, BUNDLED);
 });
 
 describe("GameIcon", () => {
   it("falls back to the Lucide icon when there's no file", () => {
-    const { container } = render(<GameIcon name="gold" fallback={Coins} />);
+    const { container } = render(<GameIcon name="field-boss" fallback={Coins} />);
     expect(container.querySelector("svg")).not.toBeNull();
     expect(container.querySelector("img")).toBeNull();
   });
 
   it("renders nothing without a file or a fallback", () => {
-    const { container } = render(<GameIcon name="class-bard" />);
+    const { container } = render(<GameIcon name="chaos-gate" />);
     expect(container.innerHTML).toBe("");
   });
 
   it("shows the bundled file at a fixed size, and falls back if it fails to load", () => {
     ICON_FILES.gold = "gold.webp";
+    delete ICON_FILES["gold-roster"];
     render(<GameIcon name="gold-roster" size={20} fallback={Coins} />);
     const image = screen.getByRole("img", { name: "Roster-bound gold" });
     expect(image.getAttribute("src")).toMatch(/\/game-icons\/gold\.webp$/);
@@ -61,6 +65,7 @@ describe("the class icon button", () => {
     render(<MarkAllButton character={bard} columns={[serca, act4]} what="raids and weeklies" data={data(["7:1", "7:2"])} />);
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByTitle("Bardy is done")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Bard" })).toBeTruthy();
   });
 
   it("shows nothing for a character with nothing to count in the card", () => {

@@ -40,7 +40,8 @@ export default function GameIcon({
       loading="lazy"
       alt={alt ?? iconLabel(name)}
       onError={() => setFailed(src)}
-      className={`shrink-0 object-contain ${className}`}
+      // Class emblems are pale, like in game: a dark backdrop keeps them visible on light pages.
+      className={`shrink-0 object-contain ${name.startsWith("class-") ? "rounded-md bg-[#1d2229] p-px" : ""} ${className}`}
       style={{ width: size, height: size }}
     />
   );

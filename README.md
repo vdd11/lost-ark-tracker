@@ -58,8 +58,8 @@ The screenshots use made-up characters.
   - **What's left** switches the cards to a list of only unfinished tasks per
     character, richest first, with one-click ticks and **Copy as text** for
     Discord.
-  - The **class icon** beside a character (a double check until game icons
-    are bundled) ticks off everything they have left in that card.
+  - The **class icon** beside a character ticks off everything they have
+    left in that card (it turns into a check on hover).
     After the Wednesday reset, a recap shows last week's gold, gems and any
     gold raids left unrun.
   - On a phone or narrow window, each character gets a stacked block instead
@@ -161,6 +161,11 @@ The screenshots use made-up characters.
 - **Export**: "Export CSV" on the Gold and Gems pages downloads your full
   history for a spreadsheet; the spending log and prices have
   their own exports.
+- **Game icons**: class emblems and item icons (gold, gems, astrogems, the
+  Ebony Cube ticket, Fate Ember, Paradise) ship inside the app, so nothing
+  is loaded from the web. Each file and its source is listed in
+  `frontend/public/game-icons/SOURCES.md`; Lost Ark and its images are
+  trademarks and property of Smilegate RPG / Amazon Games.
 - **Settings**: add characters (their usual raids are pre-selected from item
   level), edit daily/weekly columns, and download/restore backups.
 

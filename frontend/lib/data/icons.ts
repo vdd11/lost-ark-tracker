@@ -7,8 +7,20 @@
  * Lucide fallback (components/GameIcon.tsx), so the app works with none.
  */
 
+import { LOST_ARK_CLASSES } from "../classes";
+
 /** Icon name -> file in public/game-icons/. Add a file only with its SOURCES.md line. */
-export const ICON_FILES: Record<string, string> = {};
+export const ICON_FILES: Record<string, string> = {
+  gold: "gold.webp",
+  "ebony-cube": "ebony-cube.webp",
+  doomfire: "doomfire.webp",
+  blazing: "blazing.webp",
+  "astrogem-order": "astrogem-order.webp",
+  "fate-ember": "fate-ember.webp",
+  paradise: "paradise.webp",
+  // Every class in lib/classes.ts has one: class-bard.webp, ...
+  ...Object.fromEntries(LOST_ARK_CLASSES.map((name) => [classIconName(name), `${classIconName(name)}.webp`])),
+};
 
 /** Names that borrow another icon until they get their own. */
 const ALIASES: Record<string, string> = {
