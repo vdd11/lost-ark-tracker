@@ -27,6 +27,12 @@ export function useTrackerView(tasks: Task[]) {
     setStyleChosen(true);
   }
 
+  /** Save Customize's draft: what's hidden, and whether a play style was picked. */
+  function saveHidden(next: Set<string>, chosenStyle: boolean) {
+    setHiddenRaw(serializeHidden(next));
+    if (chosenStyle) setStyleChosen(true);
+  }
+
   function setVisible(key: string, visible: boolean) {
     const next = new Set(hidden);
     if (visible) next.delete(key);
@@ -34,7 +40,7 @@ export function useTrackerView(tasks: Task[]) {
     setHiddenRaw(serializeHidden(next));
   }
 
-  return { hidden, isShown, setVisible, applyStyle, styleChosen, setStyleChosen };
+  return { hidden, isShown, setVisible, saveHidden, applyStyle, styleChosen, setStyleChosen };
 }
 
 export type TrackerView = ReturnType<typeof useTrackerView>;

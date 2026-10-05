@@ -19,16 +19,13 @@ const week = (tradeable: number, roster: number, bound: number) =>
 const WEEKS = [week(70000, 70000, 70000), week(70000, 70000, 70000), week(70000, 70000, 70000), week(70000, 70000, 70000), week(0, 0, 0)];
 
 function renderGoal(mode: GoalMode, goal = 1_000_000) {
-  const handlers = { onMode: vi.fn(), onCharacter: vi.fn(), onGoal: vi.fn() };
+  const handlers = { onMode: vi.fn(), onGoal: vi.fn() };
   render(
     <GoldGoalWidget
       weeks={WEEKS}
       daysIntoWeek={0}
       onHand={{ tradeable: 100000, roster_bound: 50000 }}
-      boundGold={{ "7": 25000 }}
-      characters={[character({ id: 7, name: "Bardy" })]}
       mode={mode}
-      characterId={7}
       goal={goal}
       {...handlers}
     />,
@@ -43,17 +40,15 @@ describe("GoldGoalWidget", () => {
     cleanup();
     renderGoal("roster");
     expect(screen.getByText(/150,000 of 1,000,000 tradeable \+ roster-bound on hand/)).toBeTruthy();
-    cleanup();
-    renderGoal("character");
-    expect(screen.getByText(/175,000 of 1,000,000 tradeable \+ roster-bound \+ Bardy's bound on hand/)).toBeTruthy();
-    expect(screen.getByLabelText("Character")).toBeTruthy();
+    // Only the two modes are offered.
+    const modes = [...(screen.getByLabelText("What counts toward the goal") as HTMLSelectElement).options].map((o) => o.value);
+    expect(modes).toEqual(["tradeable", "roster"]);
   });
 
   it("switches mode", async () => {
     const { onMode } = renderGoal("roster");
-    expect(screen.queryByLabelText("Character")).toBeNull();
-    await userEvent.selectOptions(screen.getByLabelText("What counts toward the goal"), "character");
-    expect(onMode).toHaveBeenCalledWith("character");
+    await userEvent.selectOptions(screen.getByLabelText("What counts toward the goal"), "tradeable");
+    expect(onMode).toHaveBeenCalledWith("tradeable");
   });
 });
 

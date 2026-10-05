@@ -4,7 +4,7 @@ A roster tracker for Lost Ark: check off dailies, weeklies, and raids per
 character, across one or more game accounts, and log gold from non-raid
 sources to see your weekly gold over time.
 
-![The tracker in dark mode: gold boxes, this week's raids with difficulties and bonus boxes, and the daily and any-time cards](docs/screenshots/tracker-dark.png)
+![The tracker in dark mode: gold boxes, this week's raids with difficulties and bonus boxes, and the Today and Ebony Cube cards](docs/screenshots/tracker-dark.png)
 
 <details>
 <summary>Light mode, and the Gold page's weekly chart</summary>
@@ -27,25 +27,25 @@ The screenshots use made-up characters.
     cells show none, and their bonus boxes are free for 3 raids a week.
     "Raid gold this week" shows tradeable + roster-bound gold, with
     character-bound gold and how many characters it's on beneath. The
-    **gold goal** widget counts tradeable gold only, tradeable + roster-bound
-    (the default), or one character's total including their bound gold, each
-    with its own target.
+    **gold goal** widget counts tradeable gold only or tradeable + roster-bound
+    (the default), each with its own target.
   - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset
     daily at 10:00 UTC.
-  - **Any time**: Ebony Cube run counters for the character's own unlock
+  - **Ebony Cube** (tickets, no reset): run counters for the character's own unlock
     (Kurzan Front / Chaos Rift tickets); the unlock button counts lower unlocks
     from guild shop boxes and lucky rooms.
   - **Customize** starts from a play style (Just raids, Raids + dailies, or
     Everything), then lets you tick every card, column, gold box and menu
     page on or off, and tuck away characters who are done (saved per
-    browser). The top boxes count gold raids left and log other gold in one
+    browser). Changes apply when you press **Save**; **Cancel** or Esc
+    discards them. The top boxes count gold raids left and log other gold in one
     step. Optional widgets chart the past month of gold, project a gold goal
     (from your last check-in) and show when your tracked gems add up to the
     next Lv9 / Lv10, and a compact **auction calculator** sits beside them
     for bidding mid-raid. The gold and gem widgets switch between this week,
-    the last 4 weeks and all time. While Customize is open, drag any block
-    (the gold boxes, recap, cards, widgets) by its name, or use its arrows,
-    to rearrange the page; "Reset order" puts it back. More you can turn on under Customize: a **reset
+    the last 4 weeks and all time. **Rearrange the page** (in Customize) lets
+    you drag any block (the gold boxes, recap, cards, widgets) by its name, or
+    use its arrows; "Reset order" puts it back and **Done** finishes. More you can turn on under Customize: a **reset
     clock** (next daily and weekly reset in your time and UTC) and
     **counters** you keep by hand (collectibles, tokens, reputation: a name,
     a number, an optional target and +1 / −1, for a character, an account or
@@ -64,8 +64,11 @@ The screenshots use made-up characters.
   - On a phone or narrow window, each character gets a stacked block instead
     of a wide table.
   - Mistakes can be undone from the toast that follows a tick, "All" or a
-    delete. Press **?** for keyboard shortcuts: arrows move between cells,
-    Space ticks, `a` marks a character done, `g` then a letter jumps pages.
+    delete. Press **?** for keyboard shortcuts: arrows, Home and End move
+    between cells (also right after clicking a checkbox), Space ticks, + / −
+    count runs, `a` marks a character done, `g` then a letter jumps pages.
+  - **Settings → Appearance**: text size (Small, Default, Large) and density
+    (Comfortable, Compact), saved per browser.
   - Optional **reminders** (Settings) nudge you a few hours before the weekly
     reset if gold raids are left, and before the daily reset if a rest gauge is
     full. They come as browser notifications (or a banner) while the app is open.

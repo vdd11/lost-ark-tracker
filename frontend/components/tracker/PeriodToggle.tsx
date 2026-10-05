@@ -3,7 +3,7 @@ import { Period, PERIODS } from "@/lib/periods";
 /** A small "Week / 4 wk / All" switch for a widget's header. */
 export default function PeriodToggle({ value, onChange, label }: { value: Period; onChange: (p: Period) => void; label: string }) {
   return (
-    <div className="flex rounded-md border border-border p-0.5 text-[11px]" role="group" aria-label={label}>
+    <div className="flex rounded-md border border-border p-0.5 text-xs" role="group" aria-label={label}>
       {PERIODS.map((p) => (
         <button
           key={p.key}

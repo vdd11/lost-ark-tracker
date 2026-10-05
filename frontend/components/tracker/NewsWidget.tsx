@@ -77,7 +77,7 @@ export default function NewsWidget() {
           {tabButton("x", "On X (loads x.com)")}
         </div>
       </header>
-      <p className="mb-3 text-[11px] text-muted">Server status and official news, fetched online only because you turned this on.</p>
+      <p className="mb-3 text-xs text-muted">Server status and official news, fetched online only because you turned this on.</p>
 
       {tab === "x" ? (
         <XTimeline />
@@ -109,7 +109,7 @@ function Servers({ servers, error }: { servers: ServerStatus[]; error: string | 
       </p>
       {regions.map((region) => (
         <div key={region}>
-          <h3 className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted">{region}</h3>
+          <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">{region}</h3>
           <ul className="flex flex-wrap gap-x-3 gap-y-1">
             {servers
               .filter((s) => s.region === region)
@@ -130,7 +130,7 @@ function Servers({ servers, error }: { servers: ServerStatus[]; error: string | 
         href="https://www.playlostark.com/en-us/support/server-status"
         target="_blank"
         rel="noreferrer"
-        className="flex items-center gap-1 text-[11px] text-muted underline hover:text-foreground"
+        className="flex items-center gap-1 text-xs text-muted underline hover:text-foreground"
       >
         Official status page <ExternalLink size={11} />
       </a>
@@ -148,7 +148,7 @@ function News({ feed }: { feed: NewsFeed }) {
         <li key={item.url}>
           <a href={item.url} target="_blank" rel="noreferrer" className="group block">
             <span className="line-clamp-2 group-hover:underline">{item.title}</span>
-            <span className="text-[11px] text-muted">
+            <span className="text-xs text-muted">
               {new Date(item.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
             </span>
           </a>
@@ -224,7 +224,7 @@ function XTimeline() {
         href={`https://x.com/${handle}`}
         target="_blank"
         rel="noreferrer"
-        className="flex items-center gap-1 text-[11px] text-muted underline hover:text-foreground"
+        className="flex items-center gap-1 text-xs text-muted underline hover:text-foreground"
       >
         Open @{handle} on X <ExternalLink size={11} />
       </a>

@@ -1,9 +1,10 @@
-import { X } from "lucide-react";
+import { Move, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import StyleChooser from "@/components/tracker/StyleChooser";
 import { Task } from "@/lib/api";
-import { PAGE_ORDER_PREFERENCE, WIDGET_ORDER_PREFERENCE } from "@/components/tracker/arrange";
 import { COUNTERS_PREFERENCE } from "@/lib/counters";
+import { CustomizeDraft, draftChanged, isItemShown, toggleItem } from "@/lib/customizeDraft";
 import { NEWS_PREFERENCE } from "@/lib/online";
 import { RAID_GROUPS_PREFERENCE } from "@/lib/raidGroups";
 import { RESET_CLOCK_PREFERENCE } from "@/lib/resetClock";
@@ -18,40 +19,76 @@ import {
   sectionOf,
   STAT_KEYS,
   Style,
+  styleHidden,
   viewKey,
   WIDGET_KEYS,
 } from "@/lib/trackerView";
 
-/** Choose what the tracker shows. Saved in this browser only. */
+/**
+ * Choose what the tracker shows. Changes are a draft until Save; Cancel (or
+ * Esc) throws them away. Saved in this browser only.
+ */
 export default function CustomizePanel({
   tasks,
   hidden,
-  onChange,
-  onStyle,
+  onSave,
   onClose,
+  onArrange,
 }: {
   tasks: Task[];
   hidden: Set<string>;
-  onChange: (key: string, visible: boolean) => void;
-  onStyle: (style: Style) => void;
+  /** Apply the saved draft: the new hidden set, and whether a style was picked. */
+  onSave: (hidden: Set<string>, styleChosen: boolean) => void;
   onClose: () => void;
+  /** Close and start rearranging the page's blocks. */
+  onArrange: () => void;
 }) {
   // The news widget goes online, so it has its own opt-in switch rather than a spot in the hidden set.
   const [newsOn, setNewsOn] = usePreference<boolean>(NEWS_PREFERENCE, false);
   const [resetClockOn, setResetClockOn] = usePreference<boolean>(RESET_CLOCK_PREFERENCE, false);
   const [countersOn, setCountersOn] = usePreference<boolean>(COUNTERS_PREFERENCE, false);
   const [groupsOn, setGroupsOn] = usePreference<boolean>(RAID_GROUPS_PREFERENCE, false);
-  const [pageOrder, setPageOrder] = usePreference<string>(PAGE_ORDER_PREFERENCE, "");
-  const [widgetOrder, setWidgetOrder] = usePreference<string>(WIDGET_ORDER_PREFERENCE, "");
-  // Opt-in widgets keep their own on/off switch instead of the hidden list.
-  const optIn: Record<string, [boolean, (on: boolean) => void]> = {
-    [NEWS_PREFERENCE]: [newsOn, setNewsOn],
-    [RESET_CLOCK_PREFERENCE]: [resetClockOn, setResetClockOn],
-    [COUNTERS_PREFERENCE]: [countersOn, setCountersOn],
-    [RAID_GROUPS_PREFERENCE]: [groupsOn, setGroupsOn],
+  // Opt-in widgets keep their own on/off switch instead of a spot in the hidden list.
+  const optInSetters: Record<string, (on: boolean) => void> = {
+    [NEWS_PREFERENCE]: setNewsOn,
+    [RESET_CLOCK_PREFERENCE]: setResetClockOn,
+    [COUNTERS_PREFERENCE]: setCountersOn,
+    [RAID_GROUPS_PREFERENCE]: setGroupsOn,
   };
-  const isChecked = (key: string) => (key in optIn ? optIn[key][0] : !hidden.has(key));
-  const toggle = (key: string, on: boolean) => (key in optIn ? optIn[key][1](on) : onChange(key, on));
+  const saved: CustomizeDraft = {
+    hidden,
+    optIn: {
+      [NEWS_PREFERENCE]: newsOn,
+      [RESET_CLOCK_PREFERENCE]: resetClockOn,
+      [COUNTERS_PREFERENCE]: countersOn,
+      [RAID_GROUPS_PREFERENCE]: groupsOn,
+    },
+    styleChosen: false,
+  };
+  const [draft, setDraft] = useState<CustomizeDraft>(saved);
+  const changed = draftChanged(saved, draft);
+  const isChecked = (key: string) => isItemShown(draft, key);
+  const toggle = (key: string, on: boolean) => setDraft((d) => toggleItem(d, key, on));
+
+  function save() {
+    onSave(draft.hidden, draft.styleChosen);
+    for (const [key, on] of Object.entries(draft.optIn)) if (on !== saved.optIn[key]) optInSetters[key](on);
+    onClose();
+  }
+
+  function cancel() {
+    if (changed && !window.confirm("Discard your Customize changes?")) return;
+    onClose();
+  }
+
+  // Esc cancels, like closing a dialog.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") cancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
   const taskItems = (section: string) =>
     tasks.filter((t) => sectionOf(t) === section).map((t) => ({ key: viewKey(t), label: t.name }));
 
@@ -79,8 +116,8 @@ export default function CustomizePanel({
       items: [{ key: SECTION_KEYS.today, label: "Show the Today card", strong: true }, ...taskItems("today")],
     },
     {
-      title: "Any time",
-      items: [{ key: SECTION_KEYS.anytime, label: "Show the Any time card", strong: true }, ...taskItems("anytime")],
+      title: "Ebony Cube",
+      items: [{ key: SECTION_KEYS.anytime, label: "Show the Ebony Cube card", strong: true }, ...taskItems("anytime")],
     },
     {
       title: "Widgets",
@@ -114,27 +151,18 @@ export default function CustomizePanel({
         <div>
           <h2 className="font-semibold">Customize the tracker</h2>
           <p className="text-xs text-muted">
-            Start from a style, then tick exactly what you want. While this is open, drag the blocks and widgets
-            below by their names (or use the arrows) to rearrange them. Saved in this browser.
+            Start from a style, then tick exactly what you want, and Save. Saved in this browser.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setPageOrder("");
-            setWidgetOrder("");
-          }}
-          disabled={!pageOrder && !widgetOrder}
-          className="ml-auto rounded-md border border-border px-2.5 py-1 text-xs hover:bg-surface-2 disabled:opacity-40"
-          title="Put the tracker's blocks and widgets back in their usual order"
-        >
-          Reset order
-        </button>
-        <button onClick={onClose} aria-label="Close" className="rounded-md p-1 text-muted hover:bg-surface-2">
+        <button onClick={cancel} aria-label="Close" title="Close (same as Cancel)" className="rounded-md p-1 text-muted hover:bg-surface-2">
           <X size={16} />
         </button>
       </div>
 
-      <StyleChooser current={matchingStyle(hidden, tasks)} onChoose={onStyle} />
+      <StyleChooser
+        current={matchingStyle(draft.hidden, tasks)}
+        onChoose={(style: Style) => setDraft((d) => ({ ...d, hidden: styleHidden(style, tasks), styleChosen: true }))}
+      />
 
       <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {groups.map((group) => (
@@ -157,6 +185,28 @@ export default function CustomizePanel({
             </ul>
           </div>
         ))}
+      </div>
+
+      <div className="sticky bottom-0 -mx-4 -mb-4 mt-4 flex flex-wrap items-center gap-2 rounded-b-lg border-t border-border bg-surface px-4 py-3">
+        <button
+          onClick={() => {
+            if (changed && !window.confirm("Discard your Customize changes and rearrange the page?")) return;
+            onArrange();
+          }}
+          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-2"
+          title="Drag the tracker's blocks and widgets into the order you like"
+        >
+          <Move size={14} /> Rearrange the page
+        </button>
+        {changed && <span className="text-xs text-accent">Unsaved changes</span>}
+        <span className="ml-auto flex gap-2">
+          <button onClick={cancel} className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
+            Cancel
+          </button>
+          <button onClick={save} className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-background">
+            Save
+          </button>
+        </span>
       </div>
     </section>
   );

@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 // Matches usePreference("theme") in ThemeToggle: values are stored as JSON.
-const THEME_SCRIPT = `(function(){try{var t=JSON.parse(localStorage.getItem("lost-ark-tracker:theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
+const THEME_SCRIPT = `(function(){try{var d=document.documentElement,g=function(k){return JSON.parse(localStorage.getItem("lost-ark-tracker:"+k))};var t=g("theme");if(t==="light"||t==="dark")d.setAttribute("data-theme",t);var s=g("text-size");if(s==="small"||s==="large")d.setAttribute("data-text-size",s);var n=g("density");if(n==="compact")d.setAttribute("data-density",n)}catch(e){}})()`;
 
 // Typed by hand rather than with the generated LayoutProps<"/">, so
 // `tsc --noEmit` works on a fresh checkout before `next build` has run.
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       suppressHydrationWarning
     >
       <head>
-        {/* Apply a saved Light/Dark choice before the first paint (no flash). */}
+        {/* Apply the saved theme, text size and density before the first paint (no flash). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">

@@ -130,7 +130,7 @@ export default function ClassInput({
         >
           {groups.map((group) => (
             <li key={group.archetype} role="presentation">
-              <div className="px-3 pb-0.5 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
+              <div className="px-3 pb-0.5 pt-1.5 text-xs font-medium uppercase tracking-wide text-muted">
                 {group.archetype}
               </div>
               <ul role="presentation">

@@ -83,7 +83,7 @@ export default function HistoryGrid({ characters, tasks }: { characters: Charact
                       className={`min-w-16 rounded px-1 py-1 text-center tabular-nums ${TONES[tone]} ${current ? "opacity-70" : ""}`}
                     >
                       <div className="font-medium">{untracked ? "–" : raidsText}</div>
-                      <div className="text-[11px] text-muted">{week?.gold ? formatShortGold(week.gold) : "–"}</div>
+                      <div className="text-xs text-muted">{week?.gold ? formatShortGold(week.gold) : "–"}</div>
                     </td>
                   );
                 })}

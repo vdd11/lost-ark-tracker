@@ -30,7 +30,7 @@ export function MarkAllButton({
       onClick={() => data.actions.completeAll(character, todo)}
       title={`Mark ${character.name}'s remaining ${what} done: ${names}`}
       aria-label={`Mark ${character.name}'s remaining ${what} done`}
-      className="ml-auto flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted hover:border-done/60 hover:text-done"
+      className="ml-auto flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-xs text-muted hover:border-done/60 hover:text-done"
     >
       <CheckCheck size={12} /> All
     </button>
@@ -75,11 +75,11 @@ export function GoldRaidNote({ character, data }: { character: Character; data: 
       ? `Runs ${usual} raids, but only the first ${GOLD_RAIDS_PER_WEEK} cleared each week pay gold`
       : `Only the first ${GOLD_RAIDS_PER_WEEK} raids cleared each week pay gold`;
   return left === 0 ? (
-    <div className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-done" title={title}>
+    <div className="mt-0.5 flex items-center gap-1 text-xs font-medium text-done" title={title}>
       <Check size={12} /> Gold raids done
     </div>
   ) : (
-    <div className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-accent" title={title}>
+    <div className="mt-0.5 flex items-center gap-1 text-xs font-medium text-accent" title={title}>
       <Swords size={12} /> {left} gold raid{left === 1 ? "" : "s"} left
     </div>
   );
@@ -93,7 +93,7 @@ export function NextUnlockNote({ character, tasks }: { character: Character; tas
   const pays = difficulty.gold ? ` It pays ${formatGold(difficulty.gold)} gold.` : "";
   return (
     <div
-      className="mt-0.5 flex items-center gap-1 text-[11px] text-muted"
+      className="mt-0.5 flex items-center gap-1 text-xs text-muted"
       title={`${task.name} ${difficulty.name} needs item level ${formatItemLevel(difficulty.min_item_level)}.${pays}`}
     >
       <TrendingUp size={12} />
@@ -110,7 +110,7 @@ export function HoningGoalNote({ character, goals }: { character: Character; goa
   return (
     <Link
       href="/tools/honing"
-      className="mt-0.5 flex items-center gap-1 text-[11px] text-muted hover:text-accent"
+      className="mt-0.5 flex items-center gap-1 text-xs text-muted hover:text-accent"
       title={`Honing plan: ${formatItemLevel(goal.start_item_level)} → ${formatItemLevel(goal.target_item_level)}`}
     >
       <Hammer size={12} />
@@ -129,7 +129,7 @@ export function HoningGoalNote({ character, goals }: { character: Character; goa
 /** Under an event raid's column header: when it ends. */
 export function eventNote(task: Task) {
   return task.ends_on ? (
-    <div className="text-[11px] font-normal text-muted">
+    <div className="text-xs font-normal text-muted">
       event · until {new Date(`${task.ends_on}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
     </div>
   ) : null;
@@ -147,7 +147,7 @@ export function characterBoundColumn(thisWeek: WeeklyGold | null): ExtraColumn {
       return (
         <span title={`Earned ${formatGold(gold.earned)}, ${formatGold(gold.spent)} spent on bonus boxes`}>
           <span className="block">{formatGold(gold.left)}</span>
-          {gold.spent > 0 && <span className="block text-[11px] text-muted">of {formatGold(gold.earned)}</span>}
+          {gold.spent > 0 && <span className="block text-xs text-muted">of {formatGold(gold.earned)}</span>}
         </span>
       );
     },

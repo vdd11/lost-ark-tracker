@@ -3,7 +3,7 @@ import { KeyboardEvent, ReactNode, useRef, useState } from "react";
 import ItemLevelEdit from "@/components/ItemLevelEdit";
 import { CellKeyboard } from "@/components/tracker/cellKeys";
 import { Character, Task } from "@/lib/api";
-import { GridPosition, moveFocus } from "@/lib/shortcuts";
+import { GridPosition, isTypingTarget, moveFocus } from "@/lib/shortcuts";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 
 export type ExtraColumn = {
@@ -23,10 +23,11 @@ export type ExtraColumn = {
  * + and − change run counters, and `a` runs `onRowAll` for that character.
  * Keys only act on the box itself, so the controls inside keep working as usual.
  */
-/** Column widths in px for the desktop table (see the colgroup below). */
-const CHARACTER_COLUMN = 176;
-const TASK_COLUMN = 128;
-const EXTRA_COLUMN = 112;
+/** Column widths in rem for the desktop table (see the colgroup below), so they scale with the text size. */
+const CHARACTER_COLUMN = 10.5;
+const TASK_COLUMN = 7.5;
+const EXTRA_COLUMN = 7;
+const rem = (n: number) => `${n}rem`;
 
 export default function TaskTable({
   characters,
@@ -86,14 +87,22 @@ export default function TaskTable({
   }
 
   function handleKey(event: KeyboardEvent<HTMLElement>, row: number, col: number, keys: CellKeyboard, character: Character) {
-    if (event.target !== event.currentTarget || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    // Keys pressed on a control inside the cell (a clicked checkbox or button)
+    // still drive the grid; dropdowns and text fields keep their own keys, and
+    // Space/Enter stay with the control so nothing toggles twice.
+    const inside = event.target !== event.currentTarget;
+    const target = event.target as HTMLElement;
+    if (inside && (target.tagName === "SELECT" || isTypingTarget(target))) return;
     const moved = moveFocus({ row, col }, event.key, characters.length, rowTasks[row].length);
     const act = (run?: () => void) => {
       event.preventDefault();
       run?.();
     };
     if (moved) act(() => focusCell(moved.row, moved.col));
-    else if (event.key === " " || event.key === "Enter") act(keys.toggle);
+    else if (event.key === " " || event.key === "Enter") {
+      if (!inside) act(keys.toggle);
+    }
     else if (event.key === "+" || event.key === "=") act(keys.increment);
     else if (event.key === "-" || event.key === "_") act(keys.decrement);
     else if ((event.key === "a" || event.key === "A") && onRowAll) act(() => onRowAll(character));
@@ -115,7 +124,7 @@ export default function TaskTable({
         tabIndex={active.row === row && active.col === col ? 0 : -1}
         onFocus={() => setFocus({ row, col })}
         onKeyDown={(event) => handleKey(event, row, col, keys, character)}
-        className="h-full rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+        className="h-full rounded-sm outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
       >
         {renderCell(character, task)}
       </div>
@@ -136,7 +145,7 @@ export default function TaskTable({
                 ? "Gold earner: paid for 3 raids a week. Click to make a non-earner."
                 : "Not a gold earner: no raid gold, but bonus boxes are free for 3 raids a week. Click to make a gold earner (6 per account)."
             }
-            className={`rounded px-1.5 text-[10px] font-semibold ${
+            className={`rounded px-1.5 text-xs font-semibold ${
               character.is_gold_earner ? "bg-accent/15 text-accent hover:bg-accent/25" : "border border-dashed border-border text-muted hover:border-accent/60 hover:text-foreground"
             }`}
           >
@@ -144,7 +153,7 @@ export default function TaskTable({
           </button>
         ) : (
           character.is_gold_earner && (
-            <span title="Gold earner" className="rounded bg-accent/15 px-1.5 text-[10px] font-semibold text-accent">
+            <span title="Gold earner" className="rounded bg-accent/15 px-1.5 text-xs font-semibold text-accent">
               GOLD
             </span>
           )
@@ -169,7 +178,7 @@ export default function TaskTable({
             <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2">
               {rowTasks[row].map((task, col) => (
                 <div key={task.id} className="overflow-hidden rounded-md border border-border text-center">
-                  <div className="truncate px-2 pt-1.5 text-[11px] font-medium text-muted">
+                  <div className="truncate px-2 pt-1.5 text-xs font-medium text-muted">
                     {task.name}
                     {columnNote?.(task)}
                   </div>
@@ -194,14 +203,14 @@ export default function TaskTable({
   const minWidth = CHARACTER_COLUMN + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth }}>
+      <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: rem(minWidth) }}>
         <colgroup>
-          <col style={{ width: CHARACTER_COLUMN }} />
+          <col style={{ width: rem(CHARACTER_COLUMN) }} />
           {columns.map((task) => (
-            <col key={task.id} style={{ width: TASK_COLUMN }} />
+            <col key={task.id} style={{ width: rem(TASK_COLUMN) }} />
           ))}
           {extraColumns.map((column) => (
-            <col key={column.key} style={{ width: EXTRA_COLUMN }} />
+            <col key={column.key} style={{ width: rem(EXTRA_COLUMN) }} />
           ))}
         </colgroup>
         <thead>

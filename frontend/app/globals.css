@@ -78,6 +78,24 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Text size (Settings → Appearance): everything is sized in rem, so the root
+ * size scales the whole app. Default is 17px; Small 15px, Large 19px.
+ * Compact density tightens Tailwind's spacing unit (every p-/m-/gap- uses it).
+ */
+html {
+  font-size: 106.25%;
+}
+html[data-text-size="small"] {
+  font-size: 93.75%;
+}
+html[data-text-size="large"] {
+  font-size: 118.75%;
+}
+html[data-density="compact"] {
+  --spacing: 0.2rem;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

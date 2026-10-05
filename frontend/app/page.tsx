@@ -1,12 +1,13 @@
 "use client";
 
-import { FileSearch, ListTodo, Pencil, Settings2 } from "lucide-react";
+import { FileSearch, ListTodo, Move, Pencil, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
 
 import AccountTabs from "@/components/AccountTabs";
+import { useShortcutHelp } from "@/components/KeyboardShortcuts";
 import { Skeleton } from "@/components/Skeleton";
-import { ArrangeableList, PAGE_BLOCKS, PAGE_ORDER_PREFERENCE, useSavedOrder } from "@/components/tracker/arrange";
+import { ArrangeableList, PAGE_BLOCKS, PAGE_ORDER_PREFERENCE, useSavedOrder, WIDGET_ORDER_PREFERENCE } from "@/components/tracker/arrange";
 import GoldEarnerCount from "@/components/tracker/GoldEarnerCount";
 import ErrorBanner from "@/components/ErrorBanner";
 import AnytimeCard from "@/components/tracker/AnytimeCard";
@@ -33,7 +34,7 @@ const BLOCK_LABELS: Record<string, string> = {
   stats: "Gold boxes",
   recap: "New-week recap",
   week: "This week",
-  daily: "Today and Any time",
+  daily: "Today and Ebony Cube",
   widgets: "Widgets",
 };
 
@@ -42,6 +43,10 @@ export default function TrackerPage() {
   const view = useTrackerView(data.tasks);
   const [editMode, setEditMode] = useState(false);
   const [customizing, setCustomizing] = useState(false);
+  const openShortcuts = useShortcutHelp();
+  // Rearranging the page's blocks is its own mode, with its own Done.
+  const [arranging, setArranging] = useState(false);
+  const [, setWidgetOrderRaw] = usePreference<string>(WIDGET_ORDER_PREFERENCE, "");
   // The full grid, or only what's left (remembered in this browser).
   const [mode, setMode] = usePreference<(typeof MODES)[number]>("tracker-mode", "grid", MODES);
   const showLeft = mode === "left" && !editMode;
@@ -73,7 +78,7 @@ export default function TrackerPage() {
           {showAnytime && <AnytimeCard section={anytime} {...cardProps} />}
         </div>
       ) : null,
-    widgets: <WidgetGrid data={data} view={view} arranging={customizing} />,
+    widgets: <WidgetGrid data={data} view={view} arranging={arranging} />,
   };
 
   return (
@@ -84,7 +89,14 @@ export default function TrackerPage() {
           <AccountTabs accounts={data.accounts} value={data.accountId} onChange={data.setAccountId} />
           <GoldEarnerCount data={data} />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={openShortcuts}
+            className="hidden text-xs text-muted underline-offset-2 hover:text-foreground hover:underline md:inline"
+            title="The tracker works from the keyboard: Tab into a card, arrows to move, Space to tick"
+          >
+            Keyboard: press ?
+          </button>
           {loaEnabled && (
             <ToolbarButton active={importing} onClick={() => setImporting(true)} icon={<FileSearch size={16} />}>
               Import clears
@@ -97,7 +109,7 @@ export default function TrackerPage() {
           >
             What&apos;s left
           </ToolbarButton>
-          <ToolbarButton active={customizing} onClick={() => setCustomizing((v) => !v)} icon={<Settings2 size={16} />}>
+          <ToolbarButton active={customizing} onClick={() => setCustomizing(true)} icon={<Settings2 size={16} />}>
             Customize
           </ToolbarButton>
           <ToolbarButton active={editMode} onClick={() => setEditMode((v) => !v)} icon={<Pencil size={16} />}>
@@ -116,10 +128,35 @@ export default function TrackerPage() {
         <CustomizePanel
           tasks={data.tasks.filter((t) => t.category !== "raid" || isActiveRaid(t))}
           hidden={view.hidden}
-          onChange={view.setVisible}
-          onStyle={view.applyStyle}
+          onSave={view.saveHidden}
           onClose={() => setCustomizing(false)}
+          onArrange={() => {
+            setCustomizing(false);
+            setArranging(true);
+          }}
         />
+      )}
+
+      {arranging && (
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-lg border border-accent/50 bg-surface px-4 py-2 text-sm shadow-md">
+          <Move size={16} className="text-accent" />
+          <span>Drag the blocks and widgets by their names, or use their arrows. Saved as you go.</span>
+          <span className="ml-auto flex gap-2">
+            <button
+              onClick={() => {
+                setBlockOrder([...PAGE_BLOCKS]);
+                setWidgetOrderRaw("");
+              }}
+              className="rounded-md border border-border px-3 py-1.5 hover:bg-surface-2"
+              title="Put the tracker's blocks and widgets back in their usual order"
+            >
+              Reset order
+            </button>
+            <button onClick={() => setArranging(false)} className="rounded-md bg-accent px-3 py-1.5 font-medium text-background">
+              Done
+            </button>
+          </span>
+        </div>
       )}
 
       {editMode && (
@@ -151,7 +188,7 @@ export default function TrackerPage() {
       ) : (
         <ArrangeableList
           className="space-y-4"
-          arranging={customizing}
+          arranging={arranging}
           onReorder={(keys) => setBlockOrder(mergeOrder(keys, blockOrder))}
           items={blockOrder
             .map((key) => ({ key, id: PAGE_BLOCKS.indexOf(key as (typeof PAGE_BLOCKS)[number]), label: BLOCK_LABELS[key], node: blocks[key] }))

@@ -157,7 +157,7 @@ export default function GoldOptimizer({
                           {row.character.name}{" "}
                           <span className="text-xs font-normal text-muted">{formatItemLevel(row.character.item_level)}</span>
                           {row.earnerNow !== row.earnerSuggested && (
-                            <span className={`ml-2 rounded px-1.5 text-[11px] ${row.earnerSuggested ? "bg-done/15 text-done" : "bg-danger/10 text-danger"}`}>
+                            <span className={`ml-2 rounded px-1.5 text-xs ${row.earnerSuggested ? "bg-done/15 text-done" : "bg-danger/10 text-danger"}`}>
                               {row.earnerSuggested ? "becomes a gold earner" : "stops earning gold"}
                             </span>
                           )}

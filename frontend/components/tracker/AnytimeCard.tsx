@@ -22,7 +22,7 @@ export default function AnytimeCard({
   editMode: boolean;
 }) {
   return (
-    <TrackerCard icon={Box} title="Any time" subtitle="Ebony Cube tickets · no reset, count runs this week">
+    <TrackerCard icon={Box} title="Ebony Cube" subtitle="Tickets, no reset · count runs this week">
       <TaskTable
         applies={editMode ? undefined : appliesTo}
         characters={section.rows}

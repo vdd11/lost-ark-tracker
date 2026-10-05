@@ -26,7 +26,7 @@ function Node({
   const level = session.gem.levels[stat];
   return (
     <div className={`flex w-full max-w-40 flex-col items-center gap-1 rounded-lg border-2 bg-surface px-2 py-1.5 text-center ${tone}`}>
-      <span className="text-[11px] font-medium leading-tight text-muted">{label}</span>
+      <span className="text-xs font-medium leading-tight text-muted">{label}</span>
       <select
         value={level}
         onChange={(e) => onLevel(stat, Number(e.target.value))}
@@ -42,7 +42,7 @@ function Node({
           value={effect.value ?? ""}
           onChange={(e) => effect.onChange((e.target.value || null) as EffectKey | null)}
           aria-label={effect.label}
-          className="w-full truncate py-0.5 text-[11px]"
+          className="w-full truncate py-0.5 text-xs"
         >
           <option value="">Which effect?</option>
           {effect.choices.map((key) => (
@@ -219,7 +219,7 @@ export default function AstrogemPanel({
                 className="rounded border border-border px-1 py-1 text-xs hover:border-accent disabled:opacity-40"
               >
                 Applied ({slot + 1})
-                {option && advice ? <span className="block text-[11px] text-muted">then {pct(advice.after[slot])}</span> : null}
+                {option && advice ? <span className="block text-xs text-muted">then {pct(advice.after[slot])}</span> : null}
               </button>
             </div>
           );

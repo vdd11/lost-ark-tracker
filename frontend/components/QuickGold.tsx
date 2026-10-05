@@ -65,7 +65,7 @@ export default function QuickGold({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted hover:border-accent/60 hover:text-foreground"
+        className="flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-xs text-muted hover:border-accent/60 hover:text-foreground"
       >
         <Plus size={12} /> Log
       </button>
@@ -110,7 +110,7 @@ export default function QuickGold({
               Add
             </button>
           </div>
-          <p className="mt-2 text-[11px] text-muted">For a past day, another source or a note, use the Gold page.</p>
+          <p className="mt-2 text-xs text-muted">For a past day, another source or a note, use the Gold page.</p>
         </form>
       )}
     </div>

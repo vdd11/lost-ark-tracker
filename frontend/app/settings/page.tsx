@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import AccountsBar from "@/components/AccountsBar";
+import AppearanceSection from "@/components/settings/AppearanceSection";
 import { PageSkeleton } from "@/components/Skeleton";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
 import AddCharacterForm from "@/components/settings/AddCharacterForm";
@@ -199,6 +200,8 @@ export default function SettingsPage() {
       <RemindersSection />
 
       <LoaLogsSection />
+
+      <AppearanceSection />
 
       <OnlineSection />
 

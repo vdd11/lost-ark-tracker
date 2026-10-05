@@ -107,7 +107,7 @@ export default function RaidCell({
                 ? "Bonus box cost unknown for this difficulty: set it on the Raids page"
                 : `Bought the bonus ("View More") boxes for every gate: ${formatGold(shown.bonus_cost)} gold`
             }
-            className={`flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-[11px] ${
+            className={`flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-xs ${
               run!.bought_bonus
                 ? "bg-accent/20 font-medium text-accent"
                 : "border border-dashed border-border text-muted hover:border-accent/60 hover:text-foreground"

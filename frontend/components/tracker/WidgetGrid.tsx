@@ -52,7 +52,6 @@ export default function WidgetGrid({ data, view, arranging = false }: { data: Tr
   const mode = goalMode as GoalMode;
   const [goldGoal, setGoldGoal] = usePreference<number>(mode === "roster" ? "gold-goal" : `gold-goal-${mode}`, 1_000_000);
   const [order, setOrder] = useSavedOrder(WIDGET_ORDER_PREFERENCE, ALL_WIDGETS);
-  const [goalCharacter, setGoalCharacter] = usePreference<number>("gold-goal-character", 0);
   const [goldPeriod, setGoldPeriod] = usePreference<string>("gold-widget-period", "month", PERIOD_KEYS);
   const [gemPeriod, setGemPeriod] = usePreference<string>("gem-widget-period", "all", PERIOD_KEYS);
   // "All time" gold needs more than the tracker's 9 weeks; load it only when asked for.
@@ -84,12 +83,8 @@ export default function WidgetGrid({ data, view, arranging = false }: { data: Tr
           weeks={goldWeeks}
           daysIntoWeek={weekDays}
           onHand={data.onHand}
-          boundGold={data.boundGold}
-          characters={data.characters}
           mode={mode}
           onMode={setGoalMode}
-          characterId={goalCharacter || null}
-          onCharacter={setGoalCharacter}
           goal={goldGoal}
           onGoal={setGoldGoal}
         />

@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 
 import { AuctionForm } from "@/components/AuctionCalculator";
 import NumberInput from "@/components/NumberInput";
-import { Character, formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
+import { formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
 import PeriodToggle from "@/components/tracker/PeriodToggle";
 import { Period, PERIODS, periodTotal } from "@/lib/periods";
 import { GOAL_MODES, GoalMode, OnHand, onHandToward, weeklyToward } from "@/lib/goldGoal";
@@ -46,7 +46,7 @@ export function Widget({
         </h2>
         {action}
       </header>
-      {hint && <p className="mb-3 text-[11px] text-muted">{hint}</p>}
+      {hint && <p className="mb-3 text-xs text-muted">{hint}</p>}
       {children}
     </section>
   );
@@ -140,7 +140,7 @@ export function GoldMonthWidget({
           );
         })}
       </div>
-      <div className="mt-1 flex justify-between text-[11px] text-muted">
+      <div className="mt-1 flex justify-between text-xs text-muted">
         <span>{shown[0] ? shortWeek(shown[0].week) : ""}</span>
         <span className="flex items-center gap-3">
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-series-1" />Raids</span>
@@ -161,12 +161,8 @@ export function GoldGoalWidget({
   weeks,
   daysIntoWeek,
   onHand,
-  boundGold,
-  characters,
   mode,
   onMode,
-  characterId,
-  onCharacter,
   goal,
   onGoal,
 }: {
@@ -174,23 +170,16 @@ export function GoldGoalWidget({
   daysIntoWeek: number;
   /** Gold on hand by kind (last check-in plus tracked since), or null without a check-in. */
   onHand: OnHand | null;
-  /** Each character's character-bound gold now (null until entered). */
-  boundGold: Record<string, number | null>;
-  characters: Character[];
   mode: GoalMode;
   onMode: (mode: GoalMode) => void;
-  characterId: number | null;
-  onCharacter: (id: number) => void;
   goal: number;
   onGoal: (goal: number) => void;
 }) {
-  const who = mode === "character" ? characters.find((c) => c.id === characterId) ?? characters[0] ?? null : null;
-  const perDay = dailyRate(weeks.map((w) => weeklyToward(w, mode, who?.id ?? null)), daysIntoWeek);
-  const balance = onHandToward(onHand, mode, who ? (boundGold[String(who.id)] ?? null) : null);
+  const perDay = dailyRate(weeks.map((w) => weeklyToward(w, mode)), daysIntoWeek);
+  const balance = onHandToward(onHand, mode);
   const start = balance ?? 0;
   const days = daysToGoal(start, goal, perDay);
-  const counted =
-    mode === "tradeable" ? "tradeable" : mode === "roster" ? "tradeable + roster-bound" : `tradeable + roster-bound + ${who?.name ?? "their"}'s bound`;
+  const counted = mode === "tradeable" ? "tradeable" : "tradeable + roster-bound";
 
   return (
     <Widget icon={Target} title="Gold goal" hint="How long until you reach a gold target at your current pace.">
@@ -200,13 +189,6 @@ export function GoldGoalWidget({
             <option key={m.key} value={m.key}>{m.label}</option>
           ))}
         </select>
-        {mode === "character" && characters.length > 0 && (
-          <select value={who?.id ?? ""} onChange={(e) => onCharacter(Number(e.target.value))} aria-label="Character" className="px-1.5 py-1 text-xs">
-            {characters.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        )}
         <label className="flex items-center gap-2">
           Target
           <NumberInput
@@ -232,12 +214,12 @@ export function GoldGoalWidget({
           {balance !== null ? (
             <div className="mt-auto">
               <Bar value={start / goal} tone={days === 0 ? "bg-done" : "bg-accent"} />
-              <p className="mt-1 text-[11px] text-muted">
+              <p className="mt-1 text-xs text-muted">
                 {formatGold(start)} of {formatGold(goal)} {counted} on hand, from your last check-in
               </p>
             </div>
           ) : (
-            <p className="mt-auto text-[11px] text-muted">
+            <p className="mt-auto text-xs text-muted">
               Time to earn it from zero. <Link href="/gold/#check-in" className="underline">Check in</Link> your gold to count what you already have.
             </p>
           )}
@@ -317,7 +299,7 @@ export function GemWidget({
               );
             })}
           </ul>
-          <p className="mt-3 text-[11px] text-muted">
+          <p className="mt-3 text-xs text-muted">
             From every gem tracked here, as if you combined them all into one.
           </p>
         </>

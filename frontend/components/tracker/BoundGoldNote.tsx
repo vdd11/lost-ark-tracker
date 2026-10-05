@@ -44,7 +44,7 @@ export default function BoundGoldNote({ character, data }: { character: Characte
   }
 
   return (
-    <div className="mt-0.5 flex h-5 items-center gap-1 text-[11px] text-muted">
+    <div className="mt-0.5 flex h-5 items-center gap-1 text-xs text-muted">
       Bound:
       {draft !== null ? (
         <NumberInput
@@ -54,7 +54,7 @@ export default function BoundGoldNote({ character, data }: { character: Characte
           onBlur={commit}
           onKeyDown={handleKey}
           aria-label={`${character.name}'s character-bound gold`}
-          className="h-5 w-24 px-1 py-0 text-[11px] tabular-nums"
+          className="h-5 w-24 px-1 py-0 text-xs tabular-nums"
         />
       ) : (
         <button
