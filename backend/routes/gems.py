@@ -63,7 +63,7 @@ def delete_gem_entry(entry_id: int, db: Session = Depends(get_db)):
 
 @router.get("/gems/weekly", response_model=list[WeeklyGems])
 def get_weekly_gems(
-    weeks: int = Query(default=12, ge=1, le=104),
+    weeks: int = Query(default=12, ge=1, le=520),
     account_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
 ):

@@ -72,7 +72,7 @@ export function useTrackerData() {
       })
       .catch((e) => setError(describeError(e)));
     // Everything tracked so far counts toward the next big gem.
-    api<WeeklyGems[]>(`/gems/weekly?weeks=104&${accountQuery}`)
+    api<WeeklyGems[]>(`/gems/weekly?weeks=520&${accountQuery}`)
       .then(setGemWeeks)
       .catch(() => {});
     api<WeekRecap>("/recap")

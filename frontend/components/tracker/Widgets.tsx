@@ -6,6 +6,8 @@ import { ReactNode } from "react";
 
 import NumberInput from "@/components/NumberInput";
 import { Character, formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
+import PeriodToggle from "@/components/tracker/PeriodToggle";
+import { Period, PERIODS, periodTotal } from "@/lib/periods";
 import { GOAL_MODES, GoalMode, OnHand, onHandToward, weeklyToward } from "@/lib/goldGoal";
 import { describeReset } from "@/lib/resetClock";
 import {
@@ -47,9 +49,22 @@ const shortWeek = (week: string) =>
   new Date(`${week}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 /** The last few weeks of gold as small stacked columns, with the month's total and trend. */
-export function GoldMonthWidget({ weeks }: { weeks: WeeklyGold[] }) {
+export function GoldMonthWidget({
+  weeks,
+  period = "month",
+  onPeriod,
+  allWeeks = null,
+}: {
+  weeks: WeeklyGold[];
+  period?: Period;
+  onPeriod?: (period: Period) => void;
+  /** Every tracked week, for "All time" (null while loading). */
+  allWeeks?: WeeklyGold[] | null;
+}) {
   const shown = weeks.slice(-8);
-  const month = weeks.slice(-4).reduce((sum, w) => sum + w.net, 0);
+  const source = period === "all" ? (allWeeks ?? weeks) : weeks;
+  const sum = periodTotal(source, period, (w) => w.net);
+  const month = weeks.slice(-4).reduce((total, w) => total + w.net, 0);
   // Compare finished weeks only: the four before this one vs the four before those.
   const finished = weeks.slice(0, -1);
   const change = percentChange(
@@ -61,12 +76,17 @@ export function GoldMonthWidget({ weeks }: { weeks: WeeklyGold[] }) {
   return (
     <Widget
       icon={TrendingUp}
-      title="Gold, past month"
-      action={<Link href="/gold" className="text-xs text-muted underline hover:text-foreground">History</Link>}
+      title="Gold"
+      action={
+        <span className="flex items-center gap-2">
+          {onPeriod && <PeriodToggle value={period} onChange={onPeriod} label="Gold for" />}
+          <Link href="/gold" className="text-xs text-muted underline hover:text-foreground">History</Link>
+        </span>
+      }
     >
       <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-semibold tabular-nums">{formatGold(month)}</span>
-        {change !== null && (
+        <span className="text-2xl font-semibold tabular-nums">{formatGold(sum.total)}</span>
+        {period === "month" && change !== null && (
           <span
             className={`flex items-center gap-0.5 text-xs font-medium ${change >= 0 ? "text-done" : "text-danger"}`}
             title="Last 4 finished weeks vs the 4 before"
@@ -78,7 +98,13 @@ export function GoldMonthWidget({ weeks }: { weeks: WeeklyGold[] }) {
         )}
       </div>
       <p className="mb-3 text-xs text-muted">
-        last 4 weeks, after bonus boxes · about {compactGold(month / 4)} a week
+        {period === "week"
+          ? "this week so far, after bonus boxes"
+          : period === "month"
+            ? `last 4 weeks, after bonus boxes · about ${compactGold(month / 4)} a week`
+            : allWeeks === null
+              ? "loading your history…"
+              : `${sum.weeks} week${sum.weeks === 1 ? "" : "s"} tracked, after bonus boxes · about ${compactGold(sum.perWeek)} a week`}
       </p>
       <div className="mt-auto flex h-24 items-end gap-1.5" role="img" aria-label="Gold per week for the last 8 weeks">
         {shown.map((week, index) => {
@@ -206,15 +232,33 @@ export function GoldGoalWidget({
 }
 
 /** Tracked gems (cube, hourglass, logged) projected toward the next high-level gems. */
-export function GemWidget({ weeks, daysIntoWeek, levels = [9, 10] }: { weeks: WeeklyGems[]; daysIntoWeek: number; levels?: number[] }) {
+export function GemWidget({
+  weeks,
+  daysIntoWeek,
+  levels = [9, 10],
+  period = "all",
+  onPeriod,
+}: {
+  weeks: WeeklyGems[];
+  daysIntoWeek: number;
+  levels?: number[];
+  period?: Period;
+  onPeriod?: (period: Period) => void;
+}) {
   const total = weeks.reduce((sum, w) => sum + w.total, 0);
+  const gained = periodTotal(weeks, period, (w) => w.total);
   const perDay = dailyRate(weeks.map((w) => w.total), daysIntoWeek);
 
   return (
     <Widget
       icon={Gem}
       title="Gem progress"
-      action={<Link href="/gems" className="text-xs text-muted underline hover:text-foreground">Gems</Link>}
+      action={
+        <span className="flex items-center gap-2">
+          {onPeriod && <PeriodToggle value={period} onChange={onPeriod} label="Gems gained in" />}
+          <Link href="/gems" className="text-xs text-muted underline hover:text-foreground">Gems</Link>
+        </span>
+      }
     >
       {total === 0 ? (
         <p className="text-sm text-muted">
@@ -223,6 +267,10 @@ export function GemWidget({ weeks, daysIntoWeek, levels = [9, 10] }: { weeks: We
         </p>
       ) : (
         <>
+          <p className="mb-1 text-sm">
+            <span className="text-muted">{PERIODS.find((p) => p.key === period)?.label}: </span>
+            <span className="font-medium tabular-nums">{gained.total > 0 ? formatCombinedGems(gained.total) : "none yet"}</span>
+          </p>
           <p className="mb-3 text-xs text-muted">
             {perDay ? (
               <>

@@ -83,7 +83,7 @@ def spend_bonus_chests(bucket: WeeklyGold, by_character: dict[int | None, list[i
 
 @router.get("/gold/weekly", response_model=list[WeeklyGold])
 def get_weekly_gold(
-    weeks: int = Query(default=12, ge=1, le=104),
+    weeks: int = Query(default=12, ge=1, le=520),
     account_id: int | None = Query(default=None),
     db: Session = Depends(get_db),
 ):

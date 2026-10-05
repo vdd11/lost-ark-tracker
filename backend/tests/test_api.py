@@ -166,3 +166,9 @@ def test_root_reports_version_and_platform(client):
     info = client.get("/api/").json()
     assert info["app"] == "Lost Ark Tracker"
     assert info["platform"] in {"windows", "macos", "linux"}
+
+
+def test_weekly_history_goes_back_ten_years(client):
+    assert len(client.get("/api/gold/weekly?weeks=520").json()) == 520
+    assert len(client.get("/api/gems/weekly?weeks=520").json()) == 520
+    assert client.get("/api/gold/weekly?weeks=521").status_code == 422

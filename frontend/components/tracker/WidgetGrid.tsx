@@ -1,12 +1,16 @@
+import { useEffect, useState } from "react";
+
 import CountersWidget from "@/components/tracker/CountersWidget";
 import NewsWidget from "@/components/tracker/NewsWidget";
 import RaidGroupsWidget from "@/components/tracker/RaidGroupsWidget";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { GemWidget, GoldGoalWidget, GoldMonthWidget, ResetClockWidget } from "@/components/tracker/Widgets";
-import { daysIntoWeek } from "@/lib/insights";
+import { api, WeeklyGold } from "@/lib/api";
 import { COUNTERS_PREFERENCE } from "@/lib/counters";
 import { GOAL_MODES, GoalMode } from "@/lib/goldGoal";
+import { daysIntoWeek } from "@/lib/insights";
+import { Period, PERIOD_KEYS } from "@/lib/periods";
 import { NEWS_PREFERENCE } from "@/lib/online";
 import { RAID_GROUPS_PREFERENCE } from "@/lib/raidGroups";
 import { isActiveRaid } from "@/lib/raids";
@@ -24,6 +28,17 @@ export default function WidgetGrid({ data, view }: { data: TrackerData; view: Tr
   const mode = goalMode as GoalMode;
   const [goldGoal, setGoldGoal] = usePreference<number>(mode === "roster" ? "gold-goal" : `gold-goal-${mode}`, 1_000_000);
   const [goalCharacter, setGoalCharacter] = usePreference<number>("gold-goal-character", 0);
+  const [goldPeriod, setGoldPeriod] = usePreference<string>("gold-widget-period", "month", PERIOD_KEYS);
+  const [gemPeriod, setGemPeriod] = usePreference<string>("gem-widget-period", "all", PERIOD_KEYS);
+  // "All time" gold needs more than the tracker's 9 weeks; load it only when asked for.
+  const [allGold, setAllGold] = useState<{ key: string; weeks: WeeklyGold[] } | null>(null);
+  const goldKey = `${data.accountId}`;
+  useEffect(() => {
+    if (goldPeriod !== "all") return;
+    api<WeeklyGold[]>(`/gold/weekly?weeks=520${data.accountId ? `&account_id=${data.accountId}` : ""}`)
+      .then((weeks) => setAllGold({ key: goldKey, weeks }))
+      .catch(() => {});
+  }, [goldPeriod, data.accountId, goldKey]);
   // Goes online, so it's off until turned on (Customize or Settings).
   const [newsOn] = usePreference<boolean>(NEWS_PREFERENCE, false);
   const [resetClockOn] = usePreference<boolean>(RESET_CLOCK_PREFERENCE, false);
@@ -33,7 +48,10 @@ export default function WidgetGrid({ data, view }: { data: TrackerData; view: Tr
   const weekDays = tracker ? daysIntoWeek(tracker.weekly_period, now) : 0;
 
   const widgets = [
-    { key: WIDGET_KEYS.goldMonth, node: <GoldMonthWidget weeks={goldWeeks} /> },
+    {
+      key: WIDGET_KEYS.goldMonth,
+      node: <GoldMonthWidget weeks={goldWeeks} period={goldPeriod as Period} onPeriod={setGoldPeriod} allWeeks={allGold?.key === goldKey ? allGold.weeks : null} />,
+    },
     {
       key: WIDGET_KEYS.goldGoal,
       node: (
@@ -52,7 +70,7 @@ export default function WidgetGrid({ data, view }: { data: TrackerData; view: Tr
         />
       ),
     },
-    { key: WIDGET_KEYS.gems, node: <GemWidget weeks={gemWeeks} daysIntoWeek={weekDays} /> },
+    { key: WIDGET_KEYS.gems, node: <GemWidget weeks={gemWeeks} daysIntoWeek={weekDays} period={gemPeriod as Period} onPeriod={setGemPeriod} /> },
     { key: NEWS_PREFERENCE, node: <NewsWidget /> },
     {
       key: COUNTERS_PREFERENCE,
