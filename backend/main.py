@@ -11,7 +11,13 @@ from accounts import ensure_accounts
 from hosts import LocalHostOnlyMiddleware
 from database import Base, SessionLocal, add_missing_columns, backup_database, engine
 from migrations import run_once, run_schema_migrations
-from raids import backfill_bound_gold, backfill_character_bound_gold, retire_old_tasks, sync_catalog
+from raids import (
+    backfill_bound_gold,
+    backfill_character_bound_gold,
+    reset_edited_values,
+    retire_old_tasks,
+    sync_catalog,
+)
 from seed import apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
 from routes import (
@@ -56,6 +62,8 @@ async def lifespan(app: FastAPI):
             apply_default_rest_rules(db)
         sync_catalog(db)
         run_once(db, "retire-guild-weekly", lambda db: retire_old_tasks(db, ["Guild Weekly"]))
+        # v1.18: raid values are the app's; edits from the old Raids page go back to the catalog.
+        run_once(db, "catalog-wins", reset_edited_values)
         if ("completions", "bound_gold") in added_columns:
             backfill_bound_gold(db)
         if ("completions", "character_bound_gold") in added_columns:

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Character, Difficulty, Run, Task } from "./api";
 import {
   bestDifficulty,
+  boundLabel,
   canRun,
   formatShortGold,
   goldRaidsLeft,
@@ -10,6 +11,7 @@ import {
   isActiveRaid,
   paidRaids,
   possibleRaidGold,
+  settingsRaidLists,
   shortDifficulty,
   topGoldRaids,
 } from "./raids";
@@ -195,5 +197,26 @@ describe("formatting", () => {
     expect(formatShortGold(38000)).toBe("38k");
     expect(formatShortGold(27500)).toBe("27.5k");
     expect(formatShortGold(null)).toBe("?");
+  });
+});
+
+describe("settingsRaidLists", () => {
+  it("splits event, custom and hidden built-in raids", () => {
+    const today = new Date("2026-10-05T12:00:00Z");
+    const builtIn = raid("Act 4", [["Normal", 1700, 27000]], { catalog_key: "kazeros-act-4" });
+    const hidden = raid("Serca", [["Normal", 1710, 32000]], { catalog_key: "shadow-serca", archived: true });
+    const live = raid("Act 3 Extreme", [["Normal", 1720, 20000]], { ends_on: "2026-10-28" });
+    const past = raid("Act 2 Extreme", [["Normal", 1720, 20000]], { ends_on: "2026-09-01" });
+    const custom = raid("Old custom", [["Normal", 1600, null]]);
+    const lists = settingsRaidLists([builtIn, hidden, live, past, custom], today);
+    expect(lists.live).toEqual([live]);
+    expect(lists.past).toEqual([past]);
+    expect(lists.custom).toEqual([custom]);
+    expect(lists.hidden).toEqual([hidden]);
+  });
+
+  it("labels bound gold", () => {
+    expect(boundLabel(0, "roster")).toBe("");
+    expect(boundLabel(50, "roster")).toBe("50% roster");
   });
 });

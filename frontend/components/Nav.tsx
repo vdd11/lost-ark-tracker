@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Coins, Gem, Keyboard, LayoutGrid, Settings2, Swords, Wrench } from "lucide-react";
+import { BookOpen, Coins, Gem, Keyboard, LayoutGrid, Settings2, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,7 +13,6 @@ import { usePreference } from "@/lib/usePreference";
 /** `key` marks pages that can be hidden under Customize on the tracker. */
 const LINKS: { href: string; label: string; icon: typeof Coins; key?: string }[] = [
   { href: "/", label: "Tracker", icon: LayoutGrid },
-  { href: "/raids", label: "Raids", icon: Swords },
   { href: "/gold", label: "Gold", icon: Coins, key: PAGE_KEYS.gold },
   { href: "/gems", label: "Gems", icon: Gem, key: PAGE_KEYS.gems },
   { href: "/tools", label: "Tools", icon: Wrench, key: PAGE_KEYS.tools },

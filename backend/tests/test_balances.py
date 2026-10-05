@@ -1,4 +1,9 @@
+from dataclasses import replace
 from datetime import datetime
+
+import raids
+from database import SessionLocal
+from models import RaidDifficulty
 
 from tests.test_raids import add_character, complete, difficulty, task_named
 
@@ -87,25 +92,51 @@ def test_bonus_chests_count_when_bought_not_when_cleared(client, set_now):
     assert third["untracked"]["total"] == 0
 
 
-def test_filling_in_unknown_values_updates_this_weeks_clears(client, set_now):
+def test_catalog_filling_in_unknown_values_updates_this_weeks_clears(client, set_now, monkeypatch):
     set_now(datetime(2026, 10, 2, 12))
     serca = task_named(client, "Serca")
-    hard = difficulty(serca, "Normal")
+    normal = difficulty(serca, "Normal")
     # Every catalog raid has a chest cost now, so clear one to stand in for an unknown.
-    client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": None})
-    hard = difficulty(task_named(client, "Serca"), "Normal")
-    assert hard["bonus_cost"] is None
-    main = add_character(client, 1735, [{"task_id": serca["id"], "difficulty_id": hard["id"]}], name="Main")
-    complete(client, main["id"], serca["id"], difficulty_id=hard["id"], bought_bonus=True)
+    with SessionLocal() as db:
+        db.get(RaidDifficulty, normal["id"]).bonus_cost = None
+        db.commit()
+    main = add_character(client, 1735, [{"task_id": serca["id"], "difficulty_id": normal["id"]}], name="Main")
+    complete(client, main["id"], serca["id"], difficulty_id=normal["id"], bought_bonus=True)
     assert client.get("/api/gold/weekly?weeks=1").json()[0]["bonus_spent"] == 0
 
-    client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": 9000})
+    def catalog_with_cost(cost):
+        return [
+            replace(item, difficulties=[replace(d, bonus_cost=cost) if d.name == "Normal" else d for d in item.difficulties])
+            if item.key == "shadow-serca" else item
+            for item in raids.CATALOG
+        ]
+
+    monkeypatch.setattr(raids, "CATALOG", catalog_with_cost(9000))
+    with SessionLocal() as db:
+        raids.sync_catalog(db)
     week = client.get("/api/gold/weekly?weeks=1").json()[0]
     assert (week["raid_gold"], week["bonus_spent"]) == (32000, 9000)
 
     # A value that was already known isn't rewritten for clears already made.
-    client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": 1})
+    monkeypatch.setattr(raids, "CATALOG", catalog_with_cost(1))
+    with SessionLocal() as db:
+        raids.sync_catalog(db)
     assert client.get("/api/gold/weekly?weeks=1").json()[0]["bonus_spent"] == 9000
+
+
+def test_filling_in_an_event_raids_gold_updates_this_weeks_clears(client, set_now):
+    set_now(datetime(2026, 10, 2, 12))
+    event = client.post("/api/event-raids", json={
+        "name": "Act 3 Extreme", "ends_on": "2026-10-28",
+        "difficulties": [{"name": "Normal", "min_item_level": 1700, "gold": None}],
+    }).json()
+    main = add_character(client, 1735, [{"task_id": event["id"]}], name="Main")
+    complete(client, main["id"], event["id"])
+    assert client.get("/api/gold/weekly?weeks=1").json()[0]["raid_gold"] == 0
+
+    normal = event["difficulties"][0]["id"]
+    assert client.patch(f"/api/difficulties/{normal}", json={"gold": 20000}).status_code == 200
+    assert client.get("/api/gold/weekly?weeks=1").json()[0]["raid_gold"] == 20000
 
 
 def test_gold_on_hand_cannot_be_negative(client):

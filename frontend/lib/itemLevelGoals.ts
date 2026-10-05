@@ -7,7 +7,7 @@ export type NextUnlock = { task: Task; difficulty: Difficulty; gap: number };
  * The nearest difficulty a character can't enter yet, across everything with
  * tiers (raids still running, Haal's Hourglass levels, Ebony Cube unlocks).
  * Ties go to the one paying the most gold. Item levels are the difficulties'
- * own (catalog, or what you set on the Raids page).
+ * own (the built-in catalog, or an event raid's).
  */
 export function nextUnlock(character: Character, tasks: Task[], today = new Date()): NextUnlock | null {
   const candidates = tasks

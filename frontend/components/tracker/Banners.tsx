@@ -101,8 +101,9 @@ export function TrackerBanners({ data, view }: { data: TrackerData; view: Tracke
 
       {hasUnknownGold && (
         <Notice>
-          Some raids your characters run don&apos;t have a gold value yet (shown as ?). Fill them in on the{" "}
-          <Link href="/raids" className="font-medium underline">Raids page</Link>.
+          Some raids your characters run don&apos;t have a gold value yet (shown as ?). Built-in raids get theirs
+          with an app update; enter an event raid&apos;s in{" "}
+          <Link href="/settings/#raids" className="font-medium underline">Settings</Link>.
         </Notice>
       )}
     </>

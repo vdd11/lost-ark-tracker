@@ -104,7 +104,7 @@ export default function RaidCell({
               !character.is_gold_earner
                 ? `Non-earners' bonus boxes are free for ${FREE_BONUS_RAIDS_PER_WEEK} raids a week`
                 : shown?.bonus_cost == null
-                ? "Bonus box cost unknown for this difficulty: set it on the Raids page"
+                ? "Bonus box cost not known yet for this difficulty"
                 : `Bought the bonus ("View More") boxes for every gate: ${formatGold(shown.bonus_cost)} gold`
             }
             className={`flex max-w-full items-center gap-1 truncate rounded-md px-1.5 py-0.5 text-xs ${

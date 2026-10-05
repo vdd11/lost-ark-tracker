@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import Link from "next/link";
-
 import AccountsBar from "@/components/AccountsBar";
 import AppearanceSection from "@/components/settings/AppearanceSection";
 import { PageSkeleton } from "@/components/Skeleton";
@@ -15,6 +13,7 @@ import GoldOptimizer from "@/components/settings/GoldOptimizer";
 import LoaLogsSection from "@/components/settings/LoaLogsSection";
 import OnlineSection from "@/components/settings/OnlineSection";
 import PasteRoster from "@/components/settings/PasteRoster";
+import RaidsSection from "@/components/settings/RaidsSection";
 import RemindersSection from "@/components/settings/RemindersSection";
 import { AddTaskForm, TaskGroup } from "@/components/settings/TaskLists";
 import { useDragReorder } from "@/components/useDragReorder";
@@ -168,8 +167,8 @@ export default function SettingsPage() {
         <p className="mb-4 text-sm text-muted">
           Daily and weekly tracker columns. Dailies reset at 10:00 UTC, weeklies on Wednesday 10:00 UTC. New ones go
           to every character. Dailies can track a rest bonus: set Max to 0 to turn it off, or adjust the numbers if a
-          patch changes them. Raids, with their gold and item levels, are on the{" "}
-          <Link href="/raids" className="underline">Raids page</Link>.
+          patch changes them. Raids are{" "}
+          <a href="#raids" className="underline">below</a>.
         </p>
 
         <AddTaskForm onAdd={(data) => mutate(() => send("POST", "/tasks", data))} />
@@ -196,6 +195,8 @@ export default function SettingsPage() {
           ))}
         </div>
       </section>
+
+      <RaidsSection dataVersion={dataVersion} onError={setError} />
 
       <RemindersSection />
 

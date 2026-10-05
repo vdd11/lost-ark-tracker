@@ -2,14 +2,15 @@
 database on startup.
 
 Gold is the total for all gates. `None` means we don't have a confirmed
-number: the app shows "?" and users can fill it in on the Raids page.
+number: the app shows "?" (a value a user entered before then is kept).
 Sources: official NA release notes on playlostark.com ("Dimensions Unbound",
 2026-09-16, for Act 4, Final Day and Serca Normal), guides for Horizon
 Cathedral (2026-07-22), the user for Serca Hard/Nightmare, and the Ebony Cube
 Loot Calculator spreadsheet by Ksfreaks for cube gems.
 
-Updating values here reaches existing users on their next launch, except
-for values a user has edited themselves (see sync_catalog).
+The app owns these values: updating them here reaches every user on their
+next launch (see sync_catalog). Bump CATALOG_REVIEWED whenever you check them
+against a patch (docs/patch-checklist.md).
 """
 
 from dataclasses import dataclass, field
@@ -19,6 +20,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from models import Character, CharacterTask, Completion, RaidDifficulty, Task
+
+# When the values below were last checked against the patch notes (shown in the app).
+CATALOG_REVIEWED = "2026-10-04"
 
 # Gold is only paid for this many raids per character per week.
 GOLD_RAIDS_PER_WEEK = 3
@@ -164,9 +168,10 @@ def best_difficulty(difficulties: list[RaidDifficulty], item_level: float) -> Ra
 def sync_catalog(db: Session):
     """Add catalog tasks and keep their values current.
 
-    A difficulty's gold/item level follows the catalog until the user edits
-    it: catalog_gold/catalog_item_level remember what we last wrote, and a
-    value that no longer matches them was changed by the user.
+    Item level, gold, bound share and bonus cost always follow the catalog,
+    except that a gold or bonus cost the catalog doesn't know yet (None) keeps
+    whatever is there. Gem tables still follow the catalog only until the user
+    edits them (the Gems page): catalog_rewards remembers what we last wrote.
     """
     catalog_keys = {item.key for item in CATALOG}
     tasks_by_key = {t.catalog_key: t for t in db.query(Task).filter(Task.catalog_key.is_not(None))}
@@ -252,21 +257,7 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
             ))
             continue
 
-        if difficulty.gold == difficulty.catalog_gold:
-            difficulty.gold = spec.gold
-        if difficulty.min_item_level == difficulty.catalog_item_level:
-            difficulty.min_item_level = spec.item_level
-        if difficulty.bound_percent == (difficulty.catalog_bound_percent or 0):
-            difficulty.bound_percent = spec.bound_percent
-        if difficulty.bound_kind == (difficulty.catalog_bound_kind or "roster"):
-            difficulty.bound_kind = spec.bound_kind
-        if difficulty.bonus_cost == difficulty.catalog_bonus_cost:
-            difficulty.bonus_cost = spec.bonus_cost
-        difficulty.catalog_bound_kind = spec.bound_kind
-        difficulty.catalog_bonus_cost = spec.bonus_cost
-        difficulty.catalog_gold = spec.gold
-        difficulty.catalog_bound_percent = spec.bound_percent
-        difficulty.catalog_item_level = spec.item_level
+        apply_catalog_values(difficulty, spec)
         difficulty.position = position
 
         previous = difficulty.catalog_rewards or {}
@@ -274,6 +265,49 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
             if getattr(difficulty, table) == previous.get(table):
                 setattr(difficulty, table, value)
         difficulty.catalog_rewards = spec.rewards()
+
+
+# Values the app owns; None in the catalog leaves the current value alone.
+OWNED_FIELDS = (
+    ("min_item_level", "item_level"),
+    ("gold", "gold"),
+    ("bound_percent", "bound_percent"),
+    ("bound_kind", "bound_kind"),
+    ("bonus_cost", "bonus_cost"),
+)
+
+
+def apply_catalog_values(difficulty: RaidDifficulty, spec: Difficulty):
+    filled_in = False
+    for column, attribute in OWNED_FIELDS:
+        value = getattr(spec, attribute)
+        if value is None:
+            continue
+        if column in ("gold", "bonus_cost") and getattr(difficulty, column) is None:
+            filled_in = True
+        setattr(difficulty, column, value)
+    difficulty.catalog_item_level = spec.item_level
+    difficulty.catalog_gold = spec.gold
+    difficulty.catalog_bound_percent = spec.bound_percent
+    difficulty.catalog_bound_kind = spec.bound_kind
+    difficulty.catalog_bonus_cost = spec.bonus_cost
+    if filled_in:
+        # Clears made while the value was unknown recorded 0; reprice this week's.
+        from routes.difficulties import reprice_this_week
+
+        reprice_this_week(Session.object_session(difficulty), difficulty)
+
+
+def reset_edited_values(db: Session):
+    """One-off (v1.18): values users edited on the old Raids page go back to the
+    catalog's, except where the catalog has None. Gem tables are left alone."""
+    specs = {(item.key, d.name): d for item in CATALOG for d in item.difficulties}
+    for task in db.query(Task).filter(Task.catalog_key.is_not(None)):
+        for difficulty in db.query(RaidDifficulty).filter_by(task_id=task.id):
+            spec = specs.get((task.catalog_key, difficulty.name))
+            if spec is not None:
+                apply_catalog_values(difficulty, spec)
+    db.commit()
 
 
 def assign_missing_difficulties(db: Session):

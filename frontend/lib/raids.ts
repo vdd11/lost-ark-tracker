@@ -23,6 +23,26 @@ export function isActiveRaid(task: Task, today = new Date()) {
   return !task.ends_on || new Date(`${task.ends_on}T10:00:00Z`) > today;
 }
 
+/**
+ * The raids Settings lists: event raids still running and past ones, raids a
+ * user added before raids became built-in only, and built-in raids they hid.
+ */
+export function settingsRaidLists(tasks: Task[], today = new Date()) {
+  const raids = tasks.filter((t) => t.category === "raid");
+  const events = raids.filter((t) => t.ends_on);
+  return {
+    live: events.filter((t) => isActiveRaid(t, today)),
+    past: events.filter((t) => !isActiveRaid(t, today)),
+    custom: raids.filter((t) => !t.catalog_key && !t.ends_on && !t.archived),
+    hidden: raids.filter((t) => t.catalog_key && t.archived),
+  };
+}
+
+/** "50% roster", "100% character", or "" when none of the gold is bound. */
+export function boundLabel(percent: number, kind: string) {
+  return percent > 0 ? `${percent}% ${kind}` : "";
+}
+
 export function difficultyOf(character: Character, task: Task): Difficulty | undefined {
   const id = character.difficulty_ids[String(task.id)];
   return task.difficulties.find((d) => d.id === id);

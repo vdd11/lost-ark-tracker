@@ -219,6 +219,17 @@ export type DifficultyDraft = { name: string; min_item_level: number; gold: numb
 
 export type EventTemplate = { bases: string[]; difficulties: DifficultyDraft[] };
 
+/** The built-in raid values (read-only), from `/raid-catalog`. */
+export type CatalogDifficulty = {
+  name: string;
+  item_level: number;
+  gold: number | null;
+  bound_percent: number;
+  bound_kind: BoundKind;
+  bonus_cost: number | null;
+};
+export type CatalogReference = { reviewed: string; raids: { name: string; note: string | null; difficulties: CatalogDifficulty[] }[] };
+
 /** Level-1 equivalents: three gems of a level combine into one of the next. */
 export function gemsToLv1(gems: GemTable | null | undefined) {
   return Object.entries(gems ?? {}).reduce((sum, [level, count]) => sum + count * 3 ** (Number(level) - 1), 0);

@@ -117,7 +117,9 @@ def test_extra_run_pays_when_a_slot_is_free(client, set_now):
     assert raid_gold(client) == 27000
 
     # Re-saving without a change keeps the recorded gold, even if the raid's value changed.
-    client.patch(f"/api/difficulties/{difficulty(act4, 'Normal')['id']}", json={"gold": 99999})
+    with SessionLocal() as db:
+        db.get(RaidDifficulty, difficulty(act4, "Normal")["id"]).gold = 99999
+        db.commit()
     complete(client, alt["id"], act4["id"])
     assert raid_gold(client) == 27000
 
@@ -175,23 +177,47 @@ def test_gems_are_summed_as_level_one_equivalents(client, set_now):
     }
 
 
-def test_catalog_updates_reach_unedited_values_only(client, monkeypatch):
+def test_catalog_values_always_win_except_unknowns(client, monkeypatch):
     act4 = task_named(client, "Act 4")
-    client.patch(f"/api/difficulties/{difficulty(act4, 'Normal')['id']}", json={"gold": 11111})
+    normal_id = difficulty(act4, "Normal")["id"]
+    # Built-in values can't be edited any more; only gem tables can.
+    assert client.patch(f"/api/difficulties/{normal_id}", json={"gold": 11111}).status_code == 400
+    assert client.patch(f"/api/difficulties/{normal_id}", json={"reward_gems": {"2": 1}}).status_code == 200
 
+    # An old database with an edited value (from the Raids page) goes back to the catalog.
+    with SessionLocal() as db:
+        db.get(RaidDifficulty, normal_id).gold = 11111
+        db.get(RaidDifficulty, normal_id).min_item_level = 1600
+        db.commit()
+        raids.reset_edited_values(db)
+    act4 = task_named(client, "Act 4")
+    assert (difficulty(act4, "Normal")["gold"], difficulty(act4, "Normal")["min_item_level"]) == (27000, 1700)
+    assert difficulty(act4, "Normal")["reward_gems"] == {"2": 1}  # gem tables are left alone
+
+    # A catalog update overwrites; an unknown (None) in the catalog keeps what's there.
     patched = [
-        replace(item, difficulties=[replace(d, gold=d.gold + 1000) for d in item.difficulties])
+        replace(item, difficulties=[
+            replace(d, gold=None) if d.name == "Normal" else replace(d, gold=d.gold + 1000) for d in item.difficulties
+        ])
         if item.key == "kazeros-act-4" else item
         for item in raids.CATALOG
     ]
     monkeypatch.setattr(raids, "CATALOG", patched)
     with SessionLocal() as db:
         raids.sync_catalog(db)
-
     act4 = task_named(client, "Act 4")
-    assert difficulty(act4, "Normal")["gold"] == 11111
+    assert difficulty(act4, "Normal")["gold"] == 27000
     assert difficulty(act4, "Hard")["gold"] == 39000
-    assert client.post(f"/api/difficulties/{difficulty(act4, 'Normal')['id']}/reset").json()["gold"] == 28000
+
+
+def test_raid_catalog_reference(client):
+    reference = client.get("/api/raid-catalog").json()
+    assert reference["reviewed"] == raids.CATALOG_REVIEWED
+    serca = next(r for r in reference["raids"] if r["name"] == "Serca")
+    assert serca["difficulties"][0] == {
+        "name": "Normal", "item_level": 1710, "gold": 32000, "bound_percent": 50, "bound_kind": "roster", "bonus_cost": 11200,
+    }
+    assert all(r["name"] != "Ebony Cube" for r in reference["raids"])
 
 
 def test_removed_difficulty_moves_characters_to_their_best(client, monkeypatch):

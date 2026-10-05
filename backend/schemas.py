@@ -180,6 +180,26 @@ class EventTemplate(BaseModel):
     difficulties: list[DifficultyCreate]
 
 
+class CatalogDifficulty(BaseModel):
+    name: str
+    item_level: float
+    gold: int | None
+    bound_percent: int
+    bound_kind: BoundKind
+    bonus_cost: int | None
+
+
+class CatalogRaid(BaseModel):
+    name: str
+    note: str | None
+    difficulties: list[CatalogDifficulty]
+
+
+class CatalogReference(BaseModel):
+    reviewed: str
+    raids: list[CatalogRaid]
+
+
 class CompletionUpdate(BaseModel):
     # Which difficulty was run; defaults to the character's usual one.
     difficulty_id: int | None = None

@@ -126,9 +126,11 @@ The screenshots use made-up characters.
 - **Rest bonus**: Chaos Dungeon and Guardian Raid cells show each character's
   rest gauge, highlighted in gold when a rested run is available today. Click
   the number to match it to the game.
-- **Raids**: Act 4, The Final Day, Serca and Horizon Cathedral, with each
-  difficulty's item level and gold, and which of your characters qualify.
-  - Built-in values update with the app unless you've edited them.
+- **Raids**: Act 4, The Final Day, Serca and Horizon Cathedral. Item levels,
+  gold, bound gold and bonus box costs come with each app update (checked
+  against the patch notes), so there's nothing to keep up to date yourself;
+  Settings → Raids has a read-only **raid reference** and the date the values
+  were last reviewed.
   - Each character is paid for 3 raids a week.
   - Gold is split into tradeable, roster-bound (half of Serca Normal) and
     character-bound (Cathedral), on the tracker and the Gold page.
@@ -136,10 +138,9 @@ The screenshots use made-up characters.
     chests. Like the game, they're paid from that character's
     character-bound gold first, then roster-bound, then tradeable. The
     tracker's top-right box shows the tradeable and roster-bound gold left;
-    each character's row shows its character-bound gold left. Act 4 and The Final Day
-    costs are built in; enter Serca's and Cathedral's on the Raids page.
-  - The **Events** tab adds limited-time raids (e.g. "Act 3 Extreme"). Pick
-    the raid, check the pre-filled difficulties, done. Events are one clear
+    each character's row shows its character-bound gold left.
+  - **Settings → Raids → Event raids** adds limited-time raids (e.g. "Act 3
+    Extreme"). Pick the raid, check the pre-filled difficulties, done. Events are one clear
     per account, pay any character, and disappear when they end.
 - **Gold**: log Field Boss, Chaos Gate, Fate Ember, etc., and chart weekly gold
   (raid clears + logged gold). **By source** shows what each source (raids,
