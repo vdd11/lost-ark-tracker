@@ -21,6 +21,11 @@ export const BUILT_IN_GUIDES = data.guides as Guide[];
 export const GUIDES_CHECKED = data.checked;
 
 export const MY_LINKS = "My links";
+/** "Honing and gear" -> "honing-and-gear", for /guides/#honing-and-gear links. */
+export function categorySlug(category: string) {
+  return category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 const CATEGORY_ORDER = ["Start here", "Honing and gear", "Gold and market", "Raids", "Lookup", "Community"];
 
 export function fromLink(link: GuideLink): Guide {

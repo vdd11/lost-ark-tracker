@@ -91,8 +91,7 @@ export default function PricesPage() {
           <GuideLink id="maxroll-gold" label="Gold and silver guide" />
         </div>
         <p className="text-sm text-muted">
-          What items cost on the market, as you see them in game. The honing and astrogem tools use these to put a gold
-          value on materials. Type the price of a listing and how many units it&apos;s for (the market sells some items in
+          What items cost on the market, as you see them in game, kept in one place. Type the price of a listing and how many units it&apos;s for (the market sells some items in
           bundles). Nothing is looked up online. Prices older than {STALE_AFTER_DAYS} days are marked.
         </p>
       </div>

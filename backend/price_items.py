@@ -3,7 +3,7 @@
 Only names come from here, never prices: prices are what the user types in
 from the in-game market (there's no online price source: lostarkmarket.online,
 the community API, now redirects to an unrelated site, checked 2026-10-04).
-Users can add their own items, so this list only needs the ones the tools use.
+Users can add their own items, so this list only needs the common ones.
 
 Sources (checked 2026-10-04):
 - Tier 4 Upper honing materials and breaths: official "The Shadows Rise"

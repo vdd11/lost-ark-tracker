@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { advise, applyOption, attemptCost, canAppear, createSolver, drawShown, GemState, goalMet, resultGrade, simulateRest, total } from "./astrogems";
 import { BUILT_IN_OPTIONS, ProcessingOption, RESULT_GRADES } from "./data/astrogems";
-import { seededRandom } from "./honing";
+import { seededRandom } from "./random";
 
 const option = (key: string) => BUILT_IN_OPTIONS.find((o) => o.key === key)!;
 const gem = (extra: Partial<GemState> = {}, levels: Partial<GemState["levels"]> = {}): GemState => ({

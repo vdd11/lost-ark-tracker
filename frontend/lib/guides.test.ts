@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BUILT_IN_GUIDES, categoriesOf, filterGuides, fromLink, guideById, GUIDES_CHECKED, hostOf } from "./guides";
+import { BUILT_IN_GUIDES, categoriesOf, categorySlug, filterGuides, fromLink, guideById, GUIDES_CHECKED, hostOf } from "./guides";
 
 describe("built-in guides", () => {
   it("have unique ids, https links and a description each", () => {
@@ -53,6 +53,8 @@ describe("helpers", () => {
 
   it("finds a built-in guide by id", () => {
     expect(guideById("maxroll-honing")?.title).toBe("Gear honing system");
+    expect(categorySlug("Honing and gear")).toBe("honing-and-gear");
+    expect(categorySlug("Gold and market")).toBe("gold-and-market");
     expect(guideById("missing")).toBeUndefined();
   });
 });

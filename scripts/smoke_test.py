@@ -26,7 +26,7 @@ from pathlib import Path
 
 APP_NAME = "Lost Ark Tracker"
 # Every page of the static export; add new ones here.
-PAGES = ["/", "/gold/", "/gems/", "/tools/", "/tools/prices/", "/tools/honing/", "/tools/astrogems/", "/guides/", "/settings/"]
+PAGES = ["/", "/gold/", "/gems/", "/tools/", "/tools/prices/", "/tools/astrogems/", "/guides/", "/settings/"]
 
 
 def free_port() -> int:

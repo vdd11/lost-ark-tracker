@@ -10,7 +10,7 @@
  */
 
 import { ProcessingOption, StatKey } from "./data/astrogems";
-import { seededRandom } from "./honing";
+import { seededRandom } from "./random";
 
 export type GemState = {
   levels: Record<StatKey, number>;

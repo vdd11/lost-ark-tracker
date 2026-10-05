@@ -4,21 +4,15 @@ export type Tool = {
   title: string;
   description: string;
   /** A lucide icon name the hub maps to a component. */
-  icon: "prices" | "honing" | "astrogems";
+  icon: "prices" | "astrogems";
 };
 
 export const TOOLS: Tool[] = [
   {
     href: "/tools/prices",
     title: "Prices",
-    description: "Market prices you type in from the game, used by the other tools to put a gold value on materials.",
+    description: "A notebook of market prices you type in from the game, with how old each one is.",
     icon: "prices",
-  },
-  {
-    href: "/tools/honing",
-    title: "Honing planner",
-    description: "What a target item level costs, as a range, and how many weeks of your own gold it takes. Compare characters.",
-    icon: "honing",
   },
   {
     href: "/tools/astrogems",

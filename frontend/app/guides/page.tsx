@@ -12,6 +12,7 @@ import { api, send } from "@/lib/api";
 import {
   BUILT_IN_GUIDES,
   categoriesOf,
+  categorySlug,
   filterGuides,
   fromLink,
   Guide,
@@ -89,6 +90,11 @@ export default function GuidesPage() {
 
   const linkOf = (guide: Guide) => data.links.find((l) => l.id === guide.linkId);
 
+  // Sections appear after loading, so a link like /guides/#honing-and-gear scrolls once they're there.
+  useEffect(() => {
+    if (loaded && window.location.hash) document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
+  }, [loaded]);
+
   if (!loaded) return <PageSkeleton title="Guides" />;
 
   return (
@@ -158,7 +164,7 @@ export default function GuidesPage() {
       {shown.length === 0 && <p className="text-sm text-muted">No links match. Try another word, or add your own.</p>}
 
       {shownCategories.map((c) => (
-        <section key={c}>
+        <section key={c} id={categorySlug(c)} className="scroll-mt-4">
           <h2 className="mb-2 font-semibold">{c}</h2>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {shown

@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { Tool, TOOLS } from "@/lib/tools";
 
-const ICONS: Record<Tool["icon"], typeof Tags> = { prices: Tags, honing: Hammer, astrogems: Gem };
+const ICONS: Record<Tool["icon"], typeof Tags> = { prices: Tags, astrogems: Gem };
 
 export default function ToolsPage() {
   return (
@@ -15,8 +15,7 @@ export default function ToolsPage() {
           <Wrench size={22} /> Tools
         </h1>
         <p className="text-sm text-muted">
-          Planners that use what the tracker already knows: your characters, your gold and your weekly income. Everything
-          runs on this computer; numbers you enter stay here.
+          Helpers to keep open beside the game. Everything runs on this computer; numbers you enter stay here.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -37,6 +36,14 @@ export default function ToolsPage() {
           );
         })}
       </div>
+      <p className="text-sm text-muted">
+        <Hammer size={14} className="mr-1.5 inline align-[-2px]" />
+        Looking for honing? Other sites do it best: see{" "}
+        <Link href="/guides/#honing-and-gear" className="underline hover:text-foreground">
+          Guides → Honing and gear
+        </Link>{" "}
+        for Honing Forecast, Maxroll&apos;s upgrade calculator and more.
+      </p>
     </div>
   );
 }

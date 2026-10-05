@@ -239,8 +239,9 @@ class MarketPrice(Base):
 
 
 class HoningPlan(Base):
-    """A character's honing plan (Tools → Honing): a target and the steps to
-    get there, with chances and costs the user copied from the game."""
+    """A character's honing plan from the old Tools → Honing planner (removed in
+    1.18). Nothing reads it any more; the table stays, and stays in backups,
+    so old databases open and old backups restore with nothing lost."""
 
     __tablename__ = "honing_plans"
 

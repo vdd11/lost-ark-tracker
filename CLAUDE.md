@@ -56,9 +56,9 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - Tools live under `app/tools/<tool>/` with their maths in `lib/<tool>.ts`
   and a card in `lib/tools.ts`. Market prices are user-entered (`MarketPrice`
   rows); `price_items.py` only names built-in items, each with a cited source.
-  The honing planner (`lib/honing.ts`) has no game numbers at all: users
-  enter chances and costs from their honing panel. Keep it that way unless
-  the user supplies sourced values. Astrogem odds live in
+  There's no honing tool (removed in 1.18; Guides links the honing
+  calculators); its `honing_plans` table stays, unused, so old databases and
+  backups still load. Astrogem odds live in
   `lib/data/astrogems.ts` with their sources (official KR probability page,
   NA release notes, Maxroll); `lib/astrogems.ts` solves the best play with a
   seeded, memoized estimate.

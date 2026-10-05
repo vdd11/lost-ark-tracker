@@ -80,23 +80,13 @@ The screenshots use made-up characters.
   and each one's 3 best-paying raids and difficulties, shows the gain against
   your current setup, and applies it in one click (with Undo). Bound gold can
   count fully, half, or not at all.
-- **Tools** (`g` `o`): planners that use your own characters and gold.
+- **Tools** (`g` `o`): helpers to keep open beside the game. For honing,
+  sites like Honing Forecast and Maxroll's upgrade calculator do it best, so
+  the Tools page points to them under Guides → Honing and gear.
   - **Prices**: market prices you type in from the game (price and bundle
-    size per item, with when you last updated it), used by the other tools to
-    value materials. Add your own items; hide or reset any. Nothing is looked
+    size per item, with when you last updated it), in one place. Add your own items; hide or reset any. Nothing is looked
     up online: the community price site (lostarkmarket.online) now redirects
     to an unrelated site, so there's no price fetch.
-  - **Honing planner**: pick a character and a target item level, then enter
-    each upgrade with the numbers your in-game honing panel shows (chance,
-    any increase per failure or guaranteed attempt, gold, silver and
-    materials per try) and what you already own. It shows the cost as a
-    range (good luck, typical, unlucky), how many weeks your own average
-    income takes to pay for it (choose whether bound gold counts), a "what if
-    I earned more" slider, and which character reaches their goal first.
-    Nothing about honing is built in, since the rules change with patches.
-    Saved plans show a progress line on the tracker; "Log this honing"
-    records the spending. Honing fees use the character's bound gold first,
-    then roster-bound, then tradeable, like the game.
   - **Astrogem cutting**: keep it beside the game while you process a gem.
     A panel laid out like the game's (original artwork): pick the gem type
     (Order or Chaos, with its willpower cost) and its two effects, set the
@@ -168,7 +158,7 @@ The screenshots use made-up characters.
   terms of what your gems combine into (3 of a level make the next, so 15 Lv1
   gems are a Lv3 + 2× Lv2).
 - **Export**: "Export CSV" on the Gold and Gems pages downloads your full
-  history for a spreadsheet; the spending log, prices and honing plans have
+  history for a spreadsheet; the spending log and prices have
   their own exports.
 - **Settings**: add characters (their usual raids are pre-selected from item
   level), edit daily/weekly columns, and download/restore backups.

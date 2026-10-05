@@ -351,51 +351,6 @@ def web_address(url: str | None) -> str | None:
     return url
 
 
-class HoningStepData(BaseModel):
-    id: str = Field(min_length=1, max_length=40)
-    label: str = Field(default="", max_length=100)
-    count: int = Field(default=1, ge=0, le=100)
-    chance: float = Field(ge=0, le=100)
-    chanceStep: float = Field(default=0, ge=0, le=100)
-    chanceCap: float | None = Field(default=None, ge=0, le=100)
-    guaranteedBy: int | None = Field(default=None, ge=1, le=1000)
-    materials: dict[str, float] = {}
-    gold: float = Field(default=0, ge=0)
-    silver: float = Field(default=0, ge=0)
-
-    @field_validator("materials")
-    @classmethod
-    def amounts_not_negative(cls, materials: dict[str, float]) -> dict[str, float]:
-        if any(amount < 0 for amount in materials.values()) or len(materials) > 50:
-            raise ValueError("Material amounts can't be negative")
-        return materials
-
-
-class HoningPlanData(BaseModel):
-    steps: list[HoningStepData] = Field(default=[], max_length=100)
-    owned: dict[str, float] = {}
-
-
-class HoningPlanSave(BaseModel):
-    target_item_level: float | None = Field(default=None, ge=0, le=5000)
-    notes: str | None = Field(default=None, max_length=1000)
-    plan: HoningPlanData
-    # Honing uses the character's bound gold, then roster-bound, then tradeable.
-    bound_mode: Literal["tradeable", "roster", "all"] = "all"
-
-
-class HoningPlanRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    character_id: int
-    start_item_level: float
-    target_item_level: float | None
-    notes: str | None
-    plan: HoningPlanData
-    bound_mode: str
-    updated_at: datetime
-
-
 class CounterCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     value: int = Field(default=0, ge=0, le=1_000_000_000)
