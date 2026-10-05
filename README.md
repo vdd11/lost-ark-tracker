@@ -28,7 +28,11 @@ sources to see your weekly gold over time.
     browser). The top boxes count gold raids left and log other gold in one
     step. Optional widgets chart the past month of gold, project a gold goal
     (from your last check-in) and show when your tracked gems add up to the
-    next Lv9 / Lv10. More you can turn on under Customize: a **reset
+    next Lv9 / Lv10, and a compact **auction calculator** sits beside them
+    for bidding mid-raid. The gold and gem widgets switch between this week,
+    the last 4 weeks and all time. While Customize is open, drag any block
+    (the gold boxes, recap, cards, widgets) by its name, or use its arrows,
+    to rearrange the page; "Reset order" puts it back. More you can turn on under Customize: a **reset
     clock** (next daily and weekly reset in your time and UTC) and
     **counters** you keep by hand (collectibles, tokens, reputation: a name,
     a number, an optional target and +1 / −1, for a character, an account or

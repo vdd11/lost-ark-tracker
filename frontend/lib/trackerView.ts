@@ -45,6 +45,7 @@ export const WIDGET_KEYS = {
   goldMonth: "widget:gold-month",
   goldGoal: "widget:gold-goal",
   gems: "widget:gems",
+  auction: "widget:auction",
 } as const;
 /** Older versions kept the (then default-on) news widget in the hidden set; it's opt-in now (lib/online.ts). */
 const RETIRED_KEYS = ["widget:news"];

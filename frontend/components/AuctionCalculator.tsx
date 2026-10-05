@@ -10,6 +10,19 @@ import { usePreference } from "@/lib/usePreference";
 
 /** How much to bid on a raid drop: break-even and a bid that still leaves a profit. */
 export default function AuctionCalculator() {
+  return (
+    <section className="rounded-md border border-border bg-surface p-4">
+      <h2 className="mb-1 flex items-center gap-2 font-semibold">
+        <Gavel size={16} /> Auction calculator
+      </h2>
+      <p className="mb-3 text-xs text-muted">How much to bid on a raid drop so winning it is worth more than your share of someone else&apos;s bid.</p>
+      <AuctionForm />
+    </section>
+  );
+}
+
+/** The calculator itself; `compact` keeps the working-out in a tooltip (tracker widget). */
+export function AuctionForm({ compact = false }: { compact?: boolean }) {
   const [price, setPrice] = useState("");
   const [partySize, setPartySize] = usePreference<number>("auction-party-size", 8, PARTY_SIZES);
   const [resell, setResell] = usePreference<boolean>("auction-resell", true);
@@ -18,11 +31,7 @@ export default function AuctionCalculator() {
   const formula = auctionFormula(marketPrice, partySize, resell);
 
   return (
-    <section className="rounded-md border border-border bg-surface p-4">
-      <h2 className="mb-1 flex items-center gap-2 font-semibold">
-        <Gavel size={16} /> Auction calculator
-      </h2>
-      <p className="mb-3 text-xs text-muted">How much to bid on a raid drop so winning it is worth more than your share of someone else&apos;s bid.</p>
+    <div>
       <div className="flex flex-wrap items-end gap-3 text-sm">
         <label className="flex flex-col gap-1 text-xs text-muted">
           Market price
@@ -59,10 +68,10 @@ export default function AuctionCalculator() {
             Break-even <span className="tabular-nums text-foreground">{formatGold(breakEven)}</span>
           </div>
           <span className="flex items-center gap-1 text-xs text-muted" title={formula}>
-            <Info size={12} /> {formula}
+            <Info size={12} /> {compact ? "How?" : formula}
           </span>
         </div>
       )}
-    </section>
+    </div>
   );
 }

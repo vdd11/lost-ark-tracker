@@ -1,9 +1,10 @@
 "use client";
 
-import { Clock, Gem, LucideIcon, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { Clock, Gavel, Gem, LucideIcon, Target, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { ReactNode } from "react";
 
+import { AuctionForm } from "@/components/AuctionCalculator";
 import NumberInput from "@/components/NumberInput";
 import { Character, formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
 import PeriodToggle from "@/components/tracker/PeriodToggle";
@@ -331,6 +332,19 @@ export function ResetClockWidget({ nextDaily, nextWeekly, now }: { nextDaily: st
         </tbody>
       </table>
       <p className="mt-2 text-xs text-muted">Your time zone: {zone}.</p>
+    </Widget>
+  );
+}
+
+/** The auction calculator, compact, for bidding during a raid. */
+export function AuctionWidget() {
+  return (
+    <Widget
+      icon={Gavel}
+      title="Auction calculator"
+      action={<span className="text-[11px] text-muted">what to bid on a drop</span>}
+    >
+      <AuctionForm compact />
     </Widget>
   );
 }

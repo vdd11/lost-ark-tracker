@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 
 import StyleChooser from "@/components/tracker/StyleChooser";
 import { Task } from "@/lib/api";
+import { PAGE_ORDER_PREFERENCE, WIDGET_ORDER_PREFERENCE } from "@/components/tracker/arrange";
 import { COUNTERS_PREFERENCE } from "@/lib/counters";
 import { NEWS_PREFERENCE } from "@/lib/online";
 import { RAID_GROUPS_PREFERENCE } from "@/lib/raidGroups";
@@ -40,6 +41,8 @@ export default function CustomizePanel({
   const [resetClockOn, setResetClockOn] = usePreference<boolean>(RESET_CLOCK_PREFERENCE, false);
   const [countersOn, setCountersOn] = usePreference<boolean>(COUNTERS_PREFERENCE, false);
   const [groupsOn, setGroupsOn] = usePreference<boolean>(RAID_GROUPS_PREFERENCE, false);
+  const [pageOrder, setPageOrder] = usePreference<string>(PAGE_ORDER_PREFERENCE, "");
+  const [widgetOrder, setWidgetOrder] = usePreference<string>(WIDGET_ORDER_PREFERENCE, "");
   // Opt-in widgets keep their own on/off switch instead of the hidden list.
   const optIn: Record<string, [boolean, (on: boolean) => void]> = {
     [NEWS_PREFERENCE]: [newsOn, setNewsOn],
@@ -85,6 +88,7 @@ export default function CustomizePanel({
         { key: WIDGET_KEYS.goldMonth, label: "Gold, past month" },
         { key: WIDGET_KEYS.goldGoal, label: "Gold goal" },
         { key: WIDGET_KEYS.gems, label: "Gem progress (Lv9 / Lv10)" },
+        { key: WIDGET_KEYS.auction, label: "Auction calculator" },
         { key: RESET_CLOCK_PREFERENCE, label: "Reset clock (your time and UTC)" },
         { key: COUNTERS_PREFERENCE, label: "Counters you keep by hand" },
         { key: RAID_GROUPS_PREFERENCE, label: "Raid groups (statics)" },
@@ -110,9 +114,21 @@ export default function CustomizePanel({
         <div>
           <h2 className="font-semibold">Customize the tracker</h2>
           <p className="text-xs text-muted">
-            Start from a style, then tick exactly what you want. Saved in this browser.
+            Start from a style, then tick exactly what you want. While this is open, drag the blocks and widgets
+            below by their names (or use the arrows) to rearrange them. Saved in this browser.
           </p>
         </div>
+        <button
+          onClick={() => {
+            setPageOrder("");
+            setWidgetOrder("");
+          }}
+          disabled={!pageOrder && !widgetOrder}
+          className="ml-auto rounded-md border border-border px-2.5 py-1 text-xs hover:bg-surface-2 disabled:opacity-40"
+          title="Put the tracker's blocks and widgets back in their usual order"
+        >
+          Reset order
+        </button>
         <button onClick={onClose} aria-label="Close" className="rounded-md p-1 text-muted hover:bg-surface-2">
           <X size={16} />
         </button>

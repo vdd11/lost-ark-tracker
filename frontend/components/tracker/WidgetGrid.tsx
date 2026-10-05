@@ -5,11 +5,13 @@ import NewsWidget from "@/components/tracker/NewsWidget";
 import RaidGroupsWidget from "@/components/tracker/RaidGroupsWidget";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
-import { GemWidget, GoldGoalWidget, GoldMonthWidget, ResetClockWidget } from "@/components/tracker/Widgets";
+import { ArrangeableList, useSavedOrder, WIDGET_ORDER_PREFERENCE } from "@/components/tracker/arrange";
+import { AuctionWidget, GemWidget, GoldGoalWidget, GoldMonthWidget, ResetClockWidget } from "@/components/tracker/Widgets";
 import { api, WeeklyGold } from "@/lib/api";
 import { COUNTERS_PREFERENCE } from "@/lib/counters";
 import { GOAL_MODES, GoalMode } from "@/lib/goldGoal";
 import { daysIntoWeek } from "@/lib/insights";
+import { mergeOrder } from "@/lib/order";
 import { Period, PERIOD_KEYS } from "@/lib/periods";
 import { NEWS_PREFERENCE } from "@/lib/online";
 import { RAID_GROUPS_PREFERENCE } from "@/lib/raidGroups";
@@ -21,12 +23,35 @@ import { WIDGET_KEYS } from "@/lib/trackerView";
 
 const GOAL_MODE_KEYS = GOAL_MODES.map((m) => m.key as string);
 
+/** Every widget, in the default order, and the names shown while arranging. */
+const ALL_WIDGETS = [
+  WIDGET_KEYS.goldMonth,
+  WIDGET_KEYS.goldGoal,
+  WIDGET_KEYS.auction,
+  WIDGET_KEYS.gems,
+  NEWS_PREFERENCE,
+  COUNTERS_PREFERENCE,
+  RAID_GROUPS_PREFERENCE,
+  RESET_CLOCK_PREFERENCE,
+];
+const WIDGET_LABELS: Record<string, string> = {
+  [WIDGET_KEYS.goldMonth]: "Gold",
+  [WIDGET_KEYS.goldGoal]: "Gold goal",
+  [WIDGET_KEYS.auction]: "Auction calculator",
+  [WIDGET_KEYS.gems]: "Gem progress",
+  [NEWS_PREFERENCE]: "Lost Ark updates",
+  [COUNTERS_PREFERENCE]: "Counters",
+  [RAID_GROUPS_PREFERENCE]: "Raid groups",
+  [RESET_CLOCK_PREFERENCE]: "Resets",
+};
+
 /** The optional widgets under the tracker cards. */
-export default function WidgetGrid({ data, view }: { data: TrackerData; view: TrackerView }) {
+export default function WidgetGrid({ data, view, arranging = false }: { data: TrackerData; view: TrackerView; arranging?: boolean }) {
   // Each mode keeps its own target; the default mode keeps the original preference.
   const [goalMode, setGoalMode] = usePreference<string>("gold-goal-mode", "roster", GOAL_MODE_KEYS);
   const mode = goalMode as GoalMode;
   const [goldGoal, setGoldGoal] = usePreference<number>(mode === "roster" ? "gold-goal" : `gold-goal-${mode}`, 1_000_000);
+  const [order, setOrder] = useSavedOrder(WIDGET_ORDER_PREFERENCE, ALL_WIDGETS);
   const [goalCharacter, setGoalCharacter] = usePreference<number>("gold-goal-character", 0);
   const [goldPeriod, setGoldPeriod] = usePreference<string>("gold-widget-period", "month", PERIOD_KEYS);
   const [gemPeriod, setGemPeriod] = usePreference<string>("gem-widget-period", "all", PERIOD_KEYS);
@@ -70,6 +95,7 @@ export default function WidgetGrid({ data, view }: { data: TrackerData; view: Tr
         />
       ),
     },
+    { key: WIDGET_KEYS.auction, node: <AuctionWidget /> },
     { key: WIDGET_KEYS.gems, node: <GemWidget weeks={gemWeeks} daysIntoWeek={weekDays} period={gemPeriod as Period} onPeriod={setGemPeriod} /> },
     { key: NEWS_PREFERENCE, node: <NewsWidget /> },
     {
@@ -97,17 +123,22 @@ export default function WidgetGrid({ data, view }: { data: TrackerData; view: Tr
     if (widget.key === RESET_CLOCK_PREFERENCE) return resetClockOn && widget.node !== null;
     if (widget.key === COUNTERS_PREFERENCE) return countersOn;
     if (widget.key === RAID_GROUPS_PREFERENCE) return groupsOn;
+    if (widget.key === WIDGET_KEYS.auction) return view.isShown(widget.key);
     return view.isShown(widget.key) && goldWeeks.length > 0;
   });
 
   if (widgets.length === 0) return null;
+  const position = new Map(order.map((key, index) => [key, index]));
+  const items = widgets
+    .map((widget) => ({ id: ALL_WIDGETS.indexOf(widget.key), key: widget.key, label: WIDGET_LABELS[widget.key] ?? widget.key, node: widget.node }))
+    .sort((a, b) => (position.get(a.key) ?? 0) - (position.get(b.key) ?? 0));
   return (
-    <div className={`grid gap-4 md:grid-cols-2 ${widgets.length === 3 ? "xl:grid-cols-3" : ""}`}>
-      {widgets.map((widget) => (
-        <div key={widget.key} className="flex [&>*]:flex-1">
-          {widget.node}
-        </div>
-      ))}
-    </div>
+    <ArrangeableList
+      items={items}
+      arranging={arranging}
+      layout="grid"
+      onReorder={(keys) => setOrder(mergeOrder(keys, order))}
+      className={`grid gap-4 md:grid-cols-2 ${widgets.length === 3 ? "xl:grid-cols-3" : ""} [&>*>*:last-child]:flex-1`}
+    />
   );
 }

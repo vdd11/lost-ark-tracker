@@ -2,9 +2,10 @@
 
 import { FileSearch, ListTodo, Pencil, Settings2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 
 import AccountTabs from "@/components/AccountTabs";
+import { ArrangeableList, PAGE_BLOCKS, PAGE_ORDER_PREFERENCE, useSavedOrder } from "@/components/tracker/arrange";
 import GoldEarnerCount from "@/components/tracker/GoldEarnerCount";
 import ErrorBanner from "@/components/ErrorBanner";
 import AnytimeCard from "@/components/tracker/AnytimeCard";
@@ -21,11 +22,19 @@ import WhatsLeft from "@/components/tracker/WhatsLeft";
 import WidgetGrid from "@/components/tracker/WidgetGrid";
 import { isActiveRaid } from "@/lib/raids";
 import { LOA_KEYS } from "@/lib/loaLogs";
+import { mergeOrder } from "@/lib/order";
 import { buildSection } from "@/lib/trackerSections";
 import { SECTION_KEYS } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 
 const MODES = ["grid", "left"] as const;
+const BLOCK_LABELS: Record<string, string> = {
+  stats: "Gold boxes",
+  recap: "New-week recap",
+  week: "This week",
+  daily: "Today and Any time",
+  widgets: "Widgets",
+};
 
 export default function TrackerPage() {
   const data = useTrackerData();
@@ -38,6 +47,7 @@ export default function TrackerPage() {
   const [loaEnabled] = usePreference<boolean>(LOA_KEYS.enabled, false);
   const [importing, setImporting] = useState(false);
 
+  const [blockOrder, setBlockOrder] = useSavedOrder(PAGE_ORDER_PREFERENCE, [...PAGE_BLOCKS]);
   const sectionInput = { tasks: data.tasks, roster: data.roster, completed: data.completed, hidden: view.hidden, editMode };
   const week = buildSection("week", sectionInput);
   const today = buildSection("today", sectionInput);
@@ -45,6 +55,25 @@ export default function TrackerPage() {
   const showToday = view.isShown(SECTION_KEYS.today) && (today.columns.length > 0 || editMode);
   const showAnytime = view.isShown(SECTION_KEYS.anytime) && (anytime.columns.length > 0 || editMode);
   const cardProps = { data, view, editMode };
+
+  // The page's blocks, in the order the user arranged them (Customize).
+  const blocks: Record<string, ReactNode> = {
+    stats: <StatRow data={data} view={view} />,
+    recap: <TrackerBanners data={data} view={view} />,
+    week: showLeft ? (
+      <WhatsLeft data={data} columns={[...week.columns, ...(showToday ? today.columns : [])]} />
+    ) : (
+      <WeekCard section={week} {...cardProps} />
+    ),
+    daily:
+      !showLeft && (showToday || showAnytime) ? (
+        <div className={`grid gap-4 ${showToday && showAnytime ? "lg:grid-cols-2" : ""}`}>
+          {showToday && <TodayCard section={today} {...cardProps} />}
+          {showAnytime && <AnytimeCard section={anytime} {...cardProps} />}
+        </div>
+      ) : null,
+    widgets: <WidgetGrid data={data} view={view} arranging={customizing} />,
+  };
 
   return (
     <div className="space-y-4">
@@ -80,11 +109,7 @@ export default function TrackerPage() {
 
       {importing && <LoaImportDialog data={data} onClose={() => setImporting(false)} />}
 
-      <StatRow data={data} view={view} />
-
       <ErrorBanner error={data.error} onDismiss={() => data.setError(null)} />
-
-      <TrackerBanners data={data} view={view} />
 
       {customizing && (
         <CustomizePanel
@@ -110,22 +135,14 @@ export default function TrackerPage() {
           <Link href="/settings" className="underline">Add your roster in Settings</Link>.
         </p>
       ) : (
-        <>
-          {showLeft ? (
-            <WhatsLeft data={data} columns={[...week.columns, ...(showToday ? today.columns : [])]} />
-          ) : (
-            <WeekCard section={week} {...cardProps} />
-          )}
-
-          {!showLeft && (showToday || showAnytime) && (
-            <div className={`grid gap-4 ${showToday && showAnytime ? "lg:grid-cols-2" : ""}`}>
-              {showToday && <TodayCard section={today} {...cardProps} />}
-              {showAnytime && <AnytimeCard section={anytime} {...cardProps} />}
-            </div>
-          )}
-
-          <WidgetGrid data={data} view={view} />
-        </>
+        <ArrangeableList
+          className="space-y-4"
+          arranging={customizing}
+          onReorder={(keys) => setBlockOrder(mergeOrder(keys, blockOrder))}
+          items={blockOrder
+            .map((key) => ({ key, id: PAGE_BLOCKS.indexOf(key as (typeof PAGE_BLOCKS)[number]), label: BLOCK_LABELS[key], node: blocks[key] }))
+            .filter((block) => block.node)}
+        />
       )}
     </div>
   );
