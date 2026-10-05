@@ -18,6 +18,8 @@ import { goldBySource } from "@/lib/goldBySource";
 import { GOLD_SOURCES } from "@/lib/goldSources";
 import { goldEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
+import { sourceIconName } from "@/lib/data/icons";
 
 const OTHER = "__other__";
 const RANGES = [8, 12, 26, 52];
@@ -263,7 +265,12 @@ export default function GoldPage() {
               <tbody className="tabular-nums">
                 {sourceRows.map((row) => (
                   <tr key={row.source} className="border-b border-border last:border-b-0">
-                    <td className="py-1.5 pr-2">{row.source}</td>
+                    <td className="py-1.5 pr-2">
+                      <span className="flex items-center gap-1.5">
+                        <GameIcon name={sourceIconName(row.source)} size={18} alt="" />
+                        {row.source}
+                      </span>
+                    </td>
                     <td className="py-1.5 text-right">{formatGold(row.thisWeek)}</td>
                     <td className="py-1.5 text-right">{formatGold(row.lastFour)}</td>
                     <td className="py-1.5 text-right text-muted">{formatGold(Math.round(row.average))}</td>

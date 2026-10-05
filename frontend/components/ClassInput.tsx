@@ -4,6 +4,8 @@ import { ChevronDown } from "lucide-react";
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 
 import { classOptions } from "@/lib/classes";
+import GameIcon from "@/components/GameIcon";
+import { classIconName } from "@/lib/data/icons";
 
 /**
  * Class name with a dropdown, grouped by archetype, that filters as you type.
@@ -145,8 +147,9 @@ export default function ClassInput({
                       data-active={index === active}
                       onMouseEnter={() => setActive(index)}
                       onClick={() => pick(name)}
-                      className={`cursor-pointer px-3 py-1 ${index === active ? "bg-surface-2" : ""} ${selected ? "font-medium text-accent" : ""}`}
+                      className={`flex cursor-pointer items-center gap-2 px-3 py-1 ${index === active ? "bg-surface-2" : ""} ${selected ? "font-medium text-accent" : ""}`}
                     >
+                      <GameIcon name={classIconName(name)} size={18} alt="" />
                       {name}
                     </li>
                   );

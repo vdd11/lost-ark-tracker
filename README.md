@@ -58,12 +58,13 @@ The screenshots use made-up characters.
   - **What's left** switches the cards to a list of only unfinished tasks per
     character, richest first, with one-click ticks and **Copy as text** for
     Discord.
-  - **All** beside a character ticks off everything they have left in that
-    card. After the Wednesday reset, a recap shows last week's gold, gems and
-    any gold raids left unrun.
+  - The **class icon** beside a character (a double check until game icons
+    are bundled) ticks off everything they have left in that card.
+    After the Wednesday reset, a recap shows last week's gold, gems and any
+    gold raids left unrun.
   - On a phone or narrow window, each character gets a stacked block instead
     of a wide table.
-  - Mistakes can be undone from the toast that follows a tick, "All" or a
+  - Mistakes can be undone from the toast that follows a tick, a class-icon "mark all" or a
     delete. Press **?** for keyboard shortcuts: arrows, Home and End move
     between cells (also right after clicking a checkbox), Space ticks, + / −
     count runs, `a` marks a character done, `g` then a letter jumps pages.

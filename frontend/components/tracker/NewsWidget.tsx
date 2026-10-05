@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { api, NewsFeed, ServerStatus } from "@/lib/api";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 const REFRESH_MS = 10 * 60 * 1000;
 const TABS = ["servers", "news", "x"] as const;
@@ -67,7 +68,7 @@ export default function NewsWidget() {
       <header className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/15 text-accent">
-            <Newspaper size={16} />
+            <GameIcon name="news" size={20} fallback={Newspaper} alt="" />
           </span>
           Lost Ark updates
         </h2>

@@ -10,6 +10,7 @@ import { TrackerView } from "@/components/tracker/useTrackerView";
 import { parseUtc } from "@/lib/api";
 import { cellKey, formatCountdown, SectionData } from "@/lib/trackerSections";
 import { appliesTo, FINISHED_ROWS_KEY, RAID_PICKERS_KEY, remainingFor } from "@/lib/trackerView";
+import GameIcon from "@/components/GameIcon";
 
 /** Dailies, reset every day, with how many rested runs are waiting. */
 export default function TodayCard({
@@ -38,7 +39,7 @@ export default function TodayCard({
       extra={
         restedRuns > 0 ? (
           <span className="flex items-center gap-1 font-medium text-accent">
-            <Flame size={14} /> {restedRuns} rested
+            <GameIcon name="rest" size={14} fallback={Flame} alt="" /> {restedRuns} rested
           </span>
         ) : undefined
       }
@@ -61,7 +62,7 @@ export default function TodayCard({
               }
         }
         hideWhenEmpty={section.finished.length > 0}
-        characterAction={
+        rowButton={
           editMode
             ? undefined
             : (character) => <MarkAllButton character={character} columns={section.columns} what="dailies" data={data} />

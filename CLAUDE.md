@@ -62,6 +62,11 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   `lib/data/astrogems.ts` with their sources (official KR probability page,
   NA release notes, Maxroll); `lib/astrogems.ts` solves the best play with a
   seeded, memoized estimate.
+- Game icons: `<GameIcon name=... fallback={LucideIcon} />` reads
+  `frontend/lib/data/icons.ts`, which maps names to files in
+  `frontend/public/game-icons/`. A name without a file shows its Lucide
+  fallback, so the app works with none. Never hotlink; add a file only with
+  its line in `public/game-icons/SOURCES.md` (a test checks both).
 - Guides page links are data (`frontend/lib/data/guides.json`, with a
   `checked` date). Check new ones with `python scripts/check_links.py`; a
   weekly workflow (`links.yml`) runs it and opens an issue for dead links or

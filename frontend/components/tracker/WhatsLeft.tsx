@@ -9,6 +9,8 @@ import { TrackerData } from "@/components/tracker/useTrackerData";
 import { formatGold, Task } from "@/lib/api";
 import { cellKey } from "@/lib/trackerSections";
 import { itemName, whatsLeft, whatsLeftText } from "@/lib/whatsLeft";
+import GameIcon from "@/components/GameIcon";
+import { classIconName } from "@/lib/data/icons";
 
 /**
  * Only what's left, per character, richest first, with a one-click tick (and
@@ -75,7 +77,8 @@ export default function WhatsLeft({ data, columns }: { data: TrackerData; column
           {groups.map(({ character, items, gold: characterGold }) => (
             <li key={character.id} className="px-4 py-3">
               <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                <span className="font-medium">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <GameIcon name={classIconName(character.class_name)} size={18} alt="" />
                   {character.name} <span className="text-xs font-normal text-muted">{character.class_name}</span>
                 </span>
                 {characterGold > 0 && <span className="text-xs tabular-nums text-muted">{formatGold(characterGold)}</span>}
@@ -111,7 +114,7 @@ export default function WhatsLeft({ data, columns }: { data: TrackerData; column
                         )}
                         {rested && (
                           <span className="flex items-center gap-0.5 text-xs text-accent">
-                            <Flame size={11} /> rested
+                            <GameIcon name="rest" size={12} fallback={Flame} alt="" /> rested
                           </span>
                         )}
                       </button>

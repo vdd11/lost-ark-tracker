@@ -10,6 +10,7 @@ import { formatGold } from "@/lib/api";
 import { raidGoldSplit } from "@/lib/goldEarners";
 import { goldRaidsLeft, possibleRaidGold } from "@/lib/raids";
 import { STAT_KEYS } from "@/lib/trackerView";
+import GameIcon from "@/components/GameIcon";
 
 // Static class names so Tailwind generates them: the row fits however many boxes are shown.
 const STAT_COLUMNS = ["", "lg:grid-cols-1", "lg:grid-cols-2", "lg:grid-cols-3", "lg:grid-cols-4", "lg:grid-cols-5"];
@@ -44,7 +45,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
       key: STAT_KEYS.raidGold,
       node: (
         <Stat
-          icon={<Coins size={16} />}
+          icon={<GameIcon name="gold" size={18} fallback={Coins} alt="" />}
           label="Raid gold this week"
           value={formatGold(split.shared)}
           sub={
@@ -65,7 +66,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
       key: STAT_KEYS.otherGold,
       node: (
         <Stat
-          icon={<Coins size={16} />}
+          icon={<GameIcon name="gold" size={18} fallback={Coins} alt="" />}
           label="Other gold this week"
           value={formatGold(thisWeek.other_gold)}
           sub={

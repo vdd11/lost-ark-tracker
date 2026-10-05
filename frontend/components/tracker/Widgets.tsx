@@ -20,15 +20,19 @@ import {
   gemGoal,
   percentChange,
 } from "@/lib/insights";
+import GameIcon from "@/components/GameIcon";
 
 export function Widget({
   icon: Icon,
+  gameIcon,
   title,
   hint,
   action,
   children,
 }: {
   icon: LucideIcon;
+  /** A game icon (lib/data/icons.ts) shown instead of `icon` when its file is bundled. */
+  gameIcon?: string;
   title: string;
   /** One line saying what the widget is for, under the title. */
   hint?: string;
@@ -40,7 +44,7 @@ export function Widget({
       <header className={`${hint ? "mb-1" : "mb-3"} flex items-center justify-between gap-2`}>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/15 text-accent">
-            <Icon size={16} />
+            {gameIcon ? <GameIcon name={gameIcon} size={20} fallback={Icon} alt="" /> : <Icon size={16} />}
           </span>
           {title}
         </h2>
@@ -91,6 +95,7 @@ export function GoldMonthWidget({
   return (
     <Widget
       icon={TrendingUp}
+      gameIcon="gold"
       title="Gold"
       hint="Gold you earned, after bonus boxes, by week."
       action={
@@ -250,6 +255,7 @@ export function GemWidget({
   return (
     <Widget
       icon={Gem}
+      gameIcon="doomfire"
       title="Gem progress"
       hint="Your tracked gems combined, and when the next Lv9 and Lv10 land."
       action={

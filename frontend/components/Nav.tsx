@@ -9,12 +9,13 @@ import ThemeToggle from "@/components/ThemeToggle";
 import UpdateNotice, { UpdateCheckPrompt, useUpdateCheck } from "@/components/UpdateNotice";
 import { DEFAULT_HIDDEN_RAW, HIDDEN_PREFERENCE, PAGE_KEYS, parseHidden } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 /** `key` marks pages that can be hidden under Customize on the tracker. */
-const LINKS: { href: string; label: string; icon: typeof Coins; key?: string }[] = [
+const LINKS: { href: string; label: string; icon: typeof Coins; gameIcon?: string; key?: string }[] = [
   { href: "/", label: "Tracker", icon: LayoutGrid },
-  { href: "/gold", label: "Gold", icon: Coins, key: PAGE_KEYS.gold },
-  { href: "/gems", label: "Gems", icon: Gem, key: PAGE_KEYS.gems },
+  { href: "/gold", label: "Gold", icon: Coins, gameIcon: "gold", key: PAGE_KEYS.gold },
+  { href: "/gems", label: "Gems", icon: Gem, gameIcon: "doomfire", key: PAGE_KEYS.gems },
   { href: "/tools", label: "Tools", icon: Wrench, key: PAGE_KEYS.tools },
   { href: "/guides", label: "Guides", icon: BookOpen, key: PAGE_KEYS.guides },
   { href: "/settings", label: "Settings", icon: Settings2 },
@@ -51,7 +52,7 @@ export default function Nav() {
                   current ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
                 }`}
               >
-                <link.icon size={16} />
+                {link.gameIcon ? <GameIcon name={link.gameIcon} size={18} fallback={link.icon} alt="" /> : <link.icon size={16} />}
                 <span className={current ? "" : "hidden lg:inline"}>{link.label}</span>
               </Link>
             );

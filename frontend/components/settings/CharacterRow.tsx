@@ -6,6 +6,8 @@ import ClassInput from "@/components/ClassInput";
 import { AccountSelect, DeleteButton, DragHandle, DragHandleProps, draggingRow } from "@/components/settings/controls";
 import { Account, Character } from "@/lib/api";
 import { normalizeClass } from "@/lib/classes";
+import GameIcon from "@/components/GameIcon";
+import { classIconName } from "@/lib/data/icons";
 
 // Rows keep a local draft and save a field when it loses focus.
 export default function CharacterRow({
@@ -45,13 +47,16 @@ export default function CharacterRow({
         <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} onBlur={() => saveText("name")} />
       </td>
       <td className="px-3 py-1.5">
-        <ClassInput
+        <div className="flex items-center gap-2">
+          <GameIcon name={classIconName(draft.class_name)} size={22} alt="" />
+          <ClassInput
           value={draft.class_name}
           onChange={(value) => setDraft((prev) => ({ ...prev, class_name: value }))}
           onPick={(value) => saveText("class_name", value)}
           onBlur={() => saveText("class_name")}
           label={`${character.name} class`}
-        />
+          />
+        </div>
       </td>
       <td className="px-3 py-1.5">
         <input

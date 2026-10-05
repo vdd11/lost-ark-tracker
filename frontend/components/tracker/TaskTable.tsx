@@ -5,6 +5,8 @@ import { CellKeyboard } from "@/components/tracker/cellKeys";
 import { Character, Task } from "@/lib/api";
 import { GridPosition, isTypingTarget, moveFocus } from "@/lib/shortcuts";
 import { useMediaQuery } from "@/lib/useMediaQuery";
+import GameIcon from "@/components/GameIcon";
+import { taskIconName } from "@/lib/data/icons";
 
 export type ExtraColumn = {
   key: string;
@@ -24,7 +26,9 @@ export type ExtraColumn = {
  * Keys only act on the box itself, so the controls inside keep working as usual.
  */
 /** Column widths in rem for the desktop table (see the colgroup below), so they scale with the text size. */
-const CHARACTER_COLUMN = 10.5;
+const CHARACTER_COLUMN = 8.5;
+/** The class icon that marks a character's row done (`rowButton`). */
+const ROW_BUTTON_COLUMN = 2.5;
 const TASK_COLUMN = 7.5;
 const EXTRA_COLUMN = 7;
 const rem = (n: number) => `${n}rem`;
@@ -38,7 +42,7 @@ export default function TaskTable({
   onItemLevel,
   onGoldEarner,
   characterNote,
-  characterAction,
+  rowButton,
   characterGoal,
   applies,
   cellKeyboard,
@@ -54,8 +58,8 @@ export default function TaskTable({
   /** Shown as a GOLD toggle beside the name when given. */
   onGoldEarner?: (character: Character, isGoldEarner: boolean) => void;
   characterNote?: (character: Character) => ReactNode;
-  /** A small button beside the name, e.g. "mark all done". */
-  characterAction?: (character: Character) => ReactNode;
+  /** A small button in its own column after the name (beside it when stacked), e.g. "mark all done". */
+  rowButton?: (character: Character) => ReactNode;
   /** Under the item level, e.g. the next unlock. */
   characterGoal?: (character: Character) => ReactNode;
   /** In the stacked layout, tasks that don't apply to a character are left out. */
@@ -158,7 +162,7 @@ export default function TaskTable({
             </span>
           )
         )}
-        {characterAction?.(character)}
+        {!wide && rowButton && <span className="ml-auto">{rowButton(character)}</span>}
       </div>
       <div className="text-xs text-muted">
         {character.class_name} ·{" "}
@@ -200,12 +204,14 @@ export default function TaskTable({
 
   // Fixed column widths: what a cell shows after ticking (bonus box, run
   // counts, rest) can never resize a column and move the checkboxes.
-  const minWidth = CHARACTER_COLUMN + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
+  const buttonColumn = rowButton ? ROW_BUTTON_COLUMN : 0;
+  const minWidth = CHARACTER_COLUMN + buttonColumn + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
   return (
     <div className="overflow-x-auto">
       <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: rem(minWidth) }}>
         <colgroup>
           <col style={{ width: rem(CHARACTER_COLUMN) }} />
+          {rowButton && <col style={{ width: rem(ROW_BUTTON_COLUMN) }} />}
           {columns.map((task) => (
             <col key={task.id} style={{ width: rem(TASK_COLUMN) }} />
           ))}
@@ -215,10 +221,14 @@ export default function TaskTable({
         </colgroup>
         <thead>
           <tr className="border-b border-border text-xs text-muted">
-            <th className="sticky left-0 z-10 bg-surface px-4 py-2 text-left font-medium">Character</th>
+            <th className="sticky left-0 z-10 bg-surface py-2 pl-4 pr-2 text-left font-medium">Character</th>
+            {rowButton && <th aria-label="Mark all done" />}
             {columns.map((task) => (
               <th key={task.id} className="px-2 py-2 text-center align-bottom font-medium">
-                <div className="text-sm leading-tight text-foreground">{task.name}</div>
+                <div className="flex flex-col items-center gap-1 text-sm leading-tight text-foreground">
+                  <GameIcon name={taskIconName(task)} size={24} alt="" />
+                  {task.name}
+                </div>
                 {columnNote?.(task)}
               </th>
             ))}
@@ -232,7 +242,8 @@ export default function TaskTable({
         <tbody>
           {characters.map((character, row) => (
             <tr key={character.id} className="border-b border-border last:border-b-0">
-              <td className="sticky left-0 z-10 bg-surface px-4 py-2">{who(character)}</td>
+              <td className="sticky left-0 z-10 bg-surface py-2 pl-4 pr-2">{who(character)}</td>
+              {rowButton && <td className="px-0.5 text-center align-middle">{rowButton(character)}</td>}
               {columns.map((task, col) => (
                 <td key={task.id} className="p-0 text-center align-middle">
                   {cell(character, task, row, col)}

@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { api, byPosition, Character, formatGold, Task } from "@/lib/api";
 import { CellTone, firstTrackedWeek, missedRaids, weekTone, WeeklyHistory } from "@/lib/history";
 import { formatShortGold, goldRaidWeek } from "@/lib/raids";
+import GameIcon from "@/components/GameIcon";
+import { classIconName } from "@/lib/data/icons";
 
 const TONES: Record<CellTone, string> = {
   full: "bg-done/20 text-foreground",
@@ -67,7 +69,12 @@ export default function HistoryGrid({ characters, tasks }: { characters: Charact
             const missed = missedRaids(weeks, slots, character.is_gold_earner);
             return (
               <tr key={character.id}>
-                <td className="whitespace-nowrap px-1 py-0.5 text-sm font-medium">{character.name}</td>
+                <td className="whitespace-nowrap px-1 py-0.5 text-sm font-medium">
+                  <span className="flex items-center gap-1.5">
+                    <GameIcon name={classIconName(character.class_name)} size={16} alt="" />
+                    {character.name}
+                  </span>
+                </td>
                 {weeks.map((week, i) => {
                   const current = i === weeks.length - 1;
                   // Weeks before anything was recorded for them aren't failures.

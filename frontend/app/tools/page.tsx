@@ -4,6 +4,7 @@ import { ChevronRight, Gem, Hammer, Tags, Wrench } from "lucide-react";
 import Link from "next/link";
 
 import { Tool, TOOLS } from "@/lib/tools";
+import GameIcon from "@/components/GameIcon";
 
 const ICONS: Record<Tool["icon"], typeof Tags> = { prices: Tags, astrogems: Gem };
 
@@ -28,7 +29,12 @@ export default function ToolsPage() {
               className="group flex flex-col gap-2 rounded-md border border-border bg-surface p-4 hover:border-accent/60"
             >
               <span className="flex items-center gap-2 font-semibold">
-                <Icon size={18} className="text-accent" /> {tool.title}
+                {tool.gameIcon ? (
+                  <GameIcon name={tool.gameIcon} size={22} fallback={Icon} alt="" className="text-accent" />
+                ) : (
+                  <Icon size={18} className="text-accent" />
+                )}{" "}
+                {tool.title}
                 <ChevronRight size={16} className="ml-auto text-muted group-hover:text-accent" />
               </span>
               <span className="text-sm text-muted">{tool.description}</span>

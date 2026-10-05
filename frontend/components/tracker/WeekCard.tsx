@@ -71,7 +71,7 @@ export default function WeekCard({
             <BoundGoldNote character={character} data={data} />
           </>
         )}
-        characterAction={
+        rowButton={
           editMode
             ? undefined
             : (character) => <MarkAllButton character={character} columns={section.columns} what="raids and weeklies" data={data} />

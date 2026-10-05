@@ -213,6 +213,11 @@ export default function SettingsPage() {
           load();
         }}
       />
+
+      <footer className="border-t border-border pt-4 text-xs text-muted">
+        Lost Ark and its images are trademarks and property of Smilegate RPG / Amazon Games. This is an unofficial fan
+        tool.
+      </footer>
     </div>
   );
 }

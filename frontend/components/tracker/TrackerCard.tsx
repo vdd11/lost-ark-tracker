@@ -1,9 +1,11 @@
 import { LucideIcon } from "lucide-react";
 import { ReactNode } from "react";
+import GameIcon from "@/components/GameIcon";
 
 /** One tracker section: an icon, a title, when it resets, and how far along you are. */
 export default function TrackerCard({
   icon: Icon,
+  gameIcon,
   title,
   subtitle,
   done,
@@ -12,6 +14,8 @@ export default function TrackerCard({
   children,
 }: {
   icon: LucideIcon;
+  /** A game icon (lib/data/icons.ts) shown instead of `icon` when its file is bundled. */
+  gameIcon?: string;
   title: string;
   subtitle: ReactNode;
   done?: number;
@@ -25,7 +29,7 @@ export default function TrackerCard({
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/15 text-accent">
-            <Icon size={18} />
+            {gameIcon ? <GameIcon name={gameIcon} size={22} fallback={Icon} alt="" /> : <Icon size={18} />}
           </span>
           <div>
             <h2 className="font-semibold leading-tight">{title}</h2>
