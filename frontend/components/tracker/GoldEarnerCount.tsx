@@ -1,4 +1,5 @@
 import { Coins } from "lucide-react";
+import Link from "next/link";
 
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { goldEarnerCounts } from "@/lib/goldEarners";
@@ -9,10 +10,16 @@ export default function GoldEarnerCount({ data }: { data: TrackerData }) {
   const counts = goldEarnerCounts(data.allCharacters, accounts);
   if (!counts.length) return null;
   const many = counts.length > 1;
+  const names = counts
+    .map((c) => {
+      const earners = data.allCharacters.filter((ch) => ch.account_id === c.account.id && ch.is_gold_earner).map((ch) => ch.name);
+      return `${many ? `${c.account.name}: ` : ""}${earners.join(", ") || "none"}`;
+    })
+    .join("\n");
   return (
     <span
       className="flex items-center gap-1 text-xs text-muted tabular-nums"
-      title="Gold earners are paid for 3 raids a week; each account (roster) can have 6. Click GOLD beside a name to change."
+      title={`Gold earners (paid for 3 raids a week; 6 per account). Click GOLD beside a name to change.\n${names}`}
     >
       <Coins size={13} />
       {counts.map((c, i) => (
@@ -23,6 +30,9 @@ export default function GoldEarnerCount({ data }: { data: TrackerData }) {
           {many ? "" : " gold earners"}
         </span>
       ))}
+      <Link href="/settings#gold-setup" className="ml-1 underline hover:text-foreground" title="Suggest the best gold earners and raids">
+        Review
+      </Link>
     </span>
   );
 }

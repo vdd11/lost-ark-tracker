@@ -81,8 +81,9 @@ export default function GoldOptimizer({
   if (!open) {
     return (
       <button
+        id="gold-setup"
         onClick={() => setOpen(true)}
-        className="mb-4 flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
+        className="mb-4 flex scroll-mt-4 items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
       >
         <Sparkles size={16} className="text-accent" /> Suggest my gold setup
       </button>
@@ -90,7 +91,7 @@ export default function GoldOptimizer({
   }
 
   return (
-    <section className="mb-4 rounded-lg border border-accent/40 bg-surface p-4">
+    <section id="gold-setup" className="mb-4 scroll-mt-4 rounded-lg border border-accent/40 bg-surface p-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 font-semibold">
