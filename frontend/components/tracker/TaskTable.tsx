@@ -23,6 +23,11 @@ export type ExtraColumn = {
  * + and − change run counters, and `a` runs `onRowAll` for that character.
  * Keys only act on the box itself, so the controls inside keep working as usual.
  */
+/** Column widths in px for the desktop table (see the colgroup below). */
+const CHARACTER_COLUMN = 176;
+const TASK_COLUMN = 128;
+const EXTRA_COLUMN = 112;
+
 export default function TaskTable({
   characters,
   columns,
@@ -163,20 +168,32 @@ export default function TaskTable({
     );
   }
 
+  // Fixed column widths: what a cell shows after ticking (bonus box, run
+  // counts, rest) can never resize a column and move the checkboxes.
+  const minWidth = CHARACTER_COLUMN + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth }}>
+        <colgroup>
+          <col style={{ width: CHARACTER_COLUMN }} />
+          {columns.map((task) => (
+            <col key={task.id} style={{ width: TASK_COLUMN }} />
+          ))}
+          {extraColumns.map((column) => (
+            <col key={column.key} style={{ width: EXTRA_COLUMN }} />
+          ))}
+        </colgroup>
         <thead>
           <tr className="border-b border-border text-xs text-muted">
-            <th className="sticky left-0 z-10 min-w-40 bg-surface px-4 py-2 text-left font-medium">Character</th>
+            <th className="sticky left-0 z-10 bg-surface px-4 py-2 text-left font-medium">Character</th>
             {columns.map((task) => (
-              <th key={task.id} className="min-w-28 px-2 py-2 text-center align-bottom font-medium">
+              <th key={task.id} className="px-2 py-2 text-center align-bottom font-medium">
                 <div className="text-sm leading-tight text-foreground">{task.name}</div>
                 {columnNote?.(task)}
               </th>
             ))}
             {extraColumns.map((column) => (
-              <th key={column.key} title={column.title} className="whitespace-nowrap px-4 py-2 text-right align-bottom font-medium">
+              <th key={column.key} title={column.title} className="px-4 py-2 text-right align-bottom font-medium">
                 {column.header}
               </th>
             ))}

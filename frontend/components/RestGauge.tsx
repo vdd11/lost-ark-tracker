@@ -93,11 +93,14 @@ export default function RestGauge({
           <Plus size={12} />
         </button>
       </div>
-      {state.rested_run_available && (
-        <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent" title={`Today's run uses ${task.rest_cost} rest for bonus rewards`}>
-          <Flame size={12} /> Rested
-        </span>
-      )}
+      {/* The badge's slot is always there, so ticking (which uses the rest) never moves the row. */}
+      <span className="flex h-5 items-center">
+        {state.rested_run_available && (
+          <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent" title={`Today's run uses ${task.rest_cost} rest for bonus rewards`}>
+            <Flame size={12} /> Rested
+          </span>
+        )}
+      </span>
     </div>
   );
 }

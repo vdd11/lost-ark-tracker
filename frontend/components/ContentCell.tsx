@@ -138,7 +138,7 @@ export default function ContentCell({
         aria-expanded={Boolean(open)}
         aria-label={`${label}: ${tier?.name ?? ""} details`}
         title={task.counted ? "Lower unlocks, lucky rooms" : "Sands of Trial, lucky rooms"}
-        className="flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground"
+        className="flex max-w-full items-center gap-0.5 truncate rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted hover:bg-surface-2 hover:text-foreground"
       >
         {tier ? (task.counted ? `${tier.name} unlock` : tier.name) : "—"}
         {extras.length > 0 && <span className="text-accent"> · {extras.join(" ")}</span>}

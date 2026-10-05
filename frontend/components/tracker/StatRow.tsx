@@ -127,7 +127,8 @@ function Stat({
         {label}
       </div>
       <div className={`text-xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{value}</div>
-      {sub && <div className="text-xs text-muted">{sub}</div>}
+      {/* Two lines are always reserved, so a longer line after a tick doesn't grow the row and move the cards. */}
+      <div className="line-clamp-2 min-h-8 text-xs text-muted">{sub}</div>
     </div>
   );
 }
