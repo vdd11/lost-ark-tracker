@@ -4,6 +4,19 @@ A roster tracker for Lost Ark: check off dailies, weeklies, and raids per
 character, across one or more game accounts, and log gold from non-raid
 sources to see your weekly gold over time.
 
+![The tracker in dark mode: gold boxes, this week's raids with difficulties and bonus boxes, and the daily and any-time cards](docs/screenshots/tracker-dark.png)
+
+<details>
+<summary>Light mode, and the Gold page's weekly chart</summary>
+
+![The tracker in light mode](docs/screenshots/tracker-light.png)
+
+![Weekly gold on the Gold page, raids and other gold stacked](docs/screenshots/gold.png)
+
+</details>
+
+The screenshots use made-up characters.
+
 - **Tracker**: three cards, by how often things reset.
   - **This week**: raids and Haal's Hourglass (1730+), reset Wednesday 10:00
     UTC. Each raid shows a checkbox, a difficulty dropdown, and once cleared a
