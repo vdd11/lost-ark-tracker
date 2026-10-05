@@ -13,6 +13,7 @@ import { cellKeyboard } from "@/components/tracker/cellKeys";
 import TaskTable from "@/components/tracker/TaskTable";
 import TrackerCard from "@/components/tracker/TrackerCard";
 import TrackerCell from "@/components/tracker/TrackerCell";
+import BoundGoldNote from "@/components/tracker/BoundGoldNote";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { parseUtc } from "@/lib/api";
@@ -69,6 +70,7 @@ export default function WeekCard({
           <>
             <NextUnlockNote character={character} tasks={data.tasks} />
             <HoningGoalNote character={character} goals={data.honingGoals} />
+            <BoundGoldNote character={character} data={data} />
           </>
         )}
         characterAction={

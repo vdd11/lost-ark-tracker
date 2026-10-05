@@ -22,6 +22,7 @@ import {
   WeeklyGold,
   WeekRecap,
 } from "@/lib/api";
+import { OnHand } from "@/lib/goldGoal";
 import { HoningGoal } from "@/lib/honing";
 import { difficultyOf } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
@@ -44,6 +45,8 @@ export function useTrackerData() {
   const [gemWeeks, setGemWeeks] = useState<WeeklyGems[]>([]);
   // Tradeable + roster-bound gold on hand per the last check-in plus tracked gold since; null without one.
   const [balance, setBalance] = useState<number | null>(null);
+  const [onHand, setOnHand] = useState<OnHand | null>(null);
+  const [boundGold, setBoundGold] = useState<Record<string, number | null>>({});
   // undefined until loaded, null if there has never been a gold check-in.
   const [lastCheckIn, setLastCheckIn] = useState<string | null | undefined>(undefined);
   const [recap, setRecap] = useState<WeekRecap | null>(null);
@@ -83,7 +86,11 @@ export function useTrackerData() {
         setLastCheckIn(data ? data.last_check_in : null);
         // Character-bound gold can't go toward a shared goal.
         setBalance(data ? data.expected.tradeable + data.expected.roster_bound : null);
+        setOnHand(data ? { tradeable: data.expected.tradeable, roster_bound: data.expected.roster_bound } : null);
       })
+      .catch(() => {});
+    api<Record<string, number | null>>("/bound-gold")
+      .then(setBoundGold)
       .catch(() => {});
   }, [accountQuery]);
 
@@ -260,6 +267,16 @@ export function useTrackerData() {
     }
   }
 
+  /** What a character has in character-bound gold now, as the game shows it. */
+  async function setBoundGoldFor(character: Character, amount: number) {
+    try {
+      await send("PUT", `/characters/${character.id}/bound-gold`, { amount });
+      loadWeeklyGold();
+    } catch (e) {
+      setError(describeError(e));
+    }
+  }
+
   /** Make a character a gold earner or not (6 per account; the API refuses a 7th). */
   async function setGoldEarner(character: Character, isGoldEarner: boolean) {
     try {
@@ -351,6 +368,8 @@ export function useTrackerData() {
     lastCheckIn,
     recap,
     honingGoals,
+    onHand,
+    boundGold,
     now,
     error,
     setError,
@@ -364,6 +383,7 @@ export function useTrackerData() {
       updateRun,
       updateItemLevel,
       setGoldEarner,
+      setBoundGold: setBoundGoldFor,
       completeAll,
       setBonus,
       setRest,

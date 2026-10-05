@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from accounts import first_account_id
-from balances import Balances, evaluate_checks, expected_now
+from balances import Balances, character_bound_at, evaluate_checks, expected_now
 from database import get_db
-from models import Account, BalanceCheck, Character
+from models import Account, BalanceCheck, Character, CharacterBoundCheck
 from resets import utc_now
-from schemas import BalanceCheckCreate, BalanceCheckRead, BalancesOut, ExpectedBalances
+from schemas import BalanceCheckCreate, BalanceCheckRead, BalancesOut, BoundGoldSet, ExpectedBalances
 from routes.common import get_or_404, to_naive_utc
 
 router = APIRouter(prefix="/api")
@@ -80,5 +80,21 @@ def create_balance_check(data: BalanceCheckCreate, db: Session = Depends(get_db)
 @router.delete("/balances/{check_id}", status_code=204)
 def delete_balance_check(check_id: int, db: Session = Depends(get_db)):
     db.delete(get_or_404(db, BalanceCheck, check_id))
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.get("/bound-gold", response_model=dict[int, int | None])
+def get_bound_gold(db: Session = Depends(get_db)):
+    """Each character's character-bound gold now (None until it's entered once)."""
+    now = utc_now()
+    return {character_id: character_bound_at(db, character_id, now) for (character_id,) in db.query(Character.id)}
+
+
+@router.put("/characters/{character_id}/bound-gold", status_code=204)
+def set_bound_gold(character_id: int, data: BoundGoldSet, db: Session = Depends(get_db)):
+    """What the character has now, as the game shows it."""
+    get_or_404(db, Character, character_id)
+    db.add(CharacterBoundCheck(character_id=character_id, amount=data.amount, checked_at=utc_now()))
     db.commit()
     return Response(status_code=204)

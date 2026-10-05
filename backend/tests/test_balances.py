@@ -90,7 +90,10 @@ def test_bonus_chests_count_when_bought_not_when_cleared(client, set_now):
 def test_filling_in_unknown_values_updates_this_weeks_clears(client, set_now):
     set_now(datetime(2026, 10, 2, 12))
     serca = task_named(client, "Serca")
-    hard = difficulty(serca, "Normal")  # its chest cost isn't known yet
+    hard = difficulty(serca, "Normal")
+    # Every catalog raid has a chest cost now, so clear one to stand in for an unknown.
+    client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": None})
+    hard = difficulty(task_named(client, "Serca"), "Normal")
     assert hard["bonus_cost"] is None
     main = add_character(client, 1735, [{"task_id": serca["id"], "difficulty_id": hard["id"]}], name="Main")
     complete(client, main["id"], serca["id"], difficulty_id=hard["id"], bought_bonus=True)

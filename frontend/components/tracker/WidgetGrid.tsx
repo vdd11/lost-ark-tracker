@@ -6,6 +6,7 @@ import { TrackerView } from "@/components/tracker/useTrackerView";
 import { GemWidget, GoldGoalWidget, GoldMonthWidget, ResetClockWidget } from "@/components/tracker/Widgets";
 import { daysIntoWeek } from "@/lib/insights";
 import { COUNTERS_PREFERENCE } from "@/lib/counters";
+import { GOAL_MODES, GoalMode } from "@/lib/goldGoal";
 import { NEWS_PREFERENCE } from "@/lib/online";
 import { RAID_GROUPS_PREFERENCE } from "@/lib/raidGroups";
 import { isActiveRaid } from "@/lib/raids";
@@ -14,9 +15,15 @@ import { usePreference } from "@/lib/usePreference";
 import { cellKey } from "@/lib/trackerSections";
 import { WIDGET_KEYS } from "@/lib/trackerView";
 
+const GOAL_MODE_KEYS = GOAL_MODES.map((m) => m.key as string);
+
 /** The optional widgets under the tracker cards. */
 export default function WidgetGrid({ data, view }: { data: TrackerData; view: TrackerView }) {
-  const [goldGoal, setGoldGoal] = usePreference<number>("gold-goal", 1_000_000);
+  // Each mode keeps its own target; the default mode keeps the original preference.
+  const [goalMode, setGoalMode] = usePreference<string>("gold-goal-mode", "roster", GOAL_MODE_KEYS);
+  const mode = goalMode as GoalMode;
+  const [goldGoal, setGoldGoal] = usePreference<number>(mode === "roster" ? "gold-goal" : `gold-goal-${mode}`, 1_000_000);
+  const [goalCharacter, setGoalCharacter] = usePreference<number>("gold-goal-character", 0);
   // Goes online, so it's off until turned on (Customize or Settings).
   const [newsOn] = usePreference<boolean>(NEWS_PREFERENCE, false);
   const [resetClockOn] = usePreference<boolean>(RESET_CLOCK_PREFERENCE, false);
@@ -29,7 +36,21 @@ export default function WidgetGrid({ data, view }: { data: TrackerData; view: Tr
     { key: WIDGET_KEYS.goldMonth, node: <GoldMonthWidget weeks={goldWeeks} /> },
     {
       key: WIDGET_KEYS.goldGoal,
-      node: <GoldGoalWidget weeks={goldWeeks} daysIntoWeek={weekDays} balance={data.balance} goal={goldGoal} onGoal={setGoldGoal} />,
+      node: (
+        <GoldGoalWidget
+          weeks={goldWeeks}
+          daysIntoWeek={weekDays}
+          onHand={data.onHand}
+          boundGold={data.boundGold}
+          characters={data.characters}
+          mode={mode}
+          onMode={setGoalMode}
+          characterId={goalCharacter || null}
+          onCharacter={setGoalCharacter}
+          goal={goldGoal}
+          onGoal={setGoldGoal}
+        />
+      ),
     },
     { key: WIDGET_KEYS.gems, node: <GemWidget weeks={gemWeeks} daysIntoWeek={weekDays} /> },
     { key: NEWS_PREFERENCE, node: <NewsWidget /> },

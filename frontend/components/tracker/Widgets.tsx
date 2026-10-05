@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ReactNode } from "react";
 
 import NumberInput from "@/components/NumberInput";
-import { formatCombinedGems, formatGold, usableGold, WeeklyGems, WeeklyGold } from "@/lib/api";
+import { Character, formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
+import { GOAL_MODES, GoalMode, OnHand, onHandToward, weeklyToward } from "@/lib/goldGoal";
 import { describeReset } from "@/lib/resetClock";
 import {
   compactGold,
@@ -117,32 +118,63 @@ export function GoldMonthWidget({ weeks }: { weeks: WeeklyGold[] }) {
 export function GoldGoalWidget({
   weeks,
   daysIntoWeek,
-  balance,
+  onHand,
+  boundGold,
+  characters,
+  mode,
+  onMode,
+  characterId,
+  onCharacter,
   goal,
   onGoal,
 }: {
   weeks: WeeklyGold[];
   daysIntoWeek: number;
-  /** Tradeable + roster-bound gold on hand (last check-in plus tracked since), or null without a check-in. */
-  balance: number | null;
+  /** Gold on hand by kind (last check-in plus tracked since), or null without a check-in. */
+  onHand: OnHand | null;
+  /** Each character's character-bound gold now (null until entered). */
+  boundGold: Record<string, number | null>;
+  characters: Character[];
+  mode: GoalMode;
+  onMode: (mode: GoalMode) => void;
+  characterId: number | null;
+  onCharacter: (id: number) => void;
   goal: number;
   onGoal: (goal: number) => void;
 }) {
-  const perDay = dailyRate(weeks.map(usableGold), daysIntoWeek);
+  const who = mode === "character" ? characters.find((c) => c.id === characterId) ?? characters[0] ?? null : null;
+  const perDay = dailyRate(weeks.map((w) => weeklyToward(w, mode, who?.id ?? null)), daysIntoWeek);
+  const balance = onHandToward(onHand, mode, who ? (boundGold[String(who.id)] ?? null) : null);
   const start = balance ?? 0;
   const days = daysToGoal(start, goal, perDay);
+  const counted =
+    mode === "tradeable" ? "tradeable" : mode === "roster" ? "tradeable + roster-bound" : `tradeable + roster-bound + ${who?.name ?? "their"}'s bound`;
 
   return (
     <Widget icon={Target} title="Gold goal">
-      <label className="mb-3 flex items-center gap-2 text-xs text-muted">
-        Target
-        <NumberInput
-          value={String(goal)}
-          onChange={(digits) => onGoal(Number(digits) || 0)}
-          aria-label="Gold goal"
-          className="w-32 px-2 py-1 text-sm text-foreground"
-        />
-      </label>
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
+        <select value={mode} onChange={(e) => onMode(e.target.value as GoalMode)} aria-label="What counts toward the goal" className="px-1.5 py-1 text-xs">
+          {GOAL_MODES.map((m) => (
+            <option key={m.key} value={m.key}>{m.label}</option>
+          ))}
+        </select>
+        {mode === "character" && characters.length > 0 && (
+          <select value={who?.id ?? ""} onChange={(e) => onCharacter(Number(e.target.value))} aria-label="Character" className="px-1.5 py-1 text-xs">
+            {characters.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        )}
+        <label className="flex items-center gap-2">
+          Target
+          <NumberInput
+            value={String(goal)}
+            onChange={(digits) => onGoal(Number(digits) || 0)}
+            aria-label="Gold goal"
+            className="w-32 px-2 py-1 text-sm text-foreground"
+          />
+        </label>
+      </div>
       {goal <= 0 ? (
         <p className="text-sm text-muted">Set a target to see how long it takes.</p>
       ) : days === null ? (
@@ -159,7 +191,7 @@ export function GoldGoalWidget({
             <div className="mt-auto">
               <Bar value={start / goal} tone={days === 0 ? "bg-done" : "bg-accent"} />
               <p className="mt-1 text-[11px] text-muted">
-                {formatGold(start)} of {formatGold(goal)} tradeable + roster-bound on hand, from your last check-in
+                {formatGold(start)} of {formatGold(goal)} {counted} on hand, from your last check-in
               </p>
             </div>
           ) : (

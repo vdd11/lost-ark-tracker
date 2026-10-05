@@ -60,11 +60,10 @@ export default function GoldCheckIn({
         setDraft({
           tradeable: e ? String(e.tradeable) : "",
           roster_bound: e ? String(e.roster_bound) : "",
-          ...Object.fromEntries(Object.entries(e?.character_bound ?? {}).map(([id, gold]) => [id, String(gold)])),
         });
       })
       .catch((e) => onError(describeError(e)));
-  }, [onError, accountId, target]);
+  }, [onError, accountId, target, setDraft]);
 
   // refreshKey: reload when logged spending changes what's expected.
   useEffect(() => {
@@ -79,14 +78,10 @@ export default function GoldCheckIn({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const number = (key: string) => Math.round(Number(draft[key]) || 0);
-    const characterBound = Object.fromEntries(
-      boundCharacters.filter((c) => (draft[c.id] ?? "").trim() !== "").map((c) => [c.id, number(String(c.id))]),
-    );
     try {
       await send("POST", "/balances", {
         tradeable: number("tradeable"),
         roster_bound: number("roster_bound"),
-        character_bound: characterBound,
         note: note.trim() || null,
         account_id: target,
       });
@@ -160,12 +155,10 @@ export default function GoldCheckIn({
           {field("roster_bound", "Roster-bound")}
         </div>
         {boundCharacters.length > 0 && (
-          <div>
-            <div className="mb-1 text-xs text-muted">Character-bound (leave blank to skip a character)</div>
-            <div className="flex flex-wrap items-end gap-3">
-              {boundCharacters.map((c) => field(String(c.id), c.name))}
-            </div>
-          </div>
+          <p className="text-xs text-muted">
+            Character-bound gold is set per character on the tracker (&ldquo;Bound&rdquo; under the name) and kept up to date
+            from there.
+          </p>
         )}
         <div className="flex flex-wrap items-end gap-2">
           <input placeholder="Note (optional), e.g. honed weapon" value={note} onChange={(e) => setNote(e.target.value)} className="w-72" />

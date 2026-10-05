@@ -21,8 +21,8 @@ def test_bonus_chest_costs_come_from_the_patch_notes(client):
     assert (difficulty(act4, "Normal")["bonus_cost"], difficulty(act4, "Hard")["bonus_cost"]) == (8640, 12160)
     assert (difficulty(final, "Normal")["bonus_cost"], difficulty(final, "Hard")["bonus_cost"]) == (10240, 15360)
     serca, cathedral = task_named(client, "Serca"), task_named(client, "Horizon Cathedral")
-    # Serca and Cathedral chest costs are from the user (per gate, added up); Serca Normal isn't known yet.
-    assert [difficulty(serca, d)["bonus_cost"] for d in ("Normal", "Hard", "Nightmare")] == [None, 14080, 17280]
+    # Serca and Cathedral chest costs are from the user (per gate, added up).
+    assert [difficulty(serca, d)["bonus_cost"] for d in ("Normal", "Hard", "Nightmare")] == [11200, 14080, 17280]
     assert [difficulty(cathedral, d)["bonus_cost"] for d in ("Lv1", "Lv2", "Lv3")] == [9600, 12800, 16000]
     assert difficulty(task_named(client, "Horizon Cathedral"), "Lv3")["bound_kind"] == "character"
     assert (difficulty(final, "Normal")["bound_percent"], difficulty(final, "Normal")["bound_kind"]) == (50, "roster")

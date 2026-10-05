@@ -471,6 +471,10 @@ class GuidesRead(BaseModel):
     hidden: list[str]
 
 
+class BoundGoldSet(BaseModel):
+    amount: int = Field(ge=0, le=1_000_000_000)
+
+
 class BalancesOut(BaseModel):
     tradeable: int
     roster_bound: int

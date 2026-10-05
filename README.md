@@ -13,7 +13,10 @@ sources to see your weekly gold over time.
     shows next to the account tabs). Non-earners get no raid gold, so their
     cells show none, and their bonus boxes are free for 3 raids a week.
     "Raid gold this week" shows tradeable + roster-bound gold, with
-    character-bound gold and how many characters it's on beneath.
+    character-bound gold and how many characters it's on beneath. The
+    **gold goal** widget counts tradeable gold only, tradeable + roster-bound
+    (the default), or one character's total including their bound gold, each
+    with its own target.
   - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset
     daily at 10:00 UTC.
   - **Any time**: Ebony Cube run counters for the character's own unlock
@@ -124,7 +127,10 @@ sources to see your weekly gold over time.
   recommended bid for a raid drop (4 or 8 players, with or without the 5%
   market fee).
   - **Gold on hand**: once a week (or whenever you like), enter how much
-    tradeable, roster-bound and character-bound gold you have. The app
+    tradeable and roster-bound gold you have. Character-bound gold is set
+    per character on the tracker ("Bound" under the name, shown for
+    characters whose raids pay it) and kept up to date from their clears and
+    spending, so you only enter it again if it drifts. The app
     compares it with your last check-in plus everything it tracked since, so
     you see how much went to things it doesn't track (honing, the market, ...)
     without logging each one. The tracker reminds you after the weekly reset.

@@ -75,10 +75,10 @@ CATALOG = [
     CatalogTask(
         key="shadow-serca",
         name="Serca",
-        # Bonus chest costs per gate (from the user, 2026-10-04): Hard 5,600 + 8,480,
-        # Nightmare 6,720 + 10,560. Normal's isn't known yet.
+        # Bonus chest costs per gate (from the user, 2026-10-04): Normal 4,480 + 6,720,
+        # Hard 5,600 + 8,480, Nightmare 6,720 + 10,560.
         difficulties=[
-            Difficulty("Normal", 1710, 32000, bound_percent=50),
+            Difficulty("Normal", 1710, 32000, bonus_cost=11200, bound_percent=50),
             Difficulty("Hard", 1730, 44000, bonus_cost=14080),
             Difficulty("Nightmare", 1740, 54000, bonus_cost=17280),
         ],

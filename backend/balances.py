@@ -8,6 +8,13 @@ spent on things the app doesn't track.
 
 Gold is per account, so each account's check-ins form their own chain and
 only that account's gold flows count toward them.
+
+Character-bound gold is checked in per character on the tracker
+(CharacterBoundCheck) and kept up to date from there; weekly check-ins hold
+only tradeable and roster-bound gold. When a check-in has no figure for a
+character, the tracked one stands in, so chests paid from character-bound
+gold aren't mistaken for roster or tradeable spending. Older check-ins that
+include character-bound gold work as before.
 """
 
 from dataclasses import dataclass, field
@@ -16,7 +23,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from accounts import account_owner
-from models import Account, BalanceCheck, Completion, GoldEntry, SpendingEntry
+from models import Account, BalanceCheck, Character, CharacterBoundCheck, Completion, GoldEntry, SpendingEntry
 
 
 @dataclass
@@ -134,7 +141,7 @@ def evaluate_checks(db: Session, account_id: int | None = None) -> list[CheckRes
         if previous is None:
             results.append(CheckResult(check, None, None))
         else:
-            expected = project(db, Balances.of(previous), previous.checked_at, check.checked_at, account_id)
+            expected = project(db, seeded(db, previous), previous.checked_at, check.checked_at, account_id)
             actual = Balances.of(check)
             # Only compare characters counted in both check-ins.
             counted = set(actual.character_bound) & set(Balances.of(previous).character_bound)
@@ -173,4 +180,47 @@ def expected_now(db: Session, now: datetime, account_id: int | None = None) -> t
     )
     if latest is None:
         return None
-    return latest.checked_at, project(db, Balances.of(latest), latest.checked_at, now, account_id)
+    return latest.checked_at, project(db, seeded(db, latest), latest.checked_at, now, account_id)
+
+
+def seeded(db: Session, check: BalanceCheck) -> Balances:
+    """A check-in's balances, with each of its account's characters' tracked
+    character-bound gold filled in where the check-in has none."""
+    start = Balances.of(check)
+    for (character_id,) in db.query(Character.id).filter_by(account_id=check.account_id):
+        if character_id not in start.character_bound:
+            amount = character_bound_at(db, character_id, check.checked_at)
+            if amount is not None:
+                start.character_bound[character_id] = amount
+    return start
+
+
+def character_bound_at(db: Session, character_id: int, at: datetime) -> int | None:
+    """A character's character-bound gold at a moment: their latest figure
+    (a tracker check-in, or an older weekly check-in that listed them) rolled
+    forward with what they earned and spent since. None if never entered."""
+    character = db.get(Character, character_id)
+    if character is None:
+        return None
+    own = (
+        db.query(CharacterBoundCheck)
+        .filter(CharacterBoundCheck.character_id == character_id, CharacterBoundCheck.checked_at <= at)
+        .order_by(CharacterBoundCheck.checked_at.desc(), CharacterBoundCheck.id.desc())
+        .first()
+    )
+    start: tuple[datetime, int] | None = (own.checked_at, own.amount) if own else None
+    key = str(character_id)
+    for check in (
+        db.query(BalanceCheck)
+        .filter(BalanceCheck.account_id == character.account_id, BalanceCheck.checked_at <= at)
+        .order_by(BalanceCheck.checked_at.desc(), BalanceCheck.id.desc())
+    ):
+        if check.character_bound and key in check.character_bound:
+            if start is None or check.checked_at > start[0]:
+                start = (check.checked_at, check.character_bound[key])
+            break
+    if start is None:
+        return None
+    since, amount = start
+    rolled = project(db, Balances(character_bound={character_id: amount}), since, at, character.account_id)
+    return rolled.character_bound.get(character_id, 0)

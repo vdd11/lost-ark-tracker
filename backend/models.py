@@ -311,6 +311,20 @@ class HiddenGuide(Base):
     guide_id: Mapped[str] = mapped_column(String(80), primary_key=True)
 
 
+class CharacterBoundCheck(Base):
+    """A character's character-bound gold at a moment, entered on the tracker.
+    From there it's kept up to date from tracked earnings and spending
+    (balances.character_bound_at), so the weekly check-in only needs
+    tradeable and roster-bound gold."""
+
+    __tablename__ = "character_bound_checks"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    character_id: Mapped[int] = mapped_column(ForeignKey("characters.id"))
+    amount: Mapped[int] = mapped_column(Integer)
+    checked_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class AppliedMigration(Base):
     """One-off data upgrades that already ran, so each runs only once."""
 
