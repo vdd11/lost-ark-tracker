@@ -35,6 +35,7 @@ export default function TaskTable({
   renderCell,
   columnNote,
   onItemLevel,
+  onGoldEarner,
   characterNote,
   characterAction,
   characterGoal,
@@ -49,6 +50,8 @@ export default function TaskTable({
   renderCell: (character: Character, task: Task) => ReactNode;
   columnNote?: (task: Task) => ReactNode;
   onItemLevel: (character: Character, itemLevel: number) => void;
+  /** Shown as a GOLD toggle beside the name when given. */
+  onGoldEarner?: (character: Character, isGoldEarner: boolean) => void;
   characterNote?: (character: Character) => ReactNode;
   /** A small button beside the name, e.g. "mark all done". */
   characterAction?: (character: Character) => ReactNode;
@@ -123,10 +126,28 @@ export default function TaskTable({
     <>
       <div className="flex items-center gap-1.5">
         <span className="font-medium">{character.name}</span>
-        {character.is_gold_earner && (
-          <span title="Gold earner" className="rounded bg-accent/15 px-1.5 text-[10px] font-semibold text-accent">
+        {onGoldEarner ? (
+          <button
+            onClick={() => onGoldEarner(character, !character.is_gold_earner)}
+            aria-pressed={character.is_gold_earner}
+            aria-label={`${character.name} earns raid gold`}
+            title={
+              character.is_gold_earner
+                ? "Gold earner: paid for 3 raids a week. Click to make a non-earner."
+                : "Not a gold earner: no raid gold, but bonus boxes are free for 3 raids a week. Click to make a gold earner (6 per account)."
+            }
+            className={`rounded px-1.5 text-[10px] font-semibold ${
+              character.is_gold_earner ? "bg-accent/15 text-accent hover:bg-accent/25" : "border border-dashed border-border text-muted hover:border-accent/60 hover:text-foreground"
+            }`}
+          >
             GOLD
-          </span>
+          </button>
+        ) : (
+          character.is_gold_earner && (
+            <span title="Gold earner" className="rounded bg-accent/15 px-1.5 text-[10px] font-semibold text-accent">
+              GOLD
+            </span>
+          )
         )}
         {characterAction?.(character)}
       </div>

@@ -260,6 +260,16 @@ export function useTrackerData() {
     }
   }
 
+  /** Make a character a gold earner or not (6 per account; the API refuses a 7th). */
+  async function setGoldEarner(character: Character, isGoldEarner: boolean) {
+    try {
+      await send("PATCH", `/characters/${character.id}`, { is_gold_earner: isGoldEarner });
+      loadAll();
+    } catch (e) {
+      setError(describeError(e));
+    }
+  }
+
   /** Tick off everything a character still has to do in a card, in one click. */
   async function completeAll(character: Character, todo: Task[]) {
     const ticked: Task[] = [];
@@ -353,6 +363,7 @@ export function useTrackerData() {
       chooseRaidDifficulty,
       updateRun,
       updateItemLevel,
+      setGoldEarner,
       completeAll,
       setBonus,
       setRest,

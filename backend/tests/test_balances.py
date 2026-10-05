@@ -90,15 +90,15 @@ def test_bonus_chests_count_when_bought_not_when_cleared(client, set_now):
 def test_filling_in_unknown_values_updates_this_weeks_clears(client, set_now):
     set_now(datetime(2026, 10, 2, 12))
     serca = task_named(client, "Serca")
-    hard = difficulty(serca, "Hard")
+    hard = difficulty(serca, "Normal")  # its chest cost isn't known yet
     assert hard["bonus_cost"] is None
-    main = add_character(client, 1735, [{"task_id": serca["id"]}], name="Main")
-    complete(client, main["id"], serca["id"], bought_bonus=True)
+    main = add_character(client, 1735, [{"task_id": serca["id"], "difficulty_id": hard["id"]}], name="Main")
+    complete(client, main["id"], serca["id"], difficulty_id=hard["id"], bought_bonus=True)
     assert client.get("/api/gold/weekly?weeks=1").json()[0]["bonus_spent"] == 0
 
     client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": 9000})
     week = client.get("/api/gold/weekly?weeks=1").json()[0]
-    assert (week["raid_gold"], week["bonus_spent"]) == (44000, 9000)
+    assert (week["raid_gold"], week["bonus_spent"]) == (32000, 9000)
 
     # A value that was already known isn't rewritten for clears already made.
     client.patch(f"/api/difficulties/{hard['id']}", json={"bonus_cost": 1})

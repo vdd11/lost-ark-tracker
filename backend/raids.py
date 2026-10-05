@@ -22,6 +22,10 @@ from models import Character, CharacterTask, Completion, RaidDifficulty, Task
 
 # Gold is only paid for this many raids per character per week.
 GOLD_RAIDS_PER_WEEK = 3
+# Gold earners per account (roster); more characters can be on it.
+MAX_GOLD_EARNERS = 6
+# A non-earner's bonus chests are free for this many raids a week (per the user, 2026-10-04).
+FREE_BONUS_RAIDS_PER_WEEK = 3
 
 # Defaults offered when adding an Extreme event (from the Act 1 and Act 2
 # Extreme release notes). Users can adjust them before creating the event.
@@ -71,10 +75,12 @@ CATALOG = [
     CatalogTask(
         key="shadow-serca",
         name="Serca",
+        # Bonus chest costs per gate (from the user, 2026-10-04): Hard 5,600 + 8,480,
+        # Nightmare 6,720 + 10,560. Normal's isn't known yet.
         difficulties=[
             Difficulty("Normal", 1710, 32000, bound_percent=50),
-            Difficulty("Hard", 1730, 44000),
-            Difficulty("Nightmare", 1740, 54000),
+            Difficulty("Hard", 1730, 44000, bonus_cost=14080),
+            Difficulty("Nightmare", 1740, 54000, bonus_cost=17280),
         ],
         note="Shadow Raid, 4 players. Normal pays half its gold as roster-bound gold.",
         legacy_names=["Shadow Raid: Serca"],
@@ -82,10 +88,12 @@ CATALOG = [
     CatalogTask(
         key="abyss-cathedral",
         name="Horizon Cathedral",
+        # Bonus chest costs per gate (from the user, 2026-10-04): Lv1 4,320 + 5,280,
+        # Lv2 5,120 + 7,680, Lv3 6,400 + 9,600.
         difficulties=[
-            Difficulty("Lv1", 1700, 30000, bound_percent=100, bound_kind="character"),
-            Difficulty("Lv2", 1720, 40000, bound_percent=100, bound_kind="character"),
-            Difficulty("Lv3", 1750, 50000, bound_percent=100, bound_kind="character"),
+            Difficulty("Lv1", 1700, 30000, bonus_cost=9600, bound_percent=100, bound_kind="character"),
+            Difficulty("Lv2", 1720, 40000, bonus_cost=12800, bound_percent=100, bound_kind="character"),
+            Difficulty("Lv3", 1750, 50000, bonus_cost=16000, bound_percent=100, bound_kind="character"),
         ],
         note="Abyssal Dungeon, 4 players. Gold is character-bound.",
     ),

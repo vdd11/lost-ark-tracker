@@ -16,6 +16,7 @@ export default function DifficultySelect({
   noneLabel,
   label,
   highlight = false,
+  showGold = true,
 }: {
   task: Task;
   character: Character;
@@ -24,6 +25,8 @@ export default function DifficultySelect({
   noneLabel?: string;
   label: string;
   highlight?: boolean;
+  /** Off for characters who don't earn raid gold. */
+  showGold?: boolean;
 }) {
   const shown = task.difficulties.find((d) => d.id === value);
   const underLevel = shown ? shown.min_item_level > character.item_level : false;
@@ -37,7 +40,7 @@ export default function DifficultySelect({
 
   return (
     <label
-      className="relative block w-36"
+      className="relative block w-full max-w-36"
       title={underLevel && shown ? `${shown.name} needs item level ${formatItemLevel(shown.min_item_level)}` : "Change difficulty"}
     >
       <select
@@ -52,7 +55,7 @@ export default function DifficultySelect({
         {task.difficulties.map((d) => (
           <option key={d.id} value={d.id}>
             {d.name}
-            {task.category === "raid" ? ` · ${formatShortGold(d.gold)}` : ""}
+            {task.category === "raid" && showGold ? ` · ${formatShortGold(d.gold)}` : ""}
             {d.min_item_level > character.item_level ? ` (needs ${formatItemLevel(d.min_item_level)})` : ""}
           </option>
         ))}

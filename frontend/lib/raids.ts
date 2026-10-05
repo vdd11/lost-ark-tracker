@@ -2,6 +2,8 @@ import { Character, Difficulty, Run, Task } from "./api";
 
 /** Gold is only paid for this many raids per character per week. */
 export const GOLD_RAIDS_PER_WEEK = 3;
+/** A non-earner's bonus chests are free for this many raids a week (backend raids.py). */
+export const FREE_BONUS_RAIDS_PER_WEEK = 3;
 
 const SHORT_NAMES: Record<string, string> = {
   Solo: "Solo",

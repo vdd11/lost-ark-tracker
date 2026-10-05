@@ -54,6 +54,7 @@ export default function WeekCard({
         )}
         columnNote={eventNote}
         onItemLevel={data.actions.updateItemLevel}
+        onGoldEarner={data.actions.setGoldEarner}
         cellKeyboard={(character, task) => cellKeyboard(character, task, data, editMode)}
         onRowAll={
           editMode

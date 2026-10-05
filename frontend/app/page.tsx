@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import AccountTabs from "@/components/AccountTabs";
+import GoldEarnerCount from "@/components/tracker/GoldEarnerCount";
 import ErrorBanner from "@/components/ErrorBanner";
 import AnytimeCard from "@/components/tracker/AnytimeCard";
 import { TrackerBanners, WelcomeStyle } from "@/components/tracker/Banners";
@@ -51,6 +52,7 @@ export default function TrackerPage() {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">Roster</h1>
           <AccountTabs accounts={data.accounts} value={data.accountId} onChange={data.setAccountId} />
+          <GoldEarnerCount data={data} />
         </div>
         <div className="flex flex-wrap gap-2">
           {loaEnabled && (

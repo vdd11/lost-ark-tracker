@@ -7,6 +7,7 @@ import QuickGold from "@/components/QuickGold";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { formatGold } from "@/lib/api";
+import { raidGoldSplit } from "@/lib/goldEarners";
 import { goldRaidsLeft, possibleRaidGold } from "@/lib/raids";
 import { STAT_KEYS } from "@/lib/trackerView";
 
@@ -19,6 +20,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
   if (!thisWeek) return null;
   const possibleGold = possibleRaidGold(characters, tasks, runs);
   const raidsLeft = goldRaidsLeft(characters, tasks, runs);
+  const split = raidGoldSplit(thisWeek);
 
   const stats = [
     {
@@ -44,8 +46,18 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
         <Stat
           icon={<Coins size={16} />}
           label="Raid gold this week"
-          value={formatGold(thisWeek.raid_gold)}
-          sub={`of ${formatGold(possibleGold)} possible`}
+          value={formatGold(split.shared)}
+          sub={
+            <>
+              <span className="block">
+                {split.characterBound > 0
+                  ? `+ ${formatGold(split.characterBound)} bound to ${split.spreadOver} character${split.spreadOver === 1 ? "" : "s"}`
+                  : "tradeable + roster-bound"}
+              </span>
+              <span className="block">of {formatGold(possibleGold)} possible</span>
+            </>
+          }
+          title="Tradeable and roster-bound raid gold, which any character can spend; character-bound gold only its own character can use"
         />
       ),
     },

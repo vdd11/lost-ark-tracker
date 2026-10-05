@@ -13,7 +13,7 @@ from schemas import (
     CharacterRead,
     CharacterUpdate,
 )
-from raids import best_difficulty
+from raids import MAX_GOLD_EARNERS, best_difficulty
 from routes.common import get_or_404, next_position
 
 router = APIRouter(prefix="/api")
@@ -58,11 +58,29 @@ def check_account(db: Session, account_id: int | None) -> int:
     return get_or_404(db, Account, account_id).id
 
 
+def check_gold_earner_slot(db: Session, account_id: int, character_id: int | None = None):
+    """Each account (roster) has MAX_GOLD_EARNERS gold earners at most."""
+    earners = (
+        db.query(Character)
+        .filter(Character.account_id == account_id, Character.is_gold_earner.is_(True), Character.id != (character_id or 0))
+        .count()
+    )
+    if earners >= MAX_GOLD_EARNERS:
+        name = db.get(Account, account_id).name
+        raise HTTPException(
+            status_code=400,
+            detail=f"{name} already has {MAX_GOLD_EARNERS} gold earners. Make one of them a non-earner first.",
+        )
+
+
 @router.post("/characters", response_model=CharacterRead, status_code=201)
 def create_character(character_data: CharacterCreate, db: Session = Depends(get_db)):
+    account_id = check_account(db, character_data.account_id)
+    if character_data.is_gold_earner:
+        check_gold_earner_slot(db, account_id)
     character = Character(
         **character_data.model_dump(exclude={"raids", "account_id"}),
-        account_id=check_account(db, character_data.account_id),
+        account_id=account_id,
         position=next_position(db, Character),
     )
 
@@ -100,6 +118,11 @@ def update_character(character_id: int, changes: CharacterUpdate, db: Session = 
     old_item_level = character.item_level
     if changes.account_id is not None:
         check_account(db, changes.account_id)
+    # Becoming an earner, or an earner moving to another account, needs a free slot there.
+    will_earn = changes.is_gold_earner if changes.is_gold_earner is not None else character.is_gold_earner
+    target = changes.account_id if changes.account_id is not None else character.account_id
+    if will_earn and (not character.is_gold_earner or target != character.account_id):
+        check_gold_earner_slot(db, target, character.id)
 
     for field, value in changes.model_dump(exclude_unset=True).items():
         setattr(character, field, value)

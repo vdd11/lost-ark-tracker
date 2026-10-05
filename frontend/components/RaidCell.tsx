@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import DifficultySelect from "@/components/DifficultySelect";
 import { Character, formatGold, Run, Task } from "@/lib/api";
-import { bestDifficulty, difficultyOf, formatShortGold } from "@/lib/raids";
+import { bestDifficulty, difficultyOf, formatShortGold, FREE_BONUS_RAIDS_PER_WEEK } from "@/lib/raids";
 
 /**
  * A raid cell: a checkbox, the difficulty (a dropdown you can change right
@@ -51,6 +51,9 @@ export default function RaidCell({
   const shownId = run?.difficulty_id ?? choice ?? usual?.id ?? bestDifficulty(task, character.item_level)?.id;
   const shown = task.difficulties.find((d) => d.id === shownId);
   const extra = !isAssigned;
+  // Non-earners get no raid gold (event raids that pay everyone aside), so their cells show none.
+  const showGold = character.is_gold_earner || task.gold_for_everyone;
+  const freeBonus = !character.is_gold_earner && !!run?.bought_bonus && run.bonus_spent === 0;
 
   return (
     <div
@@ -72,7 +75,8 @@ export default function RaidCell({
           className={`flex h-[26px] items-center text-xs ${shown.min_item_level > character.item_level ? "text-danger" : "text-muted"}`}
           title="Change the difficulty in Edit who does what, or turn the pickers back on in Customize"
         >
-          {shown.name} · {formatShortGold(shown.gold)}
+          {shown.name}
+          {showGold ? ` · ${formatShortGold(shown.gold)}` : ""}
         </span>
       ) : (
       <DifficultySelect
@@ -80,6 +84,7 @@ export default function RaidCell({
         character={character}
         value={shownId ?? null}
         label={`${task.name} difficulty for ${character.name}`}
+        showGold={showGold}
         onChange={(id) => {
           if (id === null) return;
           if (extra) setChoice(id);
@@ -96,7 +101,9 @@ export default function RaidCell({
             aria-pressed={run!.bought_bonus}
             aria-label={`Bought the ${task.name} bonus box on ${character.name}`}
             title={
-              shown?.bonus_cost == null
+              !character.is_gold_earner
+                ? `Non-earners' bonus boxes are free for ${FREE_BONUS_RAIDS_PER_WEEK} raids a week`
+                : shown?.bonus_cost == null
                 ? "Bonus box cost unknown for this difficulty: set it on the Raids page"
                 : `Bought the bonus ("View More") boxes for every gate: ${formatGold(shown.bonus_cost)} gold`
             }
@@ -107,7 +114,7 @@ export default function RaidCell({
             }`}
           >
             <Gift size={12} />
-            {run!.bought_bonus ? `Bought −${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)}` : "Bonus box"}
+            {freeBonus ? "Free" : run!.bought_bonus ? `Bought −${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)}` : "Bonus box"}
           </button>
         )}
       </div>

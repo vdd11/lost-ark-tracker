@@ -74,4 +74,18 @@ describe("RaidCell", () => {
     setup({ compact: true, isAssigned: false, character: character() });
     expect(screen.getByRole("combobox")).not.toBeNull();
   });
+
+  it("shows no gold for a character who doesn't earn it, and their chests as free", () => {
+    const spare = character({ name: "Spare", is_gold_earner: false, task_ids: [1], difficulty_ids: { "1": 11 } });
+    setup({ character: spare, run: run({ difficulty_id: 11, bought_bonus: true, bonus_spent: 0 }) });
+    const options = screen.getAllByRole("option").map((o) => o.textContent);
+    expect(options.every((text) => !/\d+k/.test(text ?? ""))).toBe(true);
+    expect(screen.getByRole("button", { name: /bonus box/i }).textContent).toBe("Free");
+  });
+
+  it("still shows a gold earner's gold and what the chest cost", () => {
+    setup({ run: run({ difficulty_id: 11, bought_bonus: true, bonus_spent: 15360 }) });
+    expect(screen.getAllByRole("option").some((o) => o.textContent?.includes("48k"))).toBe(true);
+    expect(screen.getByRole("button", { name: /bonus box/i }).textContent).toContain("15.4k");
+  });
 });

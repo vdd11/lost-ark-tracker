@@ -8,7 +8,12 @@ sources to see your weekly gold over time.
   - **This week**: raids and Haal's Hourglass (1730+), reset Wednesday 10:00
     UTC. Each raid shows a checkbox, a difficulty dropdown, and once cleared a
     "Bonus box" button. Raids a character can enter but doesn't usually run
-    show faded, so an extra clear can be ticked.
+    show faded, so an extra clear can be ticked. **GOLD** beside a name
+    toggles whether the character earns raid gold (6 per account; the count
+    shows next to the account tabs). Non-earners get no raid gold, so their
+    cells show none, and their bonus boxes are free for 3 raids a week.
+    "Raid gold this week" shows tradeable + roster-bound gold, with
+    character-bound gold and how many characters it's on beneath.
   - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset
     daily at 10:00 UTC.
   - **Any time**: Ebony Cube run counters for the character's own unlock

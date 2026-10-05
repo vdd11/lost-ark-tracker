@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from tests.test_raids import add_character, complete, difficulty, task_named
 
@@ -20,7 +20,10 @@ def test_bonus_chest_costs_come_from_the_patch_notes(client):
     act4, final = task_named(client, "Act 4"), task_named(client, "The Final Day")
     assert (difficulty(act4, "Normal")["bonus_cost"], difficulty(act4, "Hard")["bonus_cost"]) == (8640, 12160)
     assert (difficulty(final, "Normal")["bonus_cost"], difficulty(final, "Hard")["bonus_cost"]) == (10240, 15360)
-    assert difficulty(task_named(client, "Serca"), "Hard")["bonus_cost"] is None
+    serca, cathedral = task_named(client, "Serca"), task_named(client, "Horizon Cathedral")
+    # Serca and Cathedral chest costs are from the user (per gate, added up); Serca Normal isn't known yet.
+    assert [difficulty(serca, d)["bonus_cost"] for d in ("Normal", "Hard", "Nightmare")] == [None, 14080, 17280]
+    assert [difficulty(cathedral, d)["bonus_cost"] for d in ("Lv1", "Lv2", "Lv3")] == [9600, 12800, 16000]
     assert difficulty(task_named(client, "Horizon Cathedral"), "Lv3")["bound_kind"] == "character"
     assert (difficulty(final, "Normal")["bound_percent"], difficulty(final, "Normal")["bound_kind"]) == (50, "roster")
     assert difficulty(final, "Hard")["bound_percent"] == 0
@@ -45,12 +48,39 @@ def test_buying_the_bonus_chest_is_subtracted_from_that_character(client, set_no
     assert week(client)["bonus_spent"] == 0
 
 
-def test_bonus_bought_on_a_non_paying_clear_still_costs_gold(client, set_now):
+def test_a_non_earners_first_three_bonus_chests_each_week_are_free(client, set_now):
+    set_now(NOW)
+    raids = [task_named(client, n) for n in ["Act 4", "The Final Day", "Horizon Cathedral", "Serca"]]
+    act4, final, cathedral, serca = raids
+    alt = add_character(client, 1735, [], is_gold_earner=False, name="Alt")
+    for task in (act4, final, cathedral):
+        complete(client, alt["id"], task["id"], bought_bonus=True)
+    assert [run_for(client, alt["id"], t["id"])["bonus_spent"] for t in (act4, final, cathedral)] == [0, 0, 0]
+    assert (week(client)["raid_gold"], week(client)["bonus_spent"]) == (0, 0)
+
+    # The fourth costs its price (Serca Hard: 14,080).
+    complete(client, alt["id"], serca["id"], bought_bonus=True)
+    assert run_for(client, alt["id"], serca["id"])["bonus_spent"] == 14080
+
+    # Taking one of the free ones back makes the fourth free, and buying it again pays.
+    complete(client, alt["id"], final["id"], bought_bonus=False)
+    assert run_for(client, alt["id"], serca["id"])["bonus_spent"] == 0
+    set_now(NOW + timedelta(minutes=5))  # bought again later: it's now the fourth
+    complete(client, alt["id"], final["id"], bought_bonus=True)
+    assert run_for(client, alt["id"], final["id"])["bonus_spent"] == 15360
+    assert week(client)["bonus_spent"] == 15360
+
+    # Unticking a clear frees its slot too.
+    client.delete(f"/api/characters/{alt['id']}/tasks/{act4['id']}/completion")
+    assert run_for(client, alt["id"], final["id"])["bonus_spent"] == 0
+
+
+def test_gold_earners_still_pay_for_every_chest(client, set_now):
     set_now(NOW)
     act4 = task_named(client, "Act 4")
-    friend_alt = add_character(client, 1725, [{"task_id": act4["id"]}], is_gold_earner=False)
-    complete(client, friend_alt["id"], act4["id"], bought_bonus=True)
-    assert (week(client)["raid_gold"], week(client)["net"]) == (0, -12160)
+    main = add_character(client, 1725, [{"task_id": act4["id"]}], name="Main")
+    complete(client, main["id"], act4["id"], bought_bonus=True)
+    assert run_for(client, main["id"], act4["id"])["bonus_spent"] == 12160
 
 
 def test_cube_runs_can_be_split_across_lower_unlocks(client, set_now):
@@ -132,11 +162,10 @@ def test_bonus_chests_spend_character_bound_then_roster_bound_then_tradeable(cli
     assert totals["tradeable_left"] == 32000 + 27000 + 38000
 
     complete(client, alt["id"], act4["id"], bought_bonus=False)
-    # A friend's alt with no bound gold buys 22,400 of chests; only 21,760
-    # roster-bound gold is left, so the last 640 comes out of tradeable gold.
+    # A non-earner's first chests each week are free, so they take nothing from anyone's gold.
     friend = add_character(client, 1725, [], is_gold_earner=False, name="Friend")
-    complete(client, friend["id"], final["id"], difficulty_id=final_normal, bought_bonus=True)  # 10,240
-    complete(client, friend["id"], act4["id"], bought_bonus=True)  # Hard: 12,160
+    complete(client, friend["id"], final["id"], difficulty_id=final_normal, bought_bonus=True)
+    complete(client, friend["id"], act4["id"], bought_bonus=True)
     totals = week(client)
-    assert totals["roster_bound_left"] == 0
-    assert totals["tradeable_left"] == 32000 + 27000 + 38000 - 640
+    assert totals["roster_bound_left"] == 32000 - 10240
+    assert totals["tradeable_left"] == 32000 + 27000 + 38000

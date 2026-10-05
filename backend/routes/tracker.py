@@ -16,7 +16,7 @@ from schemas import (
     RestUpdate,
     TrackerState,
 )
-from raids import GOLD_RAIDS_PER_WEEK
+from raids import FREE_BONUS_RAIDS_PER_WEEK, GOLD_RAIDS_PER_WEEK
 from rest import RestRules, rest_at_start_of, run_is_rested, start_value_for_shown
 from routes.common import get_or_404
 from routes.characters import choose_difficulty
@@ -215,6 +215,8 @@ def complete_task(
             existing.bought_bonus = body.bought_bonus
             existing.bonus_bought_at = now if body.bought_bonus else None
             existing.bonus_spent = bonus_spent(db, existing)
+            db.flush()
+            reprice_bonuses(db, character, existing.period)
         # Only a different difficulty re-prices a clear; history stays as recorded.
         if body.difficulty_id is not None and body.difficulty_id != existing.difficulty_id:
             existing.difficulty_id = run_difficulty(db, task, character, body.difficulty_id)
@@ -259,10 +261,48 @@ def tier_json(tiers: dict[int, int]) -> dict[str, int]:
 
 
 def bonus_spent(db: Session, completion: Completion) -> int:
+    """What the bonus chests cost: the difficulty's price, except that a
+    non-earner's first FREE_BONUS_RAIDS_PER_WEEK raids with bonus chests each
+    week are free (per the user, 2026-10-04)."""
     if not completion.bought_bonus or completion.difficulty_id is None:
         return 0
+    character = db.get(Character, completion.character_id) if completion.character_id else None
+    if character is not None and not character.is_gold_earner:
+        earlier = [c for c in bonus_purchases(db, character.id, completion.period) if c.id != completion.id]
+        before = [c for c in earlier if purchase_order(c) < purchase_order(completion)]
+        if len(before) < FREE_BONUS_RAIDS_PER_WEEK:
+            return 0
     difficulty = db.get(RaidDifficulty, completion.difficulty_id)
     return (difficulty.bonus_cost or 0) if difficulty else 0
+
+
+def bonus_purchases(db: Session, character_id: int, period) -> list[Completion]:
+    """A character's raid clears this period with bonus chests bought, in order."""
+    rows = (
+        db.query(Completion)
+        .join(Task, Task.id == Completion.task_id)
+        .filter(
+            Completion.character_id == character_id,
+            Completion.period == period,
+            Completion.bought_bonus.is_(True),
+            Task.category == "raid",
+        )
+        .all()
+    )
+    return sorted(rows, key=purchase_order)
+
+
+def purchase_order(completion: Completion):
+    # Older clears may have no purchase time; their clear time stands in.
+    return (completion.bonus_bought_at or completion.completed_at, completion.id)
+
+
+def reprice_bonuses(db: Session, character: Character, period):
+    """Recount which of a non-earner's bonus chests are free after one changes."""
+    if character.is_gold_earner:
+        return
+    for completion in bonus_purchases(db, character.id, period):
+        completion.bonus_spent = bonus_spent(db, completion)
 
 
 def run_difficulty(db: Session, task: Task, character: Character, requested: int | None) -> int | None:
@@ -331,6 +371,10 @@ def uncomplete_task(character_id: int, task_id: int, db: Session = Depends(get_d
     db.query(Completion).filter_by(
         character_id=character_id, task_id=task_id, period=period
     ).delete()
+    character = db.get(Character, character_id)
+    if character is not None and task.category == "raid":
+        db.flush()
+        reprice_bonuses(db, character, period)  # a later chest may be free now
     db.commit()
 
     return Response(status_code=204)
