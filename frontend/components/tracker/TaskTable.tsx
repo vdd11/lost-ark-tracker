@@ -150,7 +150,8 @@ export default function TaskTable({
 
   const who = (character: Character) => (
     <>
-      <div className="flex items-center gap-1.5">
+      {/* A fixed height: the All button coming and going never changes the row. */}
+      <div className="flex h-6 items-center gap-1.5">
         {/* Decorative: the class is written on the line below. */}
         <GameIcon name={classIconName(character.class_name)} size={22} alt="" />
         <span className="font-medium">{character.name}</span>
