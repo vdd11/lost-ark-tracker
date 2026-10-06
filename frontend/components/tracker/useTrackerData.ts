@@ -22,6 +22,7 @@ import {
   WeeklyGold,
   WeekRecap,
 } from "@/lib/api";
+import { dailyRunsNeeded, fullyDone } from "@/lib/blessings";
 import { OnHand } from "@/lib/goldGoal";
 import { difficultyOf } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
@@ -37,7 +38,8 @@ export function useTrackerData() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tracker, setTracker] = useState<TrackerState | null>(null);
-  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  // Every completion this period; `completed` below leaves out a daily with a run still to go.
+  const [rawCompleted, setCompleted] = useState<Set<string>>(new Set());
   const [thisWeek, setThisWeek] = useState<WeeklyGold | null>(null);
   // Recent weeks for the widgets (oldest first, this week last).
   const [goldWeeks, setGoldWeeks] = useState<WeeklyGold[]>([]);
@@ -147,6 +149,11 @@ export function useTrackerData() {
     [tracker],
   );
   const roster = useMemo(() => [...characters].sort(byPosition), [characters]);
+  const day = tracker?.daily_period;
+  const completed = useMemo(
+    () => fullyDone(rawCompleted, tracker?.runs ?? [], characters, tasks, day),
+    [rawCompleted, tracker, characters, tasks, day],
+  );
 
   // ---------- mutations ----------
 
@@ -170,7 +177,9 @@ export function useTrackerData() {
 
   async function toggleCompletion(character: Character, task: Task) {
     const key = cellKey(character.id, task.id);
-    const wasDone = completed.has(key);
+    const needed = dailyRunsNeeded(character, task, day);
+    if (needed > 1) return stepRuns(character, task, needed);
+    const wasDone = rawCompleted.has(key);
     const update = (done: boolean) =>
       setCompleted((prev) => {
         const next = new Set(prev);
@@ -187,6 +196,28 @@ export function useTrackerData() {
       offerToggleUndo(character, task, !wasDone, undefined);
     } catch (e) {
       update(wasDone);
+      setError(describeError(e));
+    }
+  }
+
+  /**
+   * A daily with more than one run today (Chaos Dungeon with Innana's): each
+   * click is one run, so the box fills halfway, then all the way; a click
+   * on a full box clears it.
+   */
+  async function stepRuns(character: Character, task: Task, needed: number) {
+    const path = completionPath(character, task);
+    const before = rawCompleted.has(cellKey(character.id, task.id)) ? (runByCell.get(cellKey(character.id, task.id))?.count ?? 1) : 0;
+    const after = before >= needed ? 0 : before + 1;
+    try {
+      await (after === 0 ? send("DELETE", path) : send("PUT", path, { count: after }));
+      refreshTracker();
+      loadWeeklyGold();
+      undoable(
+        after === 0 ? `${task.name} unticked on ${character.name}` : `${task.name} run ${after} of ${needed} on ${character.name}`,
+        () => (before === 0 ? send("DELETE", path) : send("PUT", path, { count: before })),
+      );
+    } catch (e) {
       setError(describeError(e));
     }
   }
@@ -292,9 +323,14 @@ export function useTrackerData() {
     const ticked: Task[] = [];
     try {
       for (const task of todo) {
-        // Raids clear at the character's usual difficulty; everything else is a plain check.
+        // Raids clear at the usual difficulty; a daily with two runs today (Innana's) gets both.
+        const runsNeeded = dailyRunsNeeded(character, task, day);
         const body =
-          task.category === "raid" && isTiered(task) ? { difficulty_id: difficultyOf(character, task)?.id ?? null } : {};
+          task.category === "raid" && isTiered(task)
+            ? { difficulty_id: difficultyOf(character, task)?.id ?? null }
+            : runsNeeded > 1
+              ? { count: runsNeeded }
+              : {};
         await send("PUT", completionPath(character, task), body);
         ticked.push(task);
       }

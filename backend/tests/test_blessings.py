@@ -30,3 +30,21 @@ def test_blessings_survive_a_backup(client):
     assert client.post("/api/backup", json=backup).status_code == 204
     restored = client.get("/api/characters").json()[0]
     assert restored["azena_until"] == "2026-11-05" and restored["innana_until"] is None
+
+
+def test_a_daily_keeps_its_run_count(client):
+    """Innana's second Chaos Dungeon run is the completion's count (the app decides when it's done)."""
+    character = make_character(client)
+    chaos = next(t for t in client.get("/api/tasks").json() if t["name"] == "Chaos Dungeon")
+    path = f"/api/characters/{character['id']}/tasks/{chaos['id']}/completion"
+
+    def runs():
+        found = [r for r in client.get("/api/tracker").json()["runs"] if r["task_id"] == chaos["id"]]
+        return found[0]["count"] if found else 0
+
+    assert client.put(path, json={"count": 1}).status_code == 204
+    assert runs() == 1
+    assert client.put(path, json={"count": 2}).status_code == 204
+    assert runs() == 2
+    assert client.delete(path).status_code == 204
+    assert runs() == 0

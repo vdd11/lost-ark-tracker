@@ -2,8 +2,10 @@ import ContentCell from "@/components/ContentCell";
 import DifficultySelect from "@/components/DifficultySelect";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
+import RunsCheckbox from "@/components/RunsCheckbox";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, Task } from "@/lib/api";
+import { dailyRunsNeeded } from "@/lib/blessings";
 import { difficultyOf } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
 import { appliesTo } from "@/lib/trackerView";
@@ -100,16 +102,26 @@ export default function TrackerCell({
 
   if (!isAssigned) return dash;
   const isDone = data.completed.has(key);
+  const runsNeeded = dailyRunsNeeded(character, task, data.tracker?.daily_period);
   const rest = task.rest_max > 0 ? data.restByCell.get(key) : undefined;
   return (
     <div className={`flex flex-col items-center gap-1.5 pt-2 ${isDone ? "bg-done/15" : ""} ${rest ? "" : "pb-2"}`}>
-      <input
-        type="checkbox"
-        checked={isDone}
-        onChange={() => actions.toggleCompletion(character, task)}
-        aria-label={`${task.name} done by ${character.name}`}
-        className="h-5 w-5 cursor-pointer"
-      />
+      {runsNeeded > 1 ? (
+        <RunsCheckbox
+          runs={run?.count ?? 0}
+          needed={runsNeeded}
+          label={`${task.name} done by ${character.name}`}
+          onClick={() => actions.toggleCompletion(character, task)}
+        />
+      ) : (
+        <input
+          type="checkbox"
+          checked={isDone}
+          onChange={() => actions.toggleCompletion(character, task)}
+          aria-label={`${task.name} done by ${character.name}`}
+          className="h-5 w-5 cursor-pointer"
+        />
+      )}
       {rest && (
         <RestGauge task={task} state={rest} characterName={character.name} onSet={(value) => actions.setRest(character, task, value)} />
       )}

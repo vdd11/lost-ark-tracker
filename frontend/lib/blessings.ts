@@ -1,4 +1,5 @@
-import { Character } from "./api";
+import { Character, Run, Task } from "./api";
+import { cellKey } from "./trackerSections";
 
 export type Blessing = "azena" | "innana";
 
@@ -24,4 +25,29 @@ export function blessingActive(character: Pick<Character, "azena_until" | "innan
 /** Chaos Dungeon runs a character has each day: two with Innana's at Chaos Rift item level. */
 export function chaosRunsPerDay(character: Character, day: string) {
   return blessingActive(character, "innana", day) && character.item_level >= CHAOS_RIFT_ITEM_LEVEL ? 2 : 1;
+}
+
+/** The daily Innana's doubles (by name: the built-in task). */
+export const CHAOS_DUNGEON = "Chaos Dungeon";
+
+/** Runs that make a daily done today for a character: 2 for Chaos Dungeon with Innana's, else 1. */
+export function dailyRunsNeeded(character: Character, task: Task, day: string | null | undefined) {
+  if (!day || task.category !== "daily" || task.name !== CHAOS_DUNGEON) return 1;
+  return chaosRunsPerDay(character, day);
+}
+
+/**
+ * The cells that count as done: every completion, except a daily that still
+ * has a run to go (the first of two Innana's runs is only half done).
+ */
+export function fullyDone(completed: Set<string>, runs: Run[], characters: Character[], tasks: Task[], day: string | null | undefined) {
+  const done = new Set(completed);
+  const byId = new Map(characters.map((c) => [c.id, c]));
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+  for (const run of runs) {
+    const character = byId.get(run.character_id);
+    const task = taskById.get(run.task_id);
+    if (character && task && run.count < dailyRunsNeeded(character, task, day)) done.delete(cellKey(run.character_id, run.task_id));
+  }
+  return done;
 }
