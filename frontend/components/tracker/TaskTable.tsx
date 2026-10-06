@@ -36,12 +36,16 @@ const TASK_COLUMN = 7.5;
 const CHECKBOX_COLUMN = 5.5;
 /** Ebony Cube: room for a ticket chip per unlock on one line. */
 const CUBE_COLUMN = 15;
+/** A daily with a rest gauge: its − bar value + row is about this wide. */
+const REST_COLUMN = 10;
 const columnWidth = (task: Task) =>
   task.counted
     ? CUBE_COLUMN
-    : task.category !== "raid" && task.difficulties.length === 0 && task.rest_max === 0
-      ? CHECKBOX_COLUMN
-      : TASK_COLUMN;
+    : task.rest_max > 0
+      ? REST_COLUMN
+      : task.category !== "raid" && task.difficulties.length === 0
+        ? CHECKBOX_COLUMN
+        : TASK_COLUMN;
 const EXTRA_COLUMN = 6;
 const rem = (n: number) => `${n}rem`;
 
@@ -260,7 +264,7 @@ export default function TaskTable({
             {columns.map((task) => (
               <th key={task.id} className="px-2 py-2 text-center align-bottom font-medium">
                 <div className="flex flex-col items-center gap-1 text-sm leading-tight text-foreground">
-                  {taskIconName(task) && <GameIcon name={taskIconName(task)!} size={24} alt="" />}
+                  <GameIcon name={taskIconName(task)} size={24} alt="" />
                   {task.category === "raid" && task.difficulties.length > 0 ? <RaidHeader task={task} /> : task.name}
                 </div>
                 {columnNote?.(task)}

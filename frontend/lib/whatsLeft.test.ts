@@ -17,7 +17,7 @@ const raid = (name: string, gold: number | null, extra: Partial<Task> = {}): Tas
 const daily = (name: string): Task =>
   ({ id: id++, name, category: "daily", position: 99, gold: 0, counted: false, roster_limited: false, difficulties: [] }) as unknown as Task;
 const who = (name: string, tasks: Task[], extra: Partial<Character> = {}): Character => ({
-  id: id++, name, class_name: "Bard", item_level: 1770, is_gold_earner: true, position: 0, account_id: 1, azena_until: null, innana_until: null,
+  id: id++, name, class_name: "Bard", item_level: 1770, is_gold_earner: true, position: 0, account_id: 1, azena_until: null, inanna_until: null,
   task_ids: tasks.map((t) => t.id),
   difficulty_ids: Object.fromEntries(tasks.filter((t) => t.difficulties.length).map((t) => [String(t.id), t.difficulties[0].id])),
   ...extra,

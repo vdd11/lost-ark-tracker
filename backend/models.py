@@ -31,9 +31,9 @@ class Character(Base):
     account_id: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     # Paid blessings, by the last day they're active (none when null).
     # Azena's: blessed embers can drop from Chaos Dungeon and Guardian Raid.
-    # Innana's: a second Chaos Dungeon (Chaos Rift, 1730+) run a day.
+    # Inanna's: a second Chaos Dungeon run a day.
     azena_until: Mapped[date | None] = mapped_column(Date, nullable=True)
-    innana_until: Mapped[date | None] = mapped_column(Date, nullable=True)
+    inanna_until: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
 class Task(Base):

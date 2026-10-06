@@ -52,7 +52,7 @@ class CharacterUpdate(BaseModel):
     account_id: int | None = None
     # Send null to clear a blessing.
     azena_until: date | None = None
-    innana_until: date | None = None
+    inanna_until: date | None = None
 
 
 class CharacterRead(BaseModel):
@@ -66,7 +66,7 @@ class CharacterRead(BaseModel):
     position: int
     account_id: int = 1
     azena_until: date | None = None
-    innana_until: date | None = None
+    inanna_until: date | None = None
     task_ids: list[int] = []
     # task_id -> difficulty_id for assigned raids that have difficulties.
     difficulty_ids: dict[int, int] = {}

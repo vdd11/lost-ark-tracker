@@ -13,8 +13,8 @@ describe("icon names", () => {
     expect(taskIconName({ catalog_key: "ebony-cube", name: "Ebony Cube", category: "weekly" })).toBe("ebony-cube");
     expect(taskIconName({ catalog_key: null, name: "Chaos Dungeon", category: "daily" })).toBe("chaos-dungeon");
     expect(taskIconName({ catalog_key: "haals-hourglass", name: "My hourglass", category: "weekly" })).toBe("haals-hourglass");
-    // Raids are text only.
-    expect(taskIconName({ catalog_key: "kazeros-denouement", name: "The Final Day", category: "raid" })).toBeNull();
+    // Every raid shares the Endgame Content badge.
+    expect(taskIconName({ catalog_key: "kazeros-denouement", name: "The Final Day", category: "raid" })).toBe("endgame-content");
     expect(sourceIconName("Field Boss")).toBe("field-boss");
     expect(slug("Haal's Hourglass")).toBe("haals-hourglass");
   });

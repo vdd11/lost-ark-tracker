@@ -4,7 +4,7 @@ import { Account, Character } from "./api";
 import { earnersByAccount, showFirstRun } from "./firstRun";
 
 const character = (id: number, accountId: number, earner: boolean) =>
-  ({ id, name: `C${id}`, class_name: "Bard", item_level: 1700, is_gold_earner: earner, position: id, account_id: accountId, azena_until: null, innana_until: null, task_ids: [], difficulty_ids: {} }) as Character;
+  ({ id, name: `C${id}`, class_name: "Bard", item_level: 1700, is_gold_earner: earner, position: id, account_id: accountId, azena_until: null, inanna_until: null, task_ids: [], difficulty_ids: {} }) as Character;
 const account = (id: number, name: string) => ({ id, name, position: id, characters: 0 }) as Account;
 
 describe("showFirstRun", () => {

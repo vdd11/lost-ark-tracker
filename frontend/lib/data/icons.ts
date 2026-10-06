@@ -27,6 +27,7 @@ export const ICON_FILES: Record<string, string> = {
   "sand-of-trial": "sand-of-trial.webp",
   "guardian-raid": "guardian-raid.webp",
   rest: "rest.webp",
+  "endgame-content": "endgame-content.webp",
   // Every class in lib/classes.ts has one: class-bard.webp, ...
   ...Object.fromEntries(LOST_ARK_CLASSES.map((name) => [classIconName(name), `${classIconName(name)}.webp`])),
 };
@@ -130,6 +131,7 @@ const LABELS: Record<string, string> = {
   "fate-ember": "Fate Ember",
   paradise: "Paradise",
   rest: "Rest bonus",
+  "endgame-content": "Endgame Content",
   "sand-of-trial": "Sand of Trial",
   "bonus-box": "Bonus box",
   news: "Lost Ark news",
@@ -150,9 +152,12 @@ const TASK_ICONS: Record<string, string> = {
   "haals-hourglass": "haals-hourglass",
 };
 
-/** A task's icon name, or null for raids: their names read better than pictures (the user's call). */
-export function taskIconName(task: { catalog_key: string | null; name: string; category: string }): string | null {
-  if (task.category === "raid") return null;
+/**
+ * A task's icon name. Every raid shares the game's "Endgame Content" badge
+ * above its name (no per-raid pictures: their names read better, the user's call).
+ */
+export function taskIconName(task: { catalog_key: string | null; name: string; category: string }): string {
+  if (task.category === "raid") return "endgame-content";
   return (task.catalog_key && TASK_ICONS[task.catalog_key]) || slug(task.name);
 }
 

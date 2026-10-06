@@ -202,7 +202,7 @@ export function useTrackerData() {
   }
 
   /**
-   * A daily with more than one run today (Chaos Dungeon with Innana's): each
+   * A daily with more than one run today (Chaos Dungeon with Inanna's): each
    * click is one run, so the box fills halfway, then all the way; a click
    * on a full box clears it.
    */
@@ -325,7 +325,7 @@ export function useTrackerData() {
     const ticked: Task[] = [];
     try {
       for (const task of todo) {
-        // Raids clear at the usual difficulty; a daily with two runs today (Innana's) gets both.
+        // Raids clear at the usual difficulty; a daily with two runs today (Inanna's) gets both.
         const runsNeeded = dailyRunsNeeded(character, task, day);
         const body =
           task.category === "raid" && isTiered(task)

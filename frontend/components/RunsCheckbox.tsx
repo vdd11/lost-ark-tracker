@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 
 /**
  * A checkbox for a daily with more than one run today (Chaos Dungeon with
- * Innana's): it fills a part per run, and is done when full. The same size
+ * Inanna's): it fills a part per run, and is done when full. The same size
  * as the plain checkbox, so switching between them moves nothing.
  */
 export default function RunsCheckbox({
@@ -24,7 +24,7 @@ export default function RunsCheckbox({
       role="checkbox"
       aria-checked={done ? true : runs > 0 ? "mixed" : false}
       aria-label={`${label} (${Math.min(runs, needed)} of ${needed} runs)`}
-      title={`Innana's blessing: ${needed} runs today. Click once per run.`}
+      title={`Inanna's blessing: ${needed} runs today. Click once per run.`}
       onClick={onClick}
       className="relative flex h-5 w-5 cursor-pointer items-center justify-center overflow-hidden rounded border border-muted/70 bg-surface"
     >

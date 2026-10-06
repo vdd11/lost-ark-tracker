@@ -57,11 +57,12 @@ The screenshots use made-up characters.
     **gold goal** widget counts tradeable gold only or tradeable + roster-bound
     (the default), each with its own target.
   - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset
-    daily at 10:00 UTC. With Innana's blessing (Settings) at 1730+, Chaos
-    Dungeon has two runs a day: its box fills halfway on the first click and
-    all the way on the second. Optionally (Customize → Today), log the fate
-    embers each Chaos Dungeon and Guardian Raid dropped, and blessed embers
-    while Azena's blessing is on; Dailies today sums the week. Optionally (Customize → Today), it shows when Field Boss
+    daily at 10:00 UTC. With Inanna's blessing (Settings), Chaos Dungeon
+    has two runs a day: its box fills halfway on the first click and all the
+    way on the second. Optionally (Customize → Today), log the fate embers
+    each Chaos Dungeon and Guardian Raid dropped, and blessed embers while
+    Azena's blessing is on; Dailies today sums the week. Also optional
+    (Customize → Today), it shows when Field Boss
     (Tuesday, Friday, Sunday) or Chaos Gate (Monday, Thursday, Saturday,
     Sunday) is up, with **Log drops** to record the gems you got and the gold
     from selling the rest; their drops are random, so you enter them.
@@ -210,8 +211,8 @@ The screenshots use made-up characters.
   trademarks and property of Smilegate RPG / Amazon Games.
 - **Settings**: add characters (their usual raids are pre-selected from item
   level), tick each character's paid blessings with the last day they're on
-  (Azena's: blessed embers from Chaos Dungeon and Guardian Raid; Innana's: a
-  second Chaos Dungeon run a day at 1730+; pick a later day when you renew),
+  (Azena's: blessed embers from Chaos Dungeon and Guardian Raid; Inanna's: a
+  second Chaos Dungeon run a day; pick a later day when you renew),
   edit daily/weekly columns, and download/restore backups.
 
 ## Using it

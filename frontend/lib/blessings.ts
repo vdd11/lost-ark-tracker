@@ -1,15 +1,12 @@
 import { Character, Run, Task } from "./api";
 import { cellKey } from "./trackerSections";
 
-export type Blessing = "azena" | "innana";
+export type Blessing = "azena" | "inanna";
 
-export const BLESSINGS: { id: Blessing; field: "azena_until" | "innana_until"; label: string; help: string }[] = [
+export const BLESSINGS: { id: Blessing; field: "azena_until" | "inanna_until"; label: string; help: string }[] = [
   { id: "azena", field: "azena_until", label: "Azena's", help: "Blessed embers can drop from Chaos Dungeon and Guardian Raid" },
-  { id: "innana", field: "innana_until", label: "Innana's", help: "A second Chaos Dungeon (Chaos Rift, 1730+) run each day" },
+  { id: "inanna", field: "inanna_until", label: "Inanna's", help: "A second Chaos Dungeon run each day" },
 ];
-
-/** Innana's extra daily run is for Chaos Rift, which starts at this item level. */
-export const CHAOS_RIFT_ITEM_LEVEL = 1730;
 
 /** The game day (dailies reset at 10:00 UTC), as YYYY-MM-DD. */
 export function gameDay(now: Date) {
@@ -17,20 +14,20 @@ export function gameDay(now: Date) {
 }
 
 /** Whether a blessing is on for the given game day: it lasts through its end date. */
-export function blessingActive(character: Pick<Character, "azena_until" | "innana_until">, blessing: Blessing, day: string) {
-  const until = blessing === "azena" ? character.azena_until : character.innana_until;
+export function blessingActive(character: Pick<Character, "azena_until" | "inanna_until">, blessing: Blessing, day: string) {
+  const until = blessing === "azena" ? character.azena_until : character.inanna_until;
   return Boolean(until && until >= day);
 }
 
-/** Chaos Dungeon runs a character has each day: two with Innana's at Chaos Rift item level. */
+/** Chaos Dungeon runs a character has each day: two with Inanna's (at any item level). */
 export function chaosRunsPerDay(character: Character, day: string) {
-  return blessingActive(character, "innana", day) && character.item_level >= CHAOS_RIFT_ITEM_LEVEL ? 2 : 1;
+  return blessingActive(character, "inanna", day) ? 2 : 1;
 }
 
-/** The daily Innana's doubles (by name: the built-in task). */
+/** The daily Inanna's doubles (by name: the built-in task). */
 export const CHAOS_DUNGEON = "Chaos Dungeon";
 
-/** Runs that make a daily done today for a character: 2 for Chaos Dungeon with Innana's, else 1. */
+/** Runs that make a daily done today for a character: 2 for Chaos Dungeon with Inanna's, else 1. */
 export function dailyRunsNeeded(character: Character, task: Task, day: string | null | undefined) {
   if (!day || task.category !== "daily" || task.name !== CHAOS_DUNGEON) return 1;
   return chaosRunsPerDay(character, day);
@@ -38,7 +35,7 @@ export function dailyRunsNeeded(character: Character, task: Task, day: string | 
 
 /**
  * The cells that count as done: every completion, except a daily that still
- * has a run to go (the first of two Innana's runs is only half done).
+ * has a run to go (the first of two Inanna's runs is only half done).
  */
 export function fullyDone(completed: Set<string>, runs: Run[], characters: Character[], tasks: Task[], day: string | null | undefined) {
   const done = new Set(completed);
