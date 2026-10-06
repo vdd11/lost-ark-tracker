@@ -33,8 +33,14 @@ const TALL_ROSTER = 8;
 const TASK_COLUMN = 7.5;
 /** A plain checkbox (a weekly like the Growth Boost Shop) needs no room for a picker. */
 const CHECKBOX_COLUMN = 5.5;
+/** Ebony Cube: room for a ticket chip per unlock on one line. */
+const CUBE_COLUMN = 15;
 const columnWidth = (task: Task) =>
-  task.category !== "raid" && task.difficulties.length === 0 && !task.counted && task.rest_max === 0 ? CHECKBOX_COLUMN : TASK_COLUMN;
+  task.counted
+    ? CUBE_COLUMN
+    : task.category !== "raid" && task.difficulties.length === 0 && task.rest_max === 0
+      ? CHECKBOX_COLUMN
+      : TASK_COLUMN;
 const EXTRA_COLUMN = 6;
 const rem = (n: number) => `${n}rem`;
 

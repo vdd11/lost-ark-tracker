@@ -55,9 +55,12 @@ The screenshots use made-up characters.
     (Tuesday, Friday, Sunday) or Chaos Gate (Monday, Thursday, Saturday,
     Sunday) is up, with **Log drops** to record the gems you got and the gold
     from selling the rest; their drops are random, so you enter them.
-  - **Ebony Cube** (tickets, no reset): run counters for the character's own unlock
-    (Kurzan Front / Chaos Rift tickets); the unlock button counts lower unlocks
-    from guild shop boxes and lucky rooms.
+  - **Ebony Cube** (tickets, no reset): `− n +` for the character's own unlock
+    (Kurzan Front / Chaos Rift tickets), and a ticket chip for each unlock they
+    can enter (guild shop boxes give lower ones): click or `+` adds a ticket,
+    its `−` or `-` removes one, and hovering shows the gems per ticket.
+    **Extras** logs lucky and mega lucky rooms. Haal's Hourglass works the
+    same way, with Sands of Trial as 0–5 right in the cell.
   - **Customize** starts from a play style (Just raids, Raids + dailies, or
     Everything), then lets you tick every card, column, gold box and menu
     page on or off, and tuck away characters who are done (saved per
