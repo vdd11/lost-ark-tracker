@@ -67,6 +67,14 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   `frontend/public/game-icons/`. A name without a file shows its Lucide
   fallback, so the app works with none. Never hotlink; add a file only with
   its line in `public/game-icons/SOURCES.md` (a test checks both).
+- In-place updates (`updater.py`, `routes/update.py`): only the packaged app
+  (`sys.frozen`), only when the user presses Update now. It downloads this
+  system's release file, checks it against the release's `SHA256SUMS`
+  (`release.yml` makes it; keep the asset names in step with
+  `updater.asset_name`), renames the running file to `*.old*`, swaps the new
+  one in and starts it with `--after-update` (waits for the port; env
+  `PYINSTALLER_RESET_ENVIRONMENT=1` so it doesn't reuse this copy's unpacked
+  files). `LOST_ARK_TRACKER_RELEASES_API` points it at a test server.
 - Guides page links are data (`frontend/lib/data/guides.json`, with a
   `checked` date). Check new ones with `python scripts/check_links.py`; a
   weekly workflow (`links.yml`) runs it and opens an issue for dead links or

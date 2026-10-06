@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { assetFor, justUpdated, parseRelease, releaseNoteLines } from "./updates";
+import { assetFor, canUpdateInPlace, justUpdated, parseRelease, releaseNoteLines, waitForVersion } from "./updates";
 
 const ASSETS = [
   { name: "LostArkTracker-linux", url: "https://example.test/linux" },
@@ -74,5 +74,29 @@ describe("justUpdated", () => {
 
   it("says nothing on a fresh install", () => {
     expect(justUpdated("", "1.14.0")).toBe(false);
+  });
+});
+
+describe("updating in place", () => {
+  const release = (names: string[]) => ({ version: "2.0.0", url: "", notes: "", assets: names.map((name) => ({ name, url: "" })) });
+
+  it("needs a copy that can replace itself and a release with checksums", () => {
+    expect(canUpdateInPlace(release(["LostArkTracker-windows.exe", "SHA256SUMS"]), true)).toBe(true);
+    expect(canUpdateInPlace(release(["LostArkTracker-windows.exe"]), true)).toBe(false);
+    expect(canUpdateInPlace(release(["LostArkTracker-windows.exe", "SHA256SUMS"]), false)).toBe(false);
+  });
+
+  it("waits until the restarted app answers at the new version", async () => {
+    const answers = [null, "1.18.0", "2.0.0"];
+    const noWait = async () => {};
+    let call = 0;
+    const current = async () => {
+      const answer = answers[call++];
+      if (answer === null) throw new Error("down");
+      return answer;
+    };
+    expect(await waitForVersion("2.0.0", current, noWait)).toBe(true);
+    expect(call).toBe(3);
+    expect(await waitForVersion("3.0.0", async () => "2.0.0", noWait, 5)).toBe(false);
   });
 });

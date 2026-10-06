@@ -81,3 +81,32 @@ export function justUpdated(lastSeen: string, running: string) {
 export function releasePage(version: string) {
   return `https://github.com/vdd11/lost-ark-tracker/releases/tag/v${version}`;
 }
+
+/** The release file the in-app updater checks downloads against. */
+export const CHECKSUMS_ASSET = "SHA256SUMS";
+
+/** "Update now" needs a copy that can replace itself and a release it can verify. */
+export function canUpdateInPlace(release: Release, supported: boolean) {
+  return supported && release.assets.some((asset) => asset.name === CHECKSUMS_ASSET);
+}
+
+/**
+ * After "Update now", the app restarts: wait until it answers at the new
+ * version (true), or give up after `tries` (false).
+ */
+export async function waitForVersion(
+  version: string,
+  currentVersion: () => Promise<string | null>,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  tries = 90,
+) {
+  for (let i = 0; i < tries; i++) {
+    await sleep(1000);
+    try {
+      if ((await currentVersion()) === version) return true;
+    } catch {
+      // Not up yet.
+    }
+  }
+  return false;
+}

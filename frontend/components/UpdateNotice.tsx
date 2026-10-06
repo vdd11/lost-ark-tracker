@@ -3,10 +3,12 @@
 import { Download, ExternalLink, RefreshCw, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { api, Character } from "@/lib/api";
+import { describeError } from "@/components/ErrorBanner";
+import { api, Character, send } from "@/lib/api";
 import { UPDATE_CHECK_CHOICES, UPDATE_CHECK_PREFERENCE, updateCheckState, UpdateCheckState } from "@/lib/online";
 import {
   assetFor,
+  canUpdateInPlace,
   justUpdated,
   parseRelease,
   Platform,
@@ -14,6 +16,7 @@ import {
   Release,
   releaseNoteLines,
   releasePage,
+  waitForVersion,
 } from "@/lib/updates";
 import { usePreference } from "@/lib/usePreference";
 import { isNewer } from "@/lib/version";
@@ -127,11 +130,12 @@ export default function UpdateNotice({ enabled }: { enabled: boolean }) {
 }
 
 /** What's new in the release, the download for this computer, and how to swap it in. */
-function UpdateDialog({ release, running, onClose }: { release: Release; running: Running | null; onClose: () => void }) {
+export function UpdateDialog({ release, running, onClose }: { release: Release; running: Running | null; onClose: () => void }) {
   const closeButton = useRef<HTMLButtonElement>(null);
   const platform = running?.platform ?? null;
   const download = assetFor(release.assets, platform);
   const notes = releaseNoteLines(release.notes);
+  const [inPlace, setInPlace] = useState(false);
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -186,7 +190,9 @@ function UpdateDialog({ release, running, onClose }: { release: Release; running
           <p className="mb-4 text-sm text-muted">This release has no notes here; the release page lists every change.</p>
         )}
 
-        <h3 className="mb-1 text-sm font-semibold">How to update</h3>
+        <UpdateNow release={release} onSupported={setInPlace} />
+
+        <h3 className="mb-1 text-sm font-semibold">{inPlace ? "Or update by hand" : "How to update"}</h3>
         <ol className="mb-4 list-decimal space-y-1 pl-5 text-sm">
           <li>Download the new version{platform ? ` for ${platformLabel(platform)}` : ""}.</li>
           <li>
@@ -210,7 +216,9 @@ function UpdateDialog({ release, running, onClose }: { release: Release; running
           {download && (
             <a
               href={download.url}
-              className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-background hover:opacity-90"
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
+                inPlace ? "border border-border hover:bg-surface-2" : "bg-accent font-medium text-background hover:opacity-90"
+              }`}
             >
               <Download size={14} /> Download for {platformLabel(platform!)}
             </a>
@@ -225,6 +233,70 @@ function UpdateDialog({ release, running, onClose }: { release: Release; running
           </a>
         </div>
       </div>
+    </div>
+  );
+}
+
+type InstallState = { phase: "idle" } | { phase: "installing" } | { phase: "restarting"; version: string } | { phase: "failed"; message: string };
+
+/**
+ * One click: the app downloads the release for this computer, checks it
+ * against the release's checksums, swaps it in and restarts; this page
+ * reloads once the new version answers. Only the downloaded app can do this,
+ * and only for releases that publish checksums.
+ */
+function UpdateNow({ release, onSupported }: { release: Release; onSupported: (inPlace: boolean) => void }) {
+  const [supported, setSupported] = useState(false);
+  const [state, setState] = useState<InstallState>({ phase: "idle" });
+
+  useEffect(() => {
+    api<{ supported: boolean }>("/update/status")
+      .then((status) => {
+        setSupported(status.supported);
+        onSupported(canUpdateInPlace(release, status.supported));
+      })
+      .catch(() => {});
+  }, [release, onSupported]);
+
+  if (!canUpdateInPlace(release, supported)) return null;
+
+  async function install() {
+    setState({ phase: "installing" });
+    try {
+      const { version } = await send<{ version: string }>("POST", "/update/install");
+      setState({ phase: "restarting", version });
+      const back = await waitForVersion(version, async () => (await api<{ version: string }>("/")).version);
+      if (back) window.location.reload();
+      else setState({ phase: "failed", message: "The update is installed, but the tracker didn't come back. Open it again from its icon." });
+    } catch (e) {
+      setState({ phase: "failed", message: describeError(e) });
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-md border border-accent/40 bg-accent/10 p-3 text-sm" aria-live="polite">
+      {state.phase === "restarting" ? (
+        <p className="flex items-center gap-2 font-medium">
+          <RefreshCw size={14} className="animate-spin" /> Installed {state.version}. Restarting the tracker; this page
+          reloads by itself.
+        </p>
+      ) : (
+        <>
+          <button
+            onClick={install}
+            disabled={state.phase === "installing"}
+            className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-medium text-background hover:opacity-90 disabled:opacity-60"
+          >
+            <RefreshCw size={14} className={state.phase === "installing" ? "animate-spin" : ""} />
+            {state.phase === "installing" ? "Downloading and checking…" : "Update now"}
+          </button>
+          <p className="mt-2 text-xs text-muted">
+            Downloads version {release.version} from GitHub, checks it against the release&apos;s checksums, swaps it in
+            and restarts the tracker. Your data stays where it is (and is backed up first).
+          </p>
+          {state.phase === "failed" && <p className="mt-2 text-danger">{state.message} You can still update by hand below.</p>}
+        </>
+      )}
     </div>
   );
 }

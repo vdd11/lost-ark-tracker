@@ -77,6 +77,12 @@ jobs:
         with:
           path: assets
           merge-multiple: true
+      # The in-app "Update now" only installs a download that matches these.
+      - name: Checksums
+        run: |
+          cd assets
+          sha256sum LostArkTracker-* > SHA256SUMS
+          cat SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           files: assets/*

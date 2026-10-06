@@ -40,6 +40,7 @@ from routes import (
     spending,
     tasks,
     tracker,
+    update,
 )
 
 
@@ -102,7 +103,7 @@ def platform_name() -> str:
 
 
 app.include_router(router)
-for module in (accounts, characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export, news, recap, loa_logs, history, spending, guides, counters, raid_groups):
+for module in (accounts, characters, tasks, tracker, gold, balances, events, gems, difficulties, backup, export, news, recap, loa_logs, history, spending, guides, counters, raid_groups, update):
     app.include_router(module.router)
 
 

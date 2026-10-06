@@ -109,10 +109,26 @@ def main():
     parser.add_argument("--no-browser", action="store_true", help="don't open a browser tab")
     parser.add_argument("--no-tray", action="store_true", help="run in the console instead of the system tray (Windows)")
     parser.add_argument("--data-dir", type=Path, default=user_data_dir(), help="where to keep database.db")
+    parser.add_argument("--after-update", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     port = args.port
     url = f"http://127.0.0.1:{port}/"
+
+    import updater
+
+    if args.after_update:
+        # Started by "Update now": let the old copy finish and free the port.
+        # The browser tab it served reloads itself, so don't open another.
+        deadline = time.monotonic() + 30
+        while (is_tracker_running(port) or not is_port_free(port)) and time.monotonic() < deadline:
+            time.sleep(0.25)
+        args.no_browser = True
+    # The previous file, after an update; in the background, since right after
+    # the restart the old copy may still be letting go of it.
+    threading.Thread(
+        target=updater.remove_old_copy, args=(updater.running_executable(), 30), name="cleanup", daemon=True
+    ).start()
 
     # Double-clicking the app again just reopens the tab.
     if is_tracker_running(port):
@@ -149,6 +165,11 @@ def main():
         run_in_tray(server, url, args.data_dir, log_path, open_browser=not args.no_browser)
         return
 
+    def stop():
+        server.should_exit = True
+
+    updater.request_exit = stop
+
     def open_browser_when_ready():
         while not server.started:
             time.sleep(0.1)
@@ -181,8 +202,13 @@ def run_in_tray(server, url: str, data_dir: Path, log_path: Path, open_browser: 
     def stop_server():
         server.should_exit = True
 
+    import updater
+
     try:
-        Tray(url, data_dir, log_path, on_quit=stop_server).run()
+        tray = Tray(url, data_dir, log_path, on_quit=stop_server)
+        # "Update now" quits like the tray's Quit, so the new copy can start.
+        updater.request_exit = tray.quit
+        tray.run()
     except Exception:
         log.exception("Couldn't show the tray icon")
         message_box(

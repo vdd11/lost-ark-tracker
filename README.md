@@ -237,12 +237,16 @@ that restores your data on another computer, or after a reinstall.
 - **Linux**: `chmod +x LostArkTracker-linux` once, then run it.
 
 **Updating.** With the update check on, the nav shows *Update available*
-when there's a new release; click it for what's new, the download for your
-system and the steps: quit the tracker, replace the old file with the new one,
-run it. Your data stays where it is (above), so nothing is lost. The first run
-after an update says so, with a link to what changed. The app doesn't download
-or replace itself: unsigned files that swap themselves out are exactly what
-antivirus tools flag (see `docs/signing.md`).
+when there's a new release; click it for what's new and **Update now**. The
+app downloads the new version for your system, checks it against the
+release's published SHA-256 checksums, backs up your data, swaps the file and
+restarts; the page reloads by itself (about 5 seconds). Nothing happens unless
+you press it, and if anything fails the old version keeps running and the
+dialog falls back to the manual steps: download, quit the tracker, replace the
+old file, run it. Your data stays where it is (above), so nothing is lost
+either way. Update now needs a copy from 1.19.0 or later; from 1.18.0 and
+earlier, update by hand once. The files aren't code-signed, so a cautious
+antivirus may question an app that replaces itself (see `docs/signing.md`).
 
 **If it won't start or something breaks,** a message box says so (Windows), or
 the terminal window says so and stays open (macOS / Linux).
@@ -262,6 +266,7 @@ requests, and only these:
 | What | Contacts | When | Default |
 |------|----------|------|---------|
 | Update check | `api.github.com` (this repo's latest release, its notes and download links) | Once per browser session | Asked on first launch; existing users keep it on |
+| Update now | `api.github.com` and `github.com` release downloads (the new version and its SHA256SUMS), fetched by the app | Only when you press Update now | Never on its own |
 | Lost Ark updates widget | `www.playlostark.com` (server status page) and `api.steampowered.com` (Lost Ark news), fetched by the app | When the widget is on screen, then every 10 minutes while the tracker is open | Off |
 | The widget's "On X" tab | `platform.twitter.com` / `x.com` (X's embed) | Only after you open that tab | Off (the widget is off) |
 

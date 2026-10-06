@@ -16,9 +16,11 @@ paying for anything. (Written October 2026.)
 | macOS | Blocked by Gatekeeper; needs `chmod +x` + `xattr` in Terminal | Opens normally once signed **and** notarized |
 | Linux | No prompt | No change (nobody checks) |
 
-It would also make an in-app "download and restart" updater reasonable. Today
-the app only links to the download (see the README's *Updating*), because an
-unsigned exe that replaces itself is exactly what antivirus heuristics flag.
+It would also make the in-app **Update now** (`backend/updater.py`, since
+1.19) safer to rely on: an unsigned exe that replaces itself is a pattern
+antivirus heuristics can flag. Today it only installs a download whose SHA-256
+matches the release's `SHA256SUMS` (made by `release.yml`), and only when the
+user presses the button; signing would add who built it, not just what.
 
 ## Free, do first: checksums and build provenance
 
@@ -153,4 +155,4 @@ above cover verification.
    friction.
 3. macOS only if there are Mac players asking: it's $99/year plus the `.app`
    rework above.
-4. With signed builds, revisit an in-app "download and restart" updater.
+4. With signed builds, the in-app updater can also check the signature before swapping.
