@@ -68,12 +68,12 @@ def test_cube_runs_and_lucky_rooms_add_expected_gems(client, set_now):
 def test_sands_multiply_hourglass_but_not_lucky_rooms(client, set_now):
     set_now(NOW)
     hourglass = task_named(client, "Haal's Hourglass")
-    assert set_rewards(client, hourglass, "Lv1", lucky_gems={"1": 6}).status_code == 200  # not known yet
+    assert difficulty(hourglass, "Lv1")["lucky_gems"] == {"3": 6}
     alt = add_character(client, 1735)
 
     complete(client, alt["id"], hourglass["id"], sands=5, lucky_rooms=1)
-    # 15 Lv2 x (1 + 5 sands) = 90 Lv2 = 270, plus 6 Lv1 from the lucky room.
-    assert weekly_gems(client)["total"] == 276
+    # 15 Lv2 x (1 + 5 sands) = 90 Lv2 = 270, plus the lucky monster's 6 Lv3 = 54.
+    assert weekly_gems(client)["total"] == 324
 
 
 def test_recorded_gems_survive_later_reward_edits(client, set_now):
@@ -100,13 +100,13 @@ def test_gem_tables_are_the_apps_except_unknown_ones(client, monkeypatch):
     assert set_rewards(client, cube, "4th", reward_gems={"2": 1}).status_code == 400
     assert set_rewards(client, cube, "4th", lucky_gems={"2": 1}).status_code == 400
     assert set_rewards(client, cube, "1st", lucky_gems={"2": 2}).status_code == 200
-    assert set_rewards(client, hourglass, "Lv1", lucky_gems={"1": 3}).status_code == 200
+    assert set_rewards(client, hourglass, "Lv2", lucky_gems={"1": 3}).status_code == 200
 
     # A sync overwrites an edited known table, keeps what users entered for an
     # unknown one, and a newly known value replaces theirs.
     set_tables(cube, "4th", reward_gems={"2": 1})
     patched = [
-        replace(item, difficulties=[replace(d, lucky_gems={"2": 9}) if d.name == "Lv1" else d for d in item.difficulties])
+        replace(item, difficulties=[replace(d, lucky_gems={"2": 9}) if d.name == "Lv2" else d for d in item.difficulties])
         if item.key == "haals-hourglass" else item
         for item in raids.CATALOG
     ]
@@ -117,7 +117,7 @@ def test_gem_tables_are_the_apps_except_unknown_ones(client, monkeypatch):
     hourglass = task_named(client, "Haal's Hourglass")
     assert difficulty(cube, "4th")["reward_gems"] == {"2": 22}
     assert difficulty(cube, "1st")["lucky_gems"] == {"2": 2}
-    assert difficulty(hourglass, "Lv1")["lucky_gems"] == {"2": 9}
+    assert difficulty(hourglass, "Lv2")["lucky_gems"] == {"2": 9}
 
 
 def test_rejects_bad_gem_tables(client):

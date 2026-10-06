@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from models import Character, CharacterTask, Completion, RaidDifficulty, Task
 
 # When the values below were last checked against the patch notes (shown in the app).
-CATALOG_REVIEWED = "2026-10-04"
+CATALOG_REVIEWED = "2026-10-06"
 
 # Gold is only paid for this many raids per character per week.
 GOLD_RAIDS_PER_WEEK = 3
@@ -147,10 +147,14 @@ CATALOG = [
         category="weekly",
         sand_scaled=True,
         difficulties=[
-            # Base reward per the wiki: Lv1 15 Lv2 gem chests, Lv2 6 Lv3 gem
-            # chests (one random gem each). Sands multiply these; the lucky
-            # monster's drops aren't multiplied.
-            Difficulty("Lv1", 1730, 0, reward_gems={"2": 15}),
+            # Base reward per the wiki and Korean posts (Inven, 2026-01): Lv1 15
+            # Lv2 gem chests, Lv2 6 Lv3 gem chests (one random gem each). Each
+            # sand adds another 100% of these (1 + sands); the lucky monster's
+            # drops aren't multiplied (official KR guide, "할의 유산").
+            # Lv1 lucky monster: "about 6" Lv3 gems, from one player's report
+            # (fmkorea, 2026-01-12, https://www.fmkorea.com/9374069892). No
+            # source yet for Lv2's lucky monster or a mega lucky one.
+            Difficulty("Lv1", 1730, 0, reward_gems={"2": 15}, lucky_gems={"3": 6}),
             Difficulty("Lv2", 1750, 0, reward_gems={"3": 6}),
         ],
         note="Once a week. Sands of Trial (up to 5) multiply the rewards.",
