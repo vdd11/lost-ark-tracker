@@ -1,0 +1,11 @@
+# The workflows pin each action to a commit (a tag can be moved; a commit
+# can't). Dependabot proposes the updates, so the pins don't go stale.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

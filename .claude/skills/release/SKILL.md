@@ -42,8 +42,21 @@ and publishes downloads for everyone, so **ask before pushing**.
 7. **Ask before pushing.** Then `git push origin main` and
    `git push origin v1.14.0`. The tag triggers `.github/workflows/release.yml`:
    it builds Windows, macOS and Linux, smoke-tests each at the tagged version,
-   and publishes the release with the tag message as its notes (which the
-   in-app update dialog shows).
+   and makes a **draft** release with the tag message as its notes (which the
+   in-app update dialog shows) and `SHA256SUMS`.
 
-8. **Watch the release run** until it's green, then give the user the release
-   link. If it fails, don't move the tag silently: say what broke and ask.
+8. **Watch the release run** until it's green. If it fails, don't move the tag
+   silently: say what broke and ask.
+
+9. **The user signs and publishes it.** The signing key is on their computer
+   and the step needs their GitHub token, so don't run it yourself; give them
+   the command to run with `!`:
+
+   ```sh
+   ! GITHUB_TOKEN=<token> backend/.venv/Scripts/python scripts/sign_release.py publish v1.14.0
+   ```
+
+   (A fine-grained token for this repo with Contents: read and write.) It
+   checks every download against `SHA256SUMS`, signs it, uploads
+   `SHA256SUMS.sig` and publishes the release. Until then the release is a
+   draft that nobody sees. Then give them the release link.

@@ -82,12 +82,14 @@ export function releasePage(version: string) {
   return `https://github.com/vdd11/lost-ark-tracker/releases/tag/v${version}`;
 }
 
-/** The release file the in-app updater checks downloads against. */
+/** The release files the in-app updater checks downloads against: checksums, and their signature. */
 export const CHECKSUMS_ASSET = "SHA256SUMS";
+export const SIGNATURE_ASSET = "SHA256SUMS.sig";
 
-/** "Update now" needs a copy that can replace itself and a release it can verify. */
+/** "Update now" needs a copy that can replace itself and a release it can verify (signed checksums). */
 export function canUpdateInPlace(release: Release, supported: boolean) {
-  return supported && release.assets.some((asset) => asset.name === CHECKSUMS_ASSET);
+  const names = new Set(release.assets.map((asset) => asset.name));
+  return supported && names.has(CHECKSUMS_ASSET) && names.has(SIGNATURE_ASSET);
 }
 
 /**

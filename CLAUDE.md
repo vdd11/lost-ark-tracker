@@ -86,8 +86,13 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   one in and starts it with `--after-update` (waits for the port; env
   `PYINSTALLER_RESET_ENVIRONMENT=1` so it doesn't reuse this copy's unpacked
   files). It only takes HTTPS URLs on GitHub's hosts (redirects too) and
-  caps downloads at 200 MB; `SHA256SUMS` comes from the same release, so it
-  guards against corruption, not a compromised release (`docs/security.md`).
+  caps downloads at 200 MB. `SHA256SUMS` must be signed (`SHA256SUMS.sig`,
+  Ed25519, `update_signing.py` holds the trusted public keys); the private key
+  stays on the developer's computer. `release.yml` makes a draft release; it's
+  published by `scripts/sign_release.py publish vX.Y.Z`, run by the user
+  (their key and GITHUB_TOKEN). See `docs/security.md`.
+- Workflows pin every action to a commit SHA (with the version in a
+  comment); Dependabot updates them. Keep new ones pinned.
   `LOST_ARK_TRACKER_RELEASES_API` points it at a test server (then loopback
   http is allowed).
 - Guides page links are data (`frontend/lib/data/guides.json`, with a

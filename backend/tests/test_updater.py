@@ -1,28 +1,54 @@
+import base64
 import hashlib
+import importlib
 import io
 import json
 import os
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+import update_signing
 import updater
 
 NEW = b"new app bytes"
 OLD = b"old app bytes"
 
 
-def release(version="99.0.0", assets=("LostArkTracker-windows.exe", "SHA256SUMS")):
+# A key made for the tests; the app trusts it instead of the real one here.
+TEST_KEY = Ed25519PrivateKey.generate()
+OTHER_KEY = Ed25519PrivateKey.generate()
+BASE = "https://github.com/vdd11/lost-ark-tracker/releases/download/v99.0.0/"
+
+
+def public(key):
+    return base64.b64encode(key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)).decode()
+
+
+def signature(key, data: str):
+    return base64.b64encode(key.sign(data.encode())).decode() + "\n"
+
+
+@pytest.fixture(autouse=True)
+def trust_test_key(monkeypatch):
+    monkeypatch.setattr(update_signing, "PUBLIC_KEYS", (public(TEST_KEY),))
+
+
+def release(version="99.0.0", assets=("LostArkTracker-windows.exe", "SHA256SUMS", "SHA256SUMS.sig")):
     return {
         "tag_name": f"v{version}",
         "assets": [{"name": name, "browser_download_url": f"https://github.com/vdd11/lost-ark-tracker/releases/download/v99.0.0/{name}"} for name in assets],
     }
 
 
-def fake_remote(release_data, checksum=None, payload=NEW):
+def fake_remote(release_data, checksum=None, payload=NEW, signed_by=TEST_KEY, sig=None):
     checksum = checksum or hashlib.sha256(payload).hexdigest()
+    sums = f"{checksum}  LostArkTracker-windows.exe\n{'0' * 64}  LostArkTracker-linux\n"
     texts = {
         updater.RELEASES_API: json.dumps(release_data),
-        "https://github.com/vdd11/lost-ark-tracker/releases/download/v99.0.0/SHA256SUMS": f"{checksum}  LostArkTracker-windows.exe\n{'0' * 64}  LostArkTracker-linux\n",
+        BASE + "SHA256SUMS": sums,
+        BASE + "SHA256SUMS.sig": sig if sig is not None else signature(signed_by, sums),
     }
 
     def fetch(url):
@@ -76,7 +102,8 @@ def test_a_bad_download_changes_nothing(exe):
     "data, message",
     [
         (release(version="0.0.1"), "already have the latest"),
-        (release(assets=("LostArkTracker-windows.exe",)), "no checksums"),
+        (release(assets=("LostArkTracker-windows.exe", "SHA256SUMS.sig")), "no checksums"),
+        (release(assets=("LostArkTracker-windows.exe", "SHA256SUMS")), "isn't signed"),
         (release(assets=("LostArkTracker-linux", "SHA256SUMS")), "no download for this system"),
     ],
 )
@@ -85,6 +112,49 @@ def test_refuses_what_it_cant_verify(exe, data, message):
     with pytest.raises(updater.UpdateError, match=message):
         updater.install_update(exe, fetch, fetch_file, platform="win32")
     assert exe.read_bytes() == OLD
+
+
+@pytest.mark.parametrize(
+    "remote",
+    [
+        {"signed_by": OTHER_KEY},  # someone else's key
+        {"sig": "not base64!"},
+        {"sig": ""},
+    ],
+)
+def test_refuses_checksums_not_signed_by_the_developer(exe, remote):
+    fetch, fetch_file = fake_remote(release(), **remote)
+    with pytest.raises(updater.UpdateError, match="isn't signed by the developer"):
+        updater.install_update(exe, fetch, fetch_file, platform="win32")
+    assert exe.read_bytes() == OLD
+    assert not updater.old_path(exe).exists()
+
+
+def test_a_tampered_checksum_file_fails_the_signature(exe):
+    fetch, fetch_file = fake_remote(release())
+
+    def tampered(url):
+        text = fetch(url)
+        return text.replace("0" * 64, "1" * 64) if url.endswith("/SHA256SUMS") else text
+
+    with pytest.raises(updater.UpdateError, match="isn't signed by the developer"):
+        updater.install_update(exe, tampered, fetch_file, platform="win32")
+    assert exe.read_bytes() == OLD
+
+
+def test_signature_helper_and_key_rollover():
+    good = signature(TEST_KEY, "sums")
+    assert update_signing.is_signed(b"sums", good)
+    assert not update_signing.is_signed(b"other", good)
+    assert not update_signing.is_signed(b"sums", signature(OTHER_KEY, "sums"))
+    # Trusting two keys (while rolling in a new one) accepts either; a broken entry is skipped.
+    assert update_signing.is_signed(b"sums", signature(OTHER_KEY, "sums"), keys=("garbage", public(TEST_KEY), public(OTHER_KEY)))
+
+
+def test_the_app_ships_a_real_key():
+    # The module as written, not the test key patched in above.
+    shipped = importlib.reload(update_signing).PUBLIC_KEYS
+    assert shipped and all(len(base64.b64decode(key)) == 32 for key in shipped)
 
 
 def test_offline_is_a_clear_error(exe):

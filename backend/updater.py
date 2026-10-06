@@ -2,7 +2,8 @@
 
 Only when the user asks (the update check that shows the dialog is opt-in):
 fetch the latest GitHub release, download this system's file next to the
-running one, check it against the release's SHA256SUMS, then swap it in.
+running one, check that the release's SHA256SUMS is signed by the developer
+(update_signing.py) and that the download matches it, then swap it in.
 Windows lets a running .exe be renamed but not overwritten, so the current
 file moves aside to `<name>.old<suffix>` and is deleted on the next start.
 If anything fails before the swap, nothing changes; if the swap itself
@@ -28,6 +29,7 @@ from typing import Callable
 
 import certifi
 
+import update_signing
 from version import APP_VERSION
 
 log = logging.getLogger(__name__)
@@ -190,13 +192,20 @@ def install_update(
         raise UpdateError(f"Version {version} has no download for this system.")
     if CHECKSUMS not in assets:
         raise UpdateError(f"Version {version} has no checksums to verify the download, so it can't be installed here.")
-    if not all(is_allowed_url(str(assets[key])) for key in (name, CHECKSUMS)):
+    signature_asset = update_signing.SIGNATURE_ASSET
+    if signature_asset not in assets:
+        raise UpdateError(f"Version {version} isn't signed, so it can't be installed here. Download it from GitHub instead.")
+    if not all(is_allowed_url(str(assets[key])) for key in (name, CHECKSUMS, signature_asset)):
         raise UpdateError(f"Version {version}'s files aren't on GitHub, so nothing was downloaded.")
 
     try:
-        expected = parse_checksums(fetch(assets[CHECKSUMS])).get(name)
+        checksums = fetch(assets[CHECKSUMS])
+        signature = fetch(assets[signature_asset])
     except (OSError, ValueError) as error:
         raise UpdateError(f"Couldn't download the checksums ({error}).") from error
+    if not update_signing.is_signed(checksums.encode("utf-8"), signature):
+        raise UpdateError(f"Version {version} isn't signed by the developer's key, so it wasn't installed.")
+    expected = parse_checksums(checksums).get(name)
     if not expected:
         raise UpdateError(f"Version {version}'s checksums don't list {name}.")
 

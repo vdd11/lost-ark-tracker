@@ -80,10 +80,12 @@ describe("justUpdated", () => {
 describe("updating in place", () => {
   const release = (names: string[]) => ({ version: "2.0.0", url: "", notes: "", assets: names.map((name) => ({ name, url: "" })) });
 
-  it("needs a copy that can replace itself and a release with checksums", () => {
-    expect(canUpdateInPlace(release(["LostArkTracker-windows.exe", "SHA256SUMS"]), true)).toBe(true);
+  it("needs a copy that can replace itself and a release with signed checksums", () => {
+    const signed = ["LostArkTracker-windows.exe", "SHA256SUMS", "SHA256SUMS.sig"];
+    expect(canUpdateInPlace(release(signed), true)).toBe(true);
     expect(canUpdateInPlace(release(["LostArkTracker-windows.exe"]), true)).toBe(false);
-    expect(canUpdateInPlace(release(["LostArkTracker-windows.exe", "SHA256SUMS"]), false)).toBe(false);
+    expect(canUpdateInPlace(release(["LostArkTracker-windows.exe", "SHA256SUMS"]), true)).toBe(false);
+    expect(canUpdateInPlace(release(signed), false)).toBe(false);
   });
 
   it("waits until the restarted app answers at the new version", async () => {

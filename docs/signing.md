@@ -20,7 +20,9 @@ It would also make the in-app **Update now** (`backend/updater.py`, since
 1.19) safer to rely on: an unsigned exe that replaces itself is a pattern
 antivirus heuristics can flag. Today it only installs a download whose SHA-256
 matches the release's `SHA256SUMS` (made by `release.yml`), and only when the
-user presses the button; signing would add who built it, not just what.
+user presses the button; the checksums themselves are signed with the
+developer's own key (`docs/security.md`), so the app already knows who
+published an update. Code signing would add a publisher Windows and macOS trust.
 
 ## Free, do first: checksums and build provenance
 

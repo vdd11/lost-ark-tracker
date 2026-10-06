@@ -275,9 +275,10 @@ tab, `--data-dir PATH` to keep the database somewhere else.
 and refuses changes sent by other websites you visit (a page can't, say, start
 an update or restore a backup behind your back). **Update now** only downloads
 from GitHub over HTTPS, caps the download's size, and installs it only if it
-matches the release's checksums; those catch a damaged or altered download,
-not a compromised release (that would need code signing). Details in
-`docs/security.md`.
+matches the release's checksums and those checksums are signed with the
+developer's key, which never leaves the developer's computer. So even someone
+who took over the GitHub release couldn't push an update through the app.
+Details in `docs/security.md`.
 
 Your roster, clears, gold and check-ins are stored only in the database on
 your computer and are never uploaded. The app makes exactly these internet
@@ -286,7 +287,7 @@ requests, and only these:
 | What | Contacts | When | Default |
 |------|----------|------|---------|
 | Update check | `api.github.com` (this repo's latest release, its notes and download links) | Once per browser session | Asked on first launch; existing users keep it on |
-| Update now | `api.github.com` and `github.com` release downloads (the new version and its SHA256SUMS), fetched by the app | Only when you press Update now | Never on its own |
+| Update now | `api.github.com` and `github.com` release downloads (the new version, its SHA256SUMS and their signature), fetched by the app | Only when you press Update now | Never on its own |
 | Lost Ark updates widget | `www.playlostark.com` (server status page) and `api.steampowered.com` (Lost Ark news), fetched by the app | When the widget is on screen, then every 10 minutes while the tracker is open | Off |
 | The widget's "On X" tab | `platform.twitter.com` / `x.com` (X's embed) | Only after you open that tab | Off (the widget is off) |
 

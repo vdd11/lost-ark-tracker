@@ -33,7 +33,7 @@ describe("Update now", () => {
     api.mockImplementation(async (path: string) => (path === "/update/status" ? { supported: true } : { version: "1.19.0" }));
     send.mockResolvedValue({ version: "1.19.0" });
 
-    render(<UpdateDialog release={release(["LostArkTracker-windows.exe", "SHA256SUMS"])} running={{ version: "1.18.0", platform: "windows" }} onClose={() => {}} />);
+    render(<UpdateDialog release={release(["LostArkTracker-windows.exe", "SHA256SUMS", "SHA256SUMS.sig"])} running={{ version: "1.18.0", platform: "windows" }} onClose={() => {}} />);
     await userEvent.click(await screen.findByRole("button", { name: /Update now/ }));
     expect(send).toHaveBeenCalledWith("POST", "/update/install");
     expect(await screen.findByText(/Installed 1.19.0/)).toBeTruthy();
@@ -44,7 +44,7 @@ describe("Update now", () => {
   it("explains a failure and keeps the manual steps", async () => {
     api.mockResolvedValue({ supported: true });
     send.mockRejectedValue(new Error("The download didn't match its checksum, so it wasn't installed."));
-    render(<UpdateDialog release={release(["LostArkTracker-windows.exe", "SHA256SUMS"])} running={{ version: "1.18.0", platform: "windows" }} onClose={() => {}} />);
+    render(<UpdateDialog release={release(["LostArkTracker-windows.exe", "SHA256SUMS", "SHA256SUMS.sig"])} running={{ version: "1.18.0", platform: "windows" }} onClose={() => {}} />);
     await userEvent.click(await screen.findByRole("button", { name: /Update now/ }));
     expect(await screen.findByText(/didn't match its checksum/)).toBeTruthy();
     expect(screen.getByRole("link", { name: /Download for Windows/ })).toBeTruthy();
@@ -59,7 +59,7 @@ describe("Update now", () => {
     unmount();
 
     api.mockResolvedValue({ supported: false });
-    render(<UpdateDialog release={release(["LostArkTracker-windows.exe", "SHA256SUMS"])} running={{ version: "1.18.0", platform: "windows" }} onClose={() => {}} />);
+    render(<UpdateDialog release={release(["LostArkTracker-windows.exe", "SHA256SUMS", "SHA256SUMS.sig"])} running={{ version: "1.18.0", platform: "windows" }} onClose={() => {}} />);
     await waitFor(() => expect(api).toHaveBeenCalledTimes(2));
     expect(screen.queryByRole("button", { name: /Update now/ })).toBeNull();
   });

@@ -6,8 +6,9 @@ on:
   push:
     tags: ["v*"]
 
+# Only the job that publishes the release can write.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -25,13 +26,13 @@ jobs:
             binary: dist/LostArkTracker
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: backend/requirements*.txt
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -56,7 +57,7 @@ jobs:
         shell: bash
         run: mv "${{ matrix.binary }}" "dist/${{ matrix.asset }}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ matrix.asset }}
           path: dist/${{ matrix.asset }}
@@ -64,8 +65,10 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       # The release notes are the annotated tag's message (see the release
       # skill). Checkout can leave the tag without its annotation, so fetch it.
       - name: Notes from the tag message
@@ -73,7 +76,7 @@ jobs:
           git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
           git tag -l "${GITHUB_REF_NAME}" --format='%(contents)' > release-notes.md
           cat release-notes.md
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: assets
           merge-multiple: true
@@ -83,8 +86,12 @@ jobs:
           cd assets
           sha256sum LostArkTracker-* > SHA256SUMS
           cat SHA256SUMS
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: assets/*
           body_path: release-notes.md
           generate_release_notes: true
+          # A draft: the app's update check can't see it until
+          # scripts/sign_release.py has signed SHA256SUMS (with a key that
+          # never comes to GitHub) and published it.
+          draft: true
