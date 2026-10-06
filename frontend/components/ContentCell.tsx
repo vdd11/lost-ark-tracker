@@ -18,6 +18,8 @@ export type RunChanges = {
 };
 
 const MAX_SANDS = 5;
+const TICKET_HELP =
+  "Where tickets come from: your own unlock's from Kurzan Front and Chaos Rift; guild shop boxes can give any unlock up to yours.";
 
 /**
  * Weekly content with tiers and gem rewards, right in the cell:
@@ -85,9 +87,11 @@ export default function ContentCell({
               />
             ))}
             <span
-              className="flex h-6 w-5 cursor-help items-center justify-center text-xs text-muted"
-              title="Your own unlock's tickets come from Kurzan Front and Chaos Rift. Guild shop boxes can give any unlock up to yours."
-              aria-label="Where tickets come from"
+              tabIndex={0}
+              role="note"
+              className="flex h-6 w-5 cursor-help items-center justify-center rounded text-xs text-muted"
+              title={TICKET_HELP}
+              aria-label={TICKET_HELP}
             >
               ?
             </span>

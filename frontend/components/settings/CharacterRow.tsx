@@ -44,7 +44,12 @@ export default function CharacterRow({
         <DragHandle handle={handle} />
       </td>
       <td className="px-3 py-1.5">
-        <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} onBlur={() => saveText("name")} />
+        <input
+          value={draft.name}
+          onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          onBlur={() => saveText("name")}
+          aria-label={`${character.name}'s name`}
+        />
       </td>
       <td className="px-3 py-1.5">
         <div className="flex items-center gap-2">
@@ -63,6 +68,7 @@ export default function CharacterRow({
           type="number"
           step="0.01"
           min="0"
+          aria-label={`${character.name}'s item level`}
           className="w-28"
           value={draft.item_level}
           onChange={(e) => setDraft({ ...draft, item_level: e.target.value })}

@@ -59,7 +59,7 @@ export function AddTaskForm({ onAdd }: { onAdd: (data: object) => Promise<void> 
   return (
     <form onSubmit={handleSubmit} className="mb-4 flex flex-wrap items-end gap-2 text-sm">
       <input required placeholder="Task name, e.g. Paradise" value={name} onChange={(e) => setName(e.target.value)} className="w-56" />
-      <select value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)}>
+      <select value={category} onChange={(e) => setCategory(e.target.value as TaskCategory)} aria-label="New task resets">
         {CATEGORIES.filter((c) => c.value !== "raid").map((c) => (
           <option key={c.value} value={c.value}>{c.label}</option>
         ))}
