@@ -34,13 +34,14 @@ import CharacterName from "@/components/CharacterName";
 // Fixed order and colors; anything else folds into "Other". Ebony Cube and
 // Haal's Hourglass are filled in from the tracker, the rest are logged here.
 const TRACKED = ["Ebony Cube", "Haal's Hourglass"];
-const SOURCES = ["Guardian Raid", "Field Boss"];
+const SOURCES = ["Guardian Raid", "Field Boss", "Chaos Gate"];
 const OTHER = "Other";
 const SERIES: ChartSeries[] = [
   { key: "Ebony Cube", label: "Ebony Cube", color: "var(--series-1)" },
   { key: "Haal's Hourglass", label: "Haal's Hourglass", color: "var(--series-2)" },
   { key: "Guardian Raid", label: "Guardian Raid", color: "var(--series-3)" },
   { key: "Field Boss", label: "Field Boss", color: "var(--series-4)" },
+  { key: "Chaos Gate", label: "Chaos Gate", color: "var(--danger)" },
   { key: OTHER, label: OTHER, color: "var(--series-5)" },
 ];
 const KNOWN_SOURCES = [...TRACKED, ...SOURCES];

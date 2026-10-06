@@ -48,7 +48,10 @@ The screenshots use made-up characters.
     **gold goal** widget counts tradeable gold only or tradeable + roster-bound
     (the default), each with its own target.
   - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset
-    daily at 10:00 UTC.
+    daily at 10:00 UTC. Optionally (Customize → Today), it shows when Field Boss
+    (Tuesday, Friday, Sunday) or Chaos Gate (Monday, Thursday, Saturday,
+    Sunday) is up, with **Log drops** to record the gems you got and the gold
+    from selling the rest; their drops are random, so you enter them.
   - **Ebony Cube** (tickets, no reset): run counters for the character's own unlock
     (Kurzan Front / Chaos Rift tickets); the unlock button counts lower unlocks
     from guild shop boxes and lucky rooms.
@@ -176,7 +179,7 @@ The screenshots use made-up characters.
   using each tier's reward table (shown on the Gems page; known values come
   with updates, and you can fill in any that aren't known yet, like most
   lucky rooms). Log Guardian
-  Raid and Field Boss drops by hand. Weekly chart and per-character totals in
+  Raid, Field Boss and Chaos Gate drops by hand. Weekly chart and per-character totals in
   terms of what your gems combine into (3 of a level make the next, so 15 Lv1
   gems are a Lv3 + 2× Lv2).
 - **Export**: "Export CSV" on the Gold and Gems pages downloads your full

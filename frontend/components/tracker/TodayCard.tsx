@@ -11,6 +11,9 @@ import { parseUtc } from "@/lib/api";
 import { cellKey, formatCountdown, SectionData } from "@/lib/trackerSections";
 import { appliesTo, FINISHED_ROWS_KEY, RAID_PICKERS_KEY, remainingFor } from "@/lib/trackerView";
 import GameIcon from "@/components/GameIcon";
+import FieldDrops from "@/components/tracker/FieldDrops";
+import { FIELD_EVENTS_PREFERENCE } from "@/lib/fieldEvents";
+import { usePreference } from "@/lib/usePreference";
 
 /** Dailies, reset every day, with how many rested runs are waiting. */
 export default function TodayCard({
@@ -29,6 +32,7 @@ export default function TodayCard({
     (r) => r.rested_run_available && section.columns.some((t) => t.id === r.task_id),
   ).length;
 
+  const [fieldEventsOn] = usePreference<boolean>(FIELD_EVENTS_PREFERENCE, false);
   return (
     <TrackerCard
       icon={Sun}
@@ -75,6 +79,7 @@ export default function TodayCard({
         period="today"
         onShow={() => view.setVisible(FINISHED_ROWS_KEY, true)}
       />
+      {fieldEventsOn && <FieldDrops data={data} />}
     </TrackerCard>
   );
 }

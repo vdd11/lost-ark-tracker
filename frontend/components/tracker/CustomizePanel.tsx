@@ -23,6 +23,7 @@ import {
   viewKey,
   WIDGET_KEYS,
 } from "@/lib/trackerView";
+import { FIELD_EVENTS_PREFERENCE } from "@/lib/fieldEvents";
 
 /**
  * Choose what the tracker shows. Changes are a draft until Save; Cancel (or
@@ -48,12 +49,14 @@ export default function CustomizePanel({
   const [resetClockOn, setResetClockOn] = usePreference<boolean>(RESET_CLOCK_PREFERENCE, false);
   const [countersOn, setCountersOn] = usePreference<boolean>(COUNTERS_PREFERENCE, false);
   const [groupsOn, setGroupsOn] = usePreference<boolean>(RAID_GROUPS_PREFERENCE, false);
+  const [fieldEventsOn, setFieldEventsOn] = usePreference<boolean>(FIELD_EVENTS_PREFERENCE, false);
   // Opt-in widgets keep their own on/off switch instead of a spot in the hidden list.
   const optInSetters: Record<string, (on: boolean) => void> = {
     [NEWS_PREFERENCE]: setNewsOn,
     [RESET_CLOCK_PREFERENCE]: setResetClockOn,
     [COUNTERS_PREFERENCE]: setCountersOn,
     [RAID_GROUPS_PREFERENCE]: setGroupsOn,
+    [FIELD_EVENTS_PREFERENCE]: setFieldEventsOn,
   };
   const saved: CustomizeDraft = {
     hidden,
@@ -62,6 +65,7 @@ export default function CustomizePanel({
       [RESET_CLOCK_PREFERENCE]: resetClockOn,
       [COUNTERS_PREFERENCE]: countersOn,
       [RAID_GROUPS_PREFERENCE]: groupsOn,
+      [FIELD_EVENTS_PREFERENCE]: fieldEventsOn,
     },
     styleChosen: false,
   };
@@ -113,7 +117,11 @@ export default function CustomizePanel({
     },
     {
       title: "Today",
-      items: [{ key: SECTION_KEYS.today, label: "Show the Today card", strong: true }, ...taskItems("today")],
+      items: [
+        { key: SECTION_KEYS.today, label: "Show the Today card", strong: true },
+        ...taskItems("today"),
+        { key: FIELD_EVENTS_PREFERENCE, label: "Field Boss & Chaos Gate: log your drops" },
+      ],
     },
     {
       title: "Ebony Cube",
