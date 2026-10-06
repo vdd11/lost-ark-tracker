@@ -1,5 +1,5 @@
 # Every check CI runs, in one go: backend lint + tests, frontend tests, types,
-# lint and the static build. Run from anywhere: powershell -File scripts\check.ps1
+# lint, the static build and the end-to-end tests. Run from anywhere: powershell -File scripts\check.ps1
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 
@@ -23,6 +23,9 @@ Step "frontend" "npm.cmd" @("test")
 Step "frontend" "npx.cmd" @("tsc", "--noEmit")
 Step "frontend" "npm.cmd" @("run", "lint")
 Step "frontend" "npm.cmd" @("run", "build")
+
+Write-Host "== frontend: end-to-end (Playwright, installed Chrome)"
+Step "frontend" "npm.cmd" @("run", "e2e")
 
 # next build rewrites this file; it's never committed.
 git -C $root checkout -- frontend/next-env.d.ts 2>$null

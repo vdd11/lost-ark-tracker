@@ -11,3 +11,6 @@ database.db
 /build/
 /dist/
 /backend/backups/
+/frontend/test-results/
+/frontend/playwright-report/
+/frontend/e2e/.data/

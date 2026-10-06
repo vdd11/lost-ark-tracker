@@ -26,6 +26,11 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   (vitest covers the pure logic in `lib/`; keep component-free code there.
   Interactive components have React Testing Library tests in
   `components/__tests__/`, which start with `// @vitest-environment jsdom`)
+- End-to-end: `cd frontend && npm run build && npm run e2e` (Playwright,
+  `e2e/*.spec.ts`). `e2e/server.mjs` starts the real backend on a fresh database
+  in `e2e/.data`; locally it drives the installed Chrome (`channel: "chrome"`, no
+  browser download), CI installs Playwright's Chromium. Select by role and
+  accessible name, like a player would.
 - The packaged Windows app is windowed (no console) and lives in the system
   tray (`backend/tray.py`, pystray + Pillow, Windows-only deps); errors go to a
   message box. `--no-tray` runs it console-style (the smoke test uses it).

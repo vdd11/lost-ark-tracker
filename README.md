@@ -315,7 +315,12 @@ Frontend (Next.js), from `frontend/`:
 ```sh
 npm install
 npm run dev                   # http://localhost:3000, talks to the API above
+npm test                      # unit and component tests (vitest)
+npm run build && npm run e2e  # end-to-end tests (Playwright) in your installed Chrome, on a throwaway database
 ```
+
+`powershell -File scripts\check.ps1` (or `sh scripts/check.sh`) runs every
+check CI runs.
 
 In development the database is `backend/database.db`, separate from the
 packaged app's. To move data between them, use Settings → Download backup in
