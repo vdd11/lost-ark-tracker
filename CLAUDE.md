@@ -55,9 +55,8 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   existing columns are adopted. After a patch, follow
   `docs/patch-checklist.md` and bump `CATALOG_REVIEWED`.
 - Tools live under `app/tools/<tool>/` with their maths in `lib/<tool>.ts`
-  and a card in `lib/tools.ts`. Market prices are user-entered (`MarketPrice`
-  rows); `price_items.py` only names built-in items, each with a cited source.
-  There's no honing tool (removed in 1.18; Guides links the honing
+  and a card in `lib/tools.ts`. There's no Prices tool any more (removed in
+  1.18; its `market_prices` table stays, unused, in backups). There's no honing tool (removed in 1.18; Guides links the honing
   calculators); its `honing_plans` table stays, unused, so old databases and
   backups still load. Astrogem odds live in
   `lib/data/astrogems.ts` with their sources (official KR probability page,

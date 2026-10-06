@@ -4,18 +4,12 @@ export type Tool = {
   title: string;
   description: string;
   /** A lucide icon name the hub maps to a component. */
-  icon: "prices" | "astrogems";
+  icon: "astrogems";
   /** A game icon (lib/data/icons.ts) used instead when its file is bundled. */
   gameIcon?: string;
 };
 
 export const TOOLS: Tool[] = [
-  {
-    href: "/tools/prices",
-    title: "Prices",
-    description: "A notebook of market prices you type in from the game, with how old each one is.",
-    icon: "prices",
-  },
   {
     href: "/tools/astrogems",
     title: "Astrogem cutting",

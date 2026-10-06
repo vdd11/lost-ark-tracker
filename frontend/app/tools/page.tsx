@@ -1,12 +1,12 @@
 "use client";
 
-import { ChevronRight, Gem, Hammer, Tags, Wrench } from "lucide-react";
+import { ChevronRight, Gem, Hammer, Wrench } from "lucide-react";
 import Link from "next/link";
 
 import { Tool, TOOLS } from "@/lib/tools";
 import GameIcon from "@/components/GameIcon";
 
-const ICONS: Record<Tool["icon"], typeof Tags> = { prices: Tags, astrogems: Gem };
+const ICONS: Record<Tool["icon"], typeof Gem> = { astrogems: Gem };
 
 export default function ToolsPage() {
   return (

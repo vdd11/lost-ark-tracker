@@ -27,7 +27,7 @@ export default function Nav() {
   const [hiddenRaw] = usePreference<string>(HIDDEN_PREFERENCE, DEFAULT_HIDDEN_RAW);
   const hidden = parseHidden(hiddenRaw);
   // A hidden page still shows while you're on it, so a bookmark isn't a dead end.
-  // A section's sub-pages (/tools/prices) count as being on it.
+  // A section's sub-pages (/tools/astrogems) count as being on it.
   const isCurrent = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
   const links = LINKS.filter((link) => !link.key || !hidden.has(link.key) || isCurrent(link.href));
   const [updateCheck, setUpdateCheck] = useUpdateCheck();

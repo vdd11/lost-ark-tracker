@@ -103,10 +103,6 @@ The screenshots use made-up characters.
 - **Tools** (`g` `o`): helpers to keep open beside the game. For honing,
   sites like Honing Forecast and Maxroll's upgrade calculator do it best, so
   the Tools page points to them under Guides → Honing and gear.
-  - **Prices**: market prices you type in from the game (price and bundle
-    size per item, with when you last updated it), in one place. Add your own items; hide or reset any. Nothing is looked
-    up online: the community price site (lostarkmarket.online) now redirects
-    to an unrelated site, so there's no price fetch.
   - **Astrogem cutting**: keep it beside the game while you process a gem.
     It looks like the game's dark **Processing** window (original artwork):
     the grade (Uncommon 5, Rare 7, Epic 9 attempts), the gem type (Order:
@@ -184,8 +180,8 @@ The screenshots use made-up characters.
   terms of what your gems combine into (3 of a level make the next, so 15 Lv1
   gems are a Lv3 + 2× Lv2).
 - **Export**: "Export CSV" on the Gold and Gems pages downloads your full
-  history for a spreadsheet; the spending log and prices have
-  their own exports.
+  history for a spreadsheet; the spending log has
+  its own export.
 - **Game icons**: class emblems and item icons (gold, gems, astrogems, the
   Ebony Cube ticket, Fate Ember, Paradise) ship inside the app, so nothing
   is loaded from the web. Each file and its source is listed in

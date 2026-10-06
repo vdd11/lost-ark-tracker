@@ -100,21 +100,6 @@ def export_gems(db: Session = Depends(get_db)):
     return csv_response("lost-ark-gems.csv", header, rows)
 
 
-@router.get("/export/prices.csv")
-def export_prices(db: Session = Depends(get_db)):
-    from routes.prices import all_prices
-
-    rows = [
-        [
-            p.name, "" if p.price is None else number(p.price), p.per,
-            "" if p.unit_price is None else number(p.unit_price),
-            p.updated_at.isoformat(timespec="minutes") if p.updated_at else "", "built-in" if p.builtin else "custom",
-        ]
-        for p in all_prices(db)
-    ]
-    return csv_response("lost-ark-prices.csv", ["item", "price", "per", "gold_per_unit", "updated", "kind"], rows)
-
-
 @router.get("/export/spending.csv")
 def export_spending(db: Session = Depends(get_db)):
     names = dict(db.query(Character.id, Character.name).all())

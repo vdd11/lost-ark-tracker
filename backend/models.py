@@ -221,7 +221,9 @@ class BalanceCheck(Base):
 
 
 class MarketPrice(Base):
-    """What an item costs on the market, typed in by the user (Tools → Prices).
+    """What an item cost on the market, from the old Tools → Prices (removed in
+    1.18). Nothing reads it any more; the table stays, and stays in backups,
+    so old databases open and old backups restore with nothing lost.
 
     Built-in items (price_items.py) only get a row once something about them
     is set; custom items ("custom-<n>") always have one and carry their name.
