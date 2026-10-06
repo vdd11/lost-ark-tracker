@@ -26,6 +26,9 @@ export type Character = {
   is_gold_earner: boolean;
   position: number;
   account_id: number;
+  /** Last day each paid blessing is on (YYYY-MM-DD), or null. */
+  azena_until: string | null;
+  innana_until: string | null;
   task_ids: number[];
   /** task_id -> difficulty_id for raids (JSON object keys are strings). */
   difficulty_ids: Record<string, number>;

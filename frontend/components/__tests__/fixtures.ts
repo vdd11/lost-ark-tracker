@@ -22,7 +22,7 @@ export function task(extra: Partial<Task> = {}): Task {
 export function character(extra: Partial<Character> = {}): Character {
   return {
     id: 7, name: "Bardy", class_name: "Bard", item_level: 1735, is_gold_earner: true, position: 0,
-    account_id: 1, task_ids: [], difficulty_ids: {}, ...extra,
+    account_id: 1, azena_until: null, innana_until: null, task_ids: [], difficulty_ids: {}, ...extra,
   };
 }
 

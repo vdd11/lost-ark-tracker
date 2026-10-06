@@ -50,6 +50,9 @@ class CharacterUpdate(BaseModel):
     is_gold_earner: bool | None = None
     position: int | None = None
     account_id: int | None = None
+    # Send null to clear a blessing.
+    azena_until: date | None = None
+    innana_until: date | None = None
 
 
 class CharacterRead(BaseModel):
@@ -62,6 +65,8 @@ class CharacterRead(BaseModel):
     is_gold_earner: bool
     position: int
     account_id: int = 1
+    azena_until: date | None = None
+    innana_until: date | None = None
     task_ids: list[int] = []
     # task_id -> difficulty_id for assigned raids that have difficulties.
     difficulty_ids: dict[int, int] = {}

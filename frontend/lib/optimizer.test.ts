@@ -16,7 +16,7 @@ function raid(name: string, tiers: [string, number, number | null, number?][], e
 function who(name: string, itemLevel: number, extra: Partial<Character> = {}): Character {
   return {
     id: nextId++, name, class_name: "Bard", item_level: itemLevel, is_gold_earner: false, position: nextId,
-    account_id: 1, task_ids: [], difficulty_ids: {}, ...extra,
+    account_id: 1, azena_until: null, innana_until: null, task_ids: [], difficulty_ids: {}, ...extra,
   };
 }
 const assigned = (tasks: [Task, string][]) => ({

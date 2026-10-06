@@ -134,6 +134,7 @@ export default function SettingsPage() {
                 <th className="px-3 py-2 font-medium">Class</th>
                 <th className="px-3 py-2 font-medium">Item level</th>
                 <th className="px-3 py-2 font-medium">Gold earner</th>
+                <th className="px-3 py-2 font-medium" title="Paid blessings and the last day each is on">Blessings</th>
                 {multipleAccounts && <th className="px-3 py-2 font-medium">Account</th>}
                 <th className="px-3 py-2" />
               </tr>

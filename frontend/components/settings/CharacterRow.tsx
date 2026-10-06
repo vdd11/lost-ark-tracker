@@ -5,6 +5,7 @@ import { useState } from "react";
 import ClassInput from "@/components/ClassInput";
 import { AccountSelect, DeleteButton, DragHandle, DragHandleProps, draggingRow } from "@/components/settings/controls";
 import { Account, Character } from "@/lib/api";
+import { BLESSINGS, gameDay } from "@/lib/blessings";
 import { normalizeClass } from "@/lib/classes";
 import GameIcon from "@/components/GameIcon";
 import { classIconName } from "@/lib/data/icons";
@@ -86,6 +87,11 @@ export default function CharacterRow({
           aria-label={`${character.name} is a gold earner`}
         />
       </td>
+      <td className="px-3 py-1.5">
+        {BLESSINGS.map((blessing) => (
+          <BlessingControl key={blessing.id} character={character} blessing={blessing} onSave={onSave} />
+        ))}
+      </td>
       {accounts.length > 0 && (
         <td className="px-3 py-1.5">
           <AccountSelect
@@ -100,5 +106,49 @@ export default function CharacterRow({
         <DeleteButton onDelete={onDelete} />
       </td>
     </tr>
+  );
+}
+
+/**
+ * One paid blessing: ticked with the last day it's on. Ticking shows the
+ * date to fill in (its slot is always there, so the table never moves);
+ * renewing is picking a later date; unticking clears it.
+ */
+function BlessingControl({
+  character,
+  blessing,
+  onSave,
+}: {
+  character: Character;
+  blessing: (typeof BLESSINGS)[number];
+  onSave: (changes: Partial<Character>) => void;
+}) {
+  const until = character[blessing.field];
+  const [ticked, setTicked] = useState(Boolean(until));
+  const on = ticked || Boolean(until);
+  const ended = Boolean(until && until < gameDay(new Date()));
+  return (
+    <div className="flex items-center gap-2 whitespace-nowrap py-0.5">
+      <label className="flex w-20 items-center gap-1.5 text-sm" title={blessing.help}>
+        <input
+          type="checkbox"
+          checked={on}
+          onChange={(e) => {
+            setTicked(e.target.checked);
+            if (!e.target.checked && until) onSave({ [blessing.field]: null });
+          }}
+          aria-label={`${character.name} has ${blessing.label} blessing`}
+        />
+        {blessing.label}
+      </label>
+      <input
+        type="date"
+        value={until ?? ""}
+        onChange={(e) => e.target.value && onSave({ [blessing.field]: e.target.value })}
+        aria-label={`Last day of ${character.name}'s ${blessing.label} blessing`}
+        title={ended ? "Ended: pick a new last day to renew it" : until ? "Last day it's on; pick a later one when you renew" : "Pick the last day it's on"}
+        className={`w-36 py-0.5 text-xs ${on ? "" : "invisible"} ${ended ? "text-muted line-through" : ""} ${on && !until ? "border-accent" : ""}`}
+      />
+    </div>
   );
 }

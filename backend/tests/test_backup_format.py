@@ -23,8 +23,25 @@ def test_format_1_fixture_restores_every_table(client):
     assert client.post("/api/backup", json=original).status_code == 204
 
     restored = client.get("/api/backup").json()
-    # A round trip: what comes back out is exactly what went in.
-    assert tables(restored) == tables(original)
+    # A round trip: what comes back out is exactly what went in. Columns added
+    # since the fixture was made (additive, no format bump) come back as their
+    # defaults, so only the fixture's own columns are compared.
+    def fixture_columns(backup):
+        result = {}
+        for key, rows in tables(backup).items():
+            columns = original[key][0].keys() if original.get(key) else ()
+            result[key] = [{column: row.get(column) for column in columns} for row in rows]
+        return result
+
+    assert fixture_columns(restored) == fixture_columns(original)
+    added = {
+        (key, column)
+        for key, rows in tables(restored).items()
+        if rows and original.get(key)
+        for column in rows[0]
+        if column not in original[key][0]
+    }
+    assert all(row[column] in (None, 0, False, "", [], {}) for key, column in added for row in restored[key])
     old_tables = [key for key in backups.BACKUP_MODELS if key in original]
     assert all(original[key] for key in old_tables), "the fixture should cover every table it has"
     assert all(restored[key] == [] for key in backups.BACKUP_MODELS if key not in original)

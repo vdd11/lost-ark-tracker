@@ -205,7 +205,10 @@ The screenshots use made-up characters.
   `frontend/public/game-icons/SOURCES.md`; Lost Ark and its images are
   trademarks and property of Smilegate RPG / Amazon Games.
 - **Settings**: add characters (their usual raids are pre-selected from item
-  level), edit daily/weekly columns, and download/restore backups.
+  level), tick each character's paid blessings with the last day they're on
+  (Azena's: blessed embers from Chaos Dungeon and Guardian Raid; Innana's: a
+  second Chaos Dungeon run a day at 1730+; pick a later day when you renew),
+  edit daily/weekly columns, and download/restore backups.
 
 ## Using it
 
