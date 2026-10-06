@@ -134,7 +134,10 @@ CATALOG = [
             Difficulty("1st", 1640, 0, reward_gems={"2": 6}),
             Difficulty("2nd", 1680, 0, reward_gems={"2": 12}),
             Difficulty("3rd", 1700, 0, reward_gems={"2": 16}),
-            Difficulty("4th", 1720, 0, reward_gems={"2": 22}),
+            # Lucky room, common part (each kind of room adds its own extra on top):
+            # 7 Lv3 gems, per "큐브 4해금 보상 정리", Inven (KR), 2025-08-21:
+            # https://www.inven.co.kr/board/lostark/6271/2487547
+            Difficulty("4th", 1720, 0, reward_gems={"2": 22}, lucky_gems={"3": 7}),
         ],
         note="Runs depend on tickets, so count them.",
     ),
@@ -168,10 +171,9 @@ def best_difficulty(difficulties: list[RaidDifficulty], item_level: float) -> Ra
 def sync_catalog(db: Session):
     """Add catalog tasks and keep their values current.
 
-    Item level, gold, bound share and bonus cost always follow the catalog,
-    except that a gold or bonus cost the catalog doesn't know yet (None) keeps
-    whatever is there. Gem tables still follow the catalog only until the user
-    edits them (the Gems page): catalog_rewards remembers what we last wrote.
+    Item level, gold, bound share, bonus cost and gem tables always follow the
+    catalog, except that a value the catalog doesn't know yet (None) keeps
+    whatever is there (users can fill in unknown gem tables on the Gems page).
     """
     catalog_keys = {item.key for item in CATALOG}
     tasks_by_key = {t.catalog_key: t for t in db.query(Task).filter(Task.catalog_key.is_not(None))}
@@ -260,9 +262,10 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
         apply_catalog_values(difficulty, spec)
         difficulty.position = position
 
-        previous = difficulty.catalog_rewards or {}
+        # Gem tables follow the catalog too; one it doesn't know yet (None)
+        # keeps what the user entered on the Gems page.
         for table, value in spec.rewards().items():
-            if getattr(difficulty, table) == previous.get(table):
+            if value is not None:
                 setattr(difficulty, table, value)
         difficulty.catalog_rewards = spec.rewards()
 

@@ -47,10 +47,11 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - Never touch `backend/database.db` or the user's app-data database in tests;
   set `DATABASE_URL` (or `--data-dir` for the exe) instead.
 - Raids and Ebony Cube come from the catalog in `backend/raids.py`, synced on
-  startup. The app owns raid values: users can't edit them (only gem tables,
-  on the Gems page), and `sync_catalog` overwrites them, except that a `None`
-  keeps what's there. Only add numbers from official NA patch notes or the
-  user. Use `None` for unknown gold. Keep `legacy_names` when renaming so
+  startup. The app owns raid values and gem tables: users can't edit them,
+  and `sync_catalog` overwrites them, except that a `None` keeps what's
+  there (users can fill in unknown gem tables on the Gems page). Only add
+  numbers from official NA patch notes or the user (cite any other source).
+  Use `None` for unknown gold. Keep `legacy_names` when renaming so
   existing columns are adopted. After a patch, follow
   `docs/patch-checklist.md` and bump `CATALOG_REVIEWED`.
 - Tools live under `app/tools/<tool>/` with their maths in `lib/<tool>.ts`

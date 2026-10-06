@@ -177,7 +177,9 @@ The screenshots use made-up characters.
     uses the character's bound gold first, then roster-bound, then tradeable
     (or choose tradeable only). Totals for the last 30 days; CSV export.
 - **Gems**: Ebony Cube and Haal's Hourglass gems are counted from the tracker
-  using each tier's reward table (editable on the Gems page). Log Guardian
+  using each tier's reward table (shown on the Gems page; known values come
+  with updates, and you can fill in any that aren't known yet, like most
+  lucky rooms). Log Guardian
   Raid and Field Boss drops by hand. Weekly chart and per-character totals in
   terms of what your gems combine into (3 of a level make the next, so 15 Lv1
   gems are a Lv3 + 2× Lv2).

@@ -395,9 +395,9 @@ function RewardTables({ tasks, mutate }: { tasks: Task[]; mutate: (action: () =>
       <div>
         <h2 className="font-semibold">Reward tables</h2>
         <p className="mt-1 text-xs text-muted">
-          Expected gems for each tier, by gem level. Averages like 0.5 are fine. Per-run values are multiplied by Cube
-          runs, or by Sands of Trial for Haal&apos;s Hourglass (1 + sands). Lucky rooms are added once per room. Changing
-          these doesn&apos;t change weeks already logged.
+          Gems for each tier, by gem level. Per-run values are multiplied by Cube runs, or by Sands of Trial for
+          Haal&apos;s Hourglass (1 + sands); a lucky room adds its tier&apos;s amount once per room. Known values come with
+          app updates. Where one isn&apos;t known yet (–), you can enter what you get; a later update replaces it.
         </p>
       </div>
       {tasks.map((task) => (
@@ -426,7 +426,6 @@ function RewardTables({ tasks, mutate }: { tasks: Task[]; mutate: (action: () =>
                     table={tier[row.field]}
                     catalogTable={tier.catalog_rewards?.[row.field] ?? null}
                     onSave={(table) => mutate(() => send("PATCH", `/difficulties/${tier.id}`, { [row.field]: table }))}
-                    onReset={() => mutate(() => send("POST", `/difficulties/${tier.id}/reset`))}
                   />
                 )),
               )}
@@ -445,7 +444,6 @@ function GemTableRow({
   table,
   catalogTable,
   onSave,
-  onReset,
 }: {
   tier: Difficulty;
   showTier: boolean;
@@ -453,12 +451,12 @@ function GemTableRow({
   table: GemTable | null;
   catalogTable: GemTable | null;
   onSave: (table: GemTable | null) => void;
-  onReset: () => void;
 }) {
   const [draft, setDraft] = useState<Record<number, string>>(() =>
     Object.fromEntries(TABLE_LEVELS.map((level) => [level, table?.[level] ? String(table[level]) : ""])),
   );
-  const customized = JSON.stringify(table ?? null) !== JSON.stringify(catalogTable ?? null);
+  // The app's value when it has one; otherwise the user can fill it in.
+  const known = catalogTable !== null;
 
   function save() {
     const next: GemTable = {};
@@ -486,6 +484,9 @@ function GemTableRow({
       <td className="whitespace-nowrap py-1 pr-2 text-xs text-muted">{label}</td>
       {TABLE_LEVELS.map((level) => (
         <td key={level} className="py-1 pr-2">
+          {known ? (
+            <span className="inline-block w-16 px-1.5 py-0.5 tabular-nums">{table?.[level] ?? "–"}</span>
+          ) : (
           <input
             type="number"
             min="0"
@@ -495,18 +496,14 @@ function GemTableRow({
             onChange={(e) => setDraft({ ...draft, [level]: e.target.value })}
             onBlur={save}
             aria-label={`${tier.name} ${label} Lv${level} gems`}
+            title="Not known yet: enter what you get"
             className="w-16 px-1.5 py-0.5"
           />
+          )}
         </td>
       ))}
       <td className="py-1 pr-2 text-right tabular-nums text-muted">{table ? formatCombinedGems(gemsToLv1(table)) : "?"}</td>
-      <td className="py-1 text-right">
-        {customized && (catalogTable || table) && (
-          <button onClick={onReset} className="rounded px-1.5 text-xs text-muted hover:bg-surface-2" title="Back to built-in values for this tier">
-            Reset
-          </button>
-        )}
-      </td>
+      <td className="py-1 text-right text-xs text-muted">{!known && table ? "yours" : ""}</td>
     </tr>
   );
 }

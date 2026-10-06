@@ -14,7 +14,6 @@ from routes.tracker import price_completion
 
 router = APIRouter(prefix="/api")
 
-# Built-in difficulties' other values come with app updates (raids.py).
 GEM_FIELDS = {"reward_gems", "lucky_gems", "mega_gems"}
 
 
@@ -49,8 +48,12 @@ def get_raid_catalog():
 def update_difficulty(difficulty_id: int, changes: DifficultyUpdate, db: Session = Depends(get_db)):
     difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
     updates = changes.model_dump(exclude_unset=True)
-    if difficulty.catalog_item_level is not None and set(updates) - GEM_FIELDS:
-        raise HTTPException(status_code=400, detail="Built-in raid values come with app updates")
+    if difficulty.catalog_item_level is not None:
+        # Built-in values come with app updates; only gem tables the catalog
+        # doesn't know yet can be filled in.
+        known = {field for field, value in (difficulty.catalog_rewards or {}).items() if value is not None}
+        if set(updates) - (GEM_FIELDS - known):
+            raise HTTPException(status_code=400, detail="Built-in values come with app updates")
     # Clears made while a value was unknown recorded 0; once it's filled in,
     # this week's clears pick it up. Known values stay as recorded (history).
     filled_in = any(field in updates and getattr(difficulty, field) is None for field in ("gold", "bonus_cost"))
@@ -74,14 +77,3 @@ def reprice_this_week(db: Session, difficulty: RaidDifficulty):
         character = db.get(Character, clear.character_id) if clear.character_id else None
         if character is not None:
             price_completion(db, character, task, clear)
-
-
-@router.post("/difficulties/{difficulty_id}/reset", response_model=DifficultyRead)
-def reset_difficulty(difficulty_id: int, db: Session = Depends(get_db)):
-    """Go back to the catalog's gem tables (the Gems page)."""
-    difficulty = get_or_404(db, RaidDifficulty, difficulty_id)
-    for field, value in (difficulty.catalog_rewards or {}).items():
-        setattr(difficulty, field, value)
-    db.commit()
-    db.refresh(difficulty)
-    return difficulty

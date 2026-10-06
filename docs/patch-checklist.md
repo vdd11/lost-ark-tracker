@@ -32,8 +32,8 @@ you. Never fill a gap from memory or a guess: leave it `None` (the app shows
 
 - [ ] Ebony Cube unlocks and Haal's Hourglass levels in `raids.py`
       (`reward_gems`, `lucky_gems`, `mega_gems`; expected gems per run by
-      level). Users can still edit these on the Gems page; their edits are
-      kept until they press Reset there.
+      level; a lucky room's table is per tier). Users can only fill in a
+      table that's `None`, and a value here replaces theirs on update.
 - [ ] Astrogem odds in `frontend/lib/data/astrogems.ts` (official KR
       probability page, NA release notes).
 
