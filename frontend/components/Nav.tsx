@@ -40,8 +40,11 @@ export default function Nav() {
           <SlotIcon glyph="slot" size={22} />
           Lost Ark Tracker
         </span>
-        {/* On a phone the links get their own row, as icons; the current page keeps its label. */}
-        <div className="order-last flex w-full flex-wrap gap-1 md:order-none md:w-auto">
+        {/* On a phone the links are a bar along the bottom of the screen (icon over a short label). */}
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border bg-surface px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] md:static md:z-auto md:flex-wrap md:justify-start md:gap-1 md:border-0 md:bg-transparent md:p-0"
+          aria-label="Pages"
+        >
           {links.map((link) => {
             const current = isCurrent(link.href);
             return (
@@ -51,12 +54,12 @@ export default function Nav() {
                 aria-label={link.label}
                 title={link.label}
                 aria-current={current ? "page" : undefined}
-                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm lg:px-3 ${
-                  current ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
+                className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-md px-1 py-1 text-xs md:flex-none md:flex-row md:gap-1.5 md:px-2.5 md:py-1.5 md:text-sm lg:px-3 ${
+                  current ? "bg-surface-2 font-medium text-foreground" : "text-muted hover:bg-surface-2"
                 }`}
               >
-                <GameIcon name={link.icon} size={20} framed alt="" />
-                <span className={current ? "" : "hidden lg:inline"}>{link.label}</span>
+                <GameIcon name={link.icon} size={22} framed alt="" />
+                <span className={current ? "" : "md:hidden lg:inline"}>{link.label}</span>
               </Link>
             );
           })}

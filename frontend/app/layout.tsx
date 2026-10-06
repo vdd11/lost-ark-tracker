@@ -44,7 +44,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           <KeyboardShortcuts>
             <Nav />
             <ResetReminders />
-            <main className="mx-auto w-full min-w-0 max-w-7xl px-4 py-6">{children}</main>
+            <main className="mx-auto w-full min-w-0 max-w-7xl px-4 pt-6 pb-24 md:pb-6">{children}</main>
           </KeyboardShortcuts>
         </ToastProvider>
       </body>

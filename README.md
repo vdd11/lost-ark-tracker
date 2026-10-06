@@ -96,7 +96,7 @@ The screenshots use made-up characters.
     After the Wednesday reset, a recap shows last week's gold, gems and any
     gold raids left unrun.
   - On a phone or narrow window, each character gets a stacked block instead
-    of a wide table.
+    of a wide table, and the menu is a bar along the bottom of the screen.
   - Mistakes can be undone from the toast that follows a tick, "All" or a
     delete. Press **?** for keyboard shortcuts: arrows, Home and End move
     between cells (also right after clicking a checkbox), Space ticks, + / −

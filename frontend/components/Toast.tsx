@@ -57,7 +57,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <UndoContext.Provider value={offerUndo}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex justify-center px-4 md:bottom-4">
         {toast && (
           <div
             role="status"
