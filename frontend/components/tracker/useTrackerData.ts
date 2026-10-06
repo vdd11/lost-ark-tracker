@@ -180,6 +180,7 @@ export function useTrackerData() {
     const needed = dailyRunsNeeded(character, task, day);
     if (needed > 1) return stepRuns(character, task, needed);
     const wasDone = rawCompleted.has(key);
+    const before = runByCell.get(key);
     const update = (done: boolean) =>
       setCompleted((prev) => {
         const next = new Set(prev);
@@ -193,7 +194,7 @@ export function useTrackerData() {
       await send(wasDone ? "DELETE" : "PUT", completionPath(character, task));
       loadWeeklyGold();
       if (task.rest_max > 0) refreshTracker();
-      offerToggleUndo(character, task, !wasDone, undefined);
+      offerToggleUndo(character, task, !wasDone, before);
     } catch (e) {
       update(wasDone);
       setError(describeError(e));
@@ -207,7 +208,8 @@ export function useTrackerData() {
    */
   async function stepRuns(character: Character, task: Task, needed: number) {
     const path = completionPath(character, task);
-    const before = rawCompleted.has(cellKey(character.id, task.id)) ? (runByCell.get(cellKey(character.id, task.id))?.count ?? 1) : 0;
+    const beforeRun = runByCell.get(cellKey(character.id, task.id));
+    const before = rawCompleted.has(cellKey(character.id, task.id)) ? (beforeRun?.count ?? 1) : 0;
     const after = before >= needed ? 0 : before + 1;
     try {
       await (after === 0 ? send("DELETE", path) : send("PUT", path, { count: after }));
@@ -215,7 +217,7 @@ export function useTrackerData() {
       loadWeeklyGold();
       undoable(
         after === 0 ? `${task.name} unticked on ${character.name}` : `${task.name} run ${after} of ${needed} on ${character.name}`,
-        () => (before === 0 ? send("DELETE", path) : send("PUT", path, { count: before })),
+        () => (before === 0 ? send("DELETE", path) : send("PUT", path, { ...(beforeRun ? restoreRunBody(beforeRun) : {}), count: before })),
       );
     } catch (e) {
       setError(describeError(e));

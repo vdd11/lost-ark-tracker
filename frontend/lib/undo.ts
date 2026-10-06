@@ -14,6 +14,8 @@ export function restoreRunBody(run: Run) {
   if (run.sands) body.sands = run.sands;
   if (run.lucky_rooms) body.lucky_rooms = run.lucky_rooms;
   if (run.mega_rooms) body.mega_rooms = run.mega_rooms;
+  if (run.fate_embers) body.fate_embers = run.fate_embers;
+  if (run.blessed_embers) body.blessed_embers = run.blessed_embers;
   if (run.tier_counts && Object.keys(run.tier_counts).length) body.tier_counts = run.tier_counts;
   else if (run.count > 1) body.count = run.count;
   return body;

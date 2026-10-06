@@ -11,6 +11,7 @@ from models import Character, CharacterTask, Completion, RaidDifficulty, Task
 from resets import daily_reset_before, period_for, utc_now, weekly_reset_before
 from schemas import (
     CompletionUpdate,
+    EmberWeek,
     RestState,
     Run,
     RestUpdate,
@@ -48,6 +49,8 @@ def get_tracker(db: Session = Depends(get_db)):
             lucky_rooms=c.lucky_rooms,
             mega_rooms=c.mega_rooms,
             sands=c.sands,
+            fate_embers=c.fate_embers,
+            blessed_embers=c.blessed_embers,
             bought_bonus=c.bought_bonus,
             bonus_spent=c.bonus_spent,
             tier_counts={int(k): v for k, v in c.tier_counts.items()} if c.tier_counts else None,
@@ -55,6 +58,13 @@ def get_tracker(db: Session = Depends(get_db)):
         )
         for c in current
     ]
+
+    embers: dict[int, EmberWeek] = {}
+    for c, _ in rows:
+        if c.fate_embers or c.blessed_embers:
+            week = embers.setdefault(c.character_id, EmberWeek(character_id=c.character_id, fate=0, blessed=0))
+            week.fate += c.fate_embers
+            week.blessed += c.blessed_embers
 
     return TrackerState(
         daily_period=daily_reset.date(),
@@ -64,6 +74,7 @@ def get_tracker(db: Session = Depends(get_db)):
         completed=completed,
         runs=runs,
         rest=current_rest(db, daily_reset.date()),
+        embers=list(embers.values()),
     )
 
 
@@ -184,7 +195,7 @@ def complete_task(
         if other is not None:
             raise HTTPException(status_code=409, detail=f"{task.name} was already cleared this week by {other.name}")
 
-    details = body.model_dump(include={"lucky_rooms", "mega_rooms", "sands"}, exclude_none=True)
+    details = body.model_dump(include={"lucky_rooms", "mega_rooms", "sands", "fate_embers", "blessed_embers"}, exclude_none=True)
     if existing is None:
         existing = Completion(
             character_id=character_id,

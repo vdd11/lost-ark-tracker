@@ -152,6 +152,10 @@ class Completion(Base):
     lucky_rooms: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     mega_rooms: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     sands: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Embers a daily dropped (Chaos Dungeon, Guardian Raid), logged by the
+    # player since they're random. Blessed embers need Azena's blessing.
+    fate_embers: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    blessed_embers: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # Expected gems from this run, snapshotted like gold so later edits to
     # the reward tables don't rewrite past weeks.
     gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)

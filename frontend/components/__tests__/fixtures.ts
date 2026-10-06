@@ -28,7 +28,7 @@ export function character(extra: Partial<Character> = {}): Character {
 
 export function run(extra: Partial<Run> = {}): Run {
   return {
-    character_id: 7, task_id: 1, difficulty_id: null, count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0,
+    character_id: 7, task_id: 1, difficulty_id: null, count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0, fate_embers: 0, blessed_embers: 0,
     bought_bonus: false, bonus_spent: 0, tier_counts: null, gems: null, ...extra,
   };
 }

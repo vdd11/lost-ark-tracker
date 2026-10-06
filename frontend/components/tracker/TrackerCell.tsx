@@ -1,14 +1,17 @@
 import ContentCell from "@/components/ContentCell";
 import DifficultySelect from "@/components/DifficultySelect";
+import EmberCounts from "@/components/EmberCounts";
 import RaidCell from "@/components/RaidCell";
 import RestGauge from "@/components/RestGauge";
 import RunsCheckbox from "@/components/RunsCheckbox";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, Task } from "@/lib/api";
-import { dailyRunsNeeded } from "@/lib/blessings";
+import { blessingActive, dailyRunsNeeded } from "@/lib/blessings";
+import { dropsEmbers, EMBERS_PREFERENCE } from "@/lib/embers";
 import { difficultyOf } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
 import { appliesTo } from "@/lib/trackerView";
+import { usePreference } from "@/lib/usePreference";
 
 /**
  * One character's task in a tracker card: in edit mode, who does what; else a
@@ -30,6 +33,7 @@ export default function TrackerCell({
   compact: boolean;
 }) {
   const { actions } = data;
+  const [emberLogging] = usePreference<boolean>(EMBERS_PREFERENCE, false);
   const key = cellKey(character.id, task.id);
   const isAssigned = character.task_ids.includes(task.id);
   const run = data.runByCell.get(key);
@@ -104,8 +108,10 @@ export default function TrackerCell({
   const isDone = data.completed.has(key);
   const runsNeeded = dailyRunsNeeded(character, task, data.tracker?.daily_period);
   const rest = task.rest_max > 0 ? data.restByCell.get(key) : undefined;
+  const embers = emberLogging && dropsEmbers(task);
+  const day = data.tracker?.daily_period;
   return (
-    <div className={`flex flex-col items-center gap-1.5 pt-2 ${isDone ? "bg-done/15" : ""} ${rest ? "" : "pb-2"}`}>
+    <div className={`flex flex-col items-center gap-1.5 pt-2 ${isDone ? "bg-done/15" : ""} ${rest && !embers ? "" : "pb-2"}`}>
       {runsNeeded > 1 ? (
         <RunsCheckbox
           runs={run?.count ?? 0}
@@ -124,6 +130,17 @@ export default function TrackerCell({
       )}
       {rest && (
         <RestGauge task={task} state={rest} characterName={character.name} onSet={(value) => actions.setRest(character, task, value)} />
+      )}
+      {embers && (
+        <EmberCounts
+          who={character.name}
+          task={task.name}
+          fate={run?.fate_embers ?? 0}
+          blessed={run?.blessed_embers ?? 0}
+          showBlessed={Boolean(day && blessingActive(character, "azena", day))}
+          enabled={Boolean(run)}
+          onChange={(changes) => actions.updateRun(character, task, changes)}
+        />
       )}
     </div>
   );

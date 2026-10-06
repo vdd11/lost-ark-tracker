@@ -6,6 +6,8 @@ import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { formatGold } from "@/lib/api";
 import { dailiesToday } from "@/lib/dailies";
+import { EMBERS_PREFERENCE, embersThisWeek } from "@/lib/embers";
+import { usePreference } from "@/lib/usePreference";
 import { goldThisWeek } from "@/lib/goldEarners";
 import { goldRaidsLeft, possibleSharedGold } from "@/lib/raids";
 import { buildSection, cellKey } from "@/lib/trackerSections";
@@ -18,7 +20,9 @@ const STAT_COLUMNS = ["", "sm:grid-cols-1", "sm:grid-cols-2", "sm:grid-cols-3"];
 /** The boxes along the top of the tracker, each of which can be hidden in Customize. */
 export default function StatRow({ data, view }: { data: TrackerData; view: TrackerView }) {
   const { thisWeek, characters, tasks, runs } = data;
+  const [emberLogging] = usePreference<boolean>(EMBERS_PREFERENCE, false);
   if (!thisWeek) return null;
+  const embers = embersThisWeek(data.tracker?.embers ?? [], characters);
   const possibleGold = possibleSharedGold(characters, tasks, runs);
   const raidsLeft = goldRaidsLeft(characters, tasks, runs);
   const gold = goldThisWeek(thisWeek);
@@ -72,7 +76,16 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
             label="Dailies today"
             value={`${dailies.done}/${dailies.total}`}
             accent={dailies.done < dailies.total}
-            sub={dailies.perTask.map((d) => `${d.task.name} ${d.done}/${d.total}`).join(" · ")}
+            sub={
+              <>
+                <span className="block">{dailies.perTask.map((d) => `${d.task.name} ${d.done}/${d.total}`).join(" · ")}</span>
+                {emberLogging && (
+                  <span className="block">
+                    Embers this week: {embers.fate} fate{embers.blessed > 0 ? ` · ${embers.blessed} blessed` : ""}
+                  </span>
+                )}
+              </>
+            }
             title="Daily tasks done today by the characters who do them (resets at 10:00 UTC)"
           />
         ) : null,

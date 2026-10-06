@@ -139,7 +139,7 @@ describe("possibleRaidGold", () => {
 function clear(who: Character, task: Task, tier: string): Run {
   return {
     character_id: who.id, task_id: task.id, difficulty_id: task.difficulties.find((d) => d.name === tier)!.id,
-    count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0, bought_bonus: false, bonus_spent: 0,
+    count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0, fate_embers: 0, blessed_embers: 0, bought_bonus: false, bonus_spent: 0,
     tier_counts: null, gems: null,
   };
 }

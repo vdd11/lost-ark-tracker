@@ -94,6 +94,9 @@ export type Run = {
   lucky_rooms: number;
   mega_rooms: number;
   sands: number;
+  /** Embers this daily dropped, as logged. */
+  fate_embers: number;
+  blessed_embers: number;
   bought_bonus: boolean;
   bonus_spent: number;
   /** Counted tasks: runs per tier, {difficulty_id: runs}. */
@@ -117,7 +120,11 @@ export type TrackerState = {
   completed: [number, number][];
   runs: Run[];
   rest: RestState[];
+  /** Embers logged since the weekly reset, per character. */
+  embers: EmberWeek[];
 };
+
+export type EmberWeek = { character_id: number; fate: number; blessed: number };
 
 export type GoldEntry = {
   id: number;

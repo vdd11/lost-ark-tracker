@@ -59,7 +59,9 @@ The screenshots use made-up characters.
   - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset
     daily at 10:00 UTC. With Innana's blessing (Settings) at 1730+, Chaos
     Dungeon has two runs a day: its box fills halfway on the first click and
-    all the way on the second. Optionally (Customize → Today), it shows when Field Boss
+    all the way on the second. Optionally (Customize → Today), log the fate
+    embers each Chaos Dungeon and Guardian Raid dropped, and blessed embers
+    while Azena's blessing is on; Dailies today sums the week. Optionally (Customize → Today), it shows when Field Boss
     (Tuesday, Friday, Sunday) or Chaos Gate (Monday, Thursday, Saturday,
     Sunday) is up, with **Log drops** to record the gems you got and the gold
     from selling the rest; their drops are random, so you enter them.

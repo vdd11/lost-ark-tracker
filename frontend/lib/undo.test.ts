@@ -4,7 +4,7 @@ import { BalanceCheck, GoldEntry, Run } from "./api";
 import { checkInBody, goldEntryBody, restoreRunBody } from "./undo";
 
 const run = (extra: Partial<Run>): Run => ({
-  character_id: 1, task_id: 2, difficulty_id: 30, count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0,
+  character_id: 1, task_id: 2, difficulty_id: 30, count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0, fate_embers: 0, blessed_embers: 0,
   bought_bonus: false, bonus_spent: 0, tier_counts: null, gems: null, ...extra,
 });
 
@@ -14,6 +14,7 @@ describe("restoreRunBody", () => {
     expect(restoreRunBody(run({ bought_bonus: true, sands: 3, lucky_rooms: 1 }))).toEqual({
       difficulty_id: 30, bought_bonus: true, sands: 3, lucky_rooms: 1,
     });
+    expect(restoreRunBody(run({ fate_embers: 2, blessed_embers: 1 }))).toEqual({ difficulty_id: 30, fate_embers: 2, blessed_embers: 1 });
   });
 
   it("restores run counts per tier for counted content", () => {

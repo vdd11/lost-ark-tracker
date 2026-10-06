@@ -214,6 +214,9 @@ class CompletionUpdate(BaseModel):
     mega_rooms: int | None = Field(default=None, ge=0)
     # Sands of Trial spent (Haal's Hourglass), up to 5.
     sands: int | None = Field(default=None, ge=0, le=5)
+    # Embers a daily dropped, as the player logs them.
+    fate_embers: int | None = Field(default=None, ge=0)
+    blessed_embers: int | None = Field(default=None, ge=0)
     # Bought the bonus ("View More") chests for this clear.
     bought_bonus: bool | None = None
     # Counted tasks: runs per tier {difficulty_id: runs}. `count` sets the
@@ -236,6 +239,8 @@ class Run(BaseModel):
     lucky_rooms: int = 0
     mega_rooms: int = 0
     sands: int = 0
+    fate_embers: int = 0
+    blessed_embers: int = 0
     bought_bonus: bool = False
     bonus_spent: int = 0
     tier_counts: dict[int, int] | None = None
@@ -256,6 +261,14 @@ class RestUpdate(BaseModel):
     value: int = Field(ge=0)
 
 
+class EmberWeek(BaseModel):
+    """Embers a character logged from dailies since the weekly reset."""
+
+    character_id: int
+    fate: int
+    blessed: int
+
+
 class TrackerState(BaseModel):
     """Everything the tracker grid needs about the current reset periods."""
 
@@ -267,6 +280,7 @@ class TrackerState(BaseModel):
     completed: list[tuple[int, int]]
     runs: list[Run] = []
     rest: list[RestState] = []
+    embers: list[EmberWeek] = []
 
 
 class GoldEntryCreate(BaseModel):

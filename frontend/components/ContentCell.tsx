@@ -15,6 +15,8 @@ export type RunChanges = {
   lucky_rooms?: number;
   mega_rooms?: number;
   sands?: number;
+  fate_embers?: number;
+  blessed_embers?: number;
 };
 
 const MAX_SANDS = 5;
