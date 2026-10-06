@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Gem, RotateCcw, Undo2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -13,6 +13,7 @@ import { Advice, advise, applyOption, createSolver, goalMet, Goal, simulateRest 
 import { applied, finish, newSession, optionsWith, parseOdds, refreshed, Session, sessionTotals, undo } from "@/lib/astrogemSession";
 import { Grade, RESULT_GRADES, STATS } from "@/lib/data/astrogems";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 const ADVICE_TEXT: Record<Advice["action"], string> = {
   "stop-done": "Stop: your goal is met. Finish processing.",
@@ -122,7 +123,7 @@ export default function AstrogemsPage() {
         </Link>
         <div className="flex flex-wrap items-baseline gap-3">
           <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <Gem size={22} /> Astrogem cutting
+            <GameIcon name="astrogem-order" size={32} alt="" /> Astrogem cutting
           </h1>
           <GuideLink id="maxroll-ark-grid" label="Ark Grid guide" />
         </div>

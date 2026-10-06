@@ -3,8 +3,9 @@
  *
  * The images are Smilegate RPG / Amazon Games property, bundled (never
  * hotlinked) and each listed with its source in public/game-icons/SOURCES.md
- * so any of them can be removed fast. A name without a file here renders its
- * Lucide fallback (components/GameIcon.tsx), so the app works with none.
+ * so any of them can be removed fast. A name without a file renders its slot
+ * glyph (SLOT_GLYPHS, components/SlotIcon.tsx), so the app works with none
+ * and never shows a bare generic icon for a feature.
  */
 
 import { LOST_ARK_CLASSES } from "../classes";
@@ -23,6 +24,9 @@ export const ICON_FILES: Record<string, string> = {
   "astrogem-destruction": "astrogem-destruction.webp",
   "fate-ember": "fate-ember.webp",
   paradise: "paradise.webp",
+  "sand-of-trial": "sand-of-trial.webp",
+  "guardian-raid": "guardian-raid.webp",
+  rest: "rest.webp",
   // Every class in lib/classes.ts has one: class-bard.webp, ...
   ...Object.fromEntries(LOST_ARK_CLASSES.map((name) => [classIconName(name), `${classIconName(name)}.webp`])),
 };
@@ -33,7 +37,73 @@ const ALIASES: Record<string, string> = {
   "astrogem-stability": "astrogem-order",
   "gold-roster": "gold",
   "gold-character": "gold",
+  // Haal's Hourglass shows the Sand of Trial that powers it.
+  "haals-hourglass": "sand-of-trial",
 };
+
+/** The original glyphs (components/SlotIcon.tsx). */
+export type SlotGlyph =
+  | "banner" | "anvil" | "tome" | "compass" | "keycap" | "swords" | "sun" | "scroll" | "ledger" | "chest"
+  | "hourglass" | "gavel" | "herald" | "tally" | "shields" | "bell" | "log-search" | "beacon" | "purse"
+  | "chronicle" | "star" | "portal" | "skull" | "gate" | "flame" | "chest-star" | "slot";
+
+/**
+ * Features with no game art, and game things whose art isn't bundled yet:
+ * name -> glyph. GameIcon shows the glyph in a slot tile when there's no file.
+ */
+export const SLOT_GLYPHS: Record<string, SlotGlyph> = {
+  // Menu
+  tracker: "banner",
+  tools: "anvil",
+  guides: "tome",
+  settings: "compass",
+  shortcuts: "keycap",
+  // Cards, boxes and widgets
+  "this-week": "swords",
+  "gold-raids": "swords",
+  today: "sun",
+  "whats-left": "scroll",
+  "gold-chart": "ledger",
+  "gold-goal": "chest",
+  resets: "hourglass",
+  auction: "gavel",
+  news: "herald",
+  counters: "tally",
+  "raid-groups": "shields",
+  accounts: "shields",
+  reminders: "bell",
+  "loa-logs": "log-search",
+  online: "beacon",
+  spending: "purse",
+  history: "chronicle",
+  recap: "ledger",
+  optimizer: "star",
+  "whats-new": "star",
+  everything: "star",
+  // Settings sections
+  characters: "shields",
+  tasks: "scroll",
+  raids: "swords",
+  appearance: "sun",
+  backup: "chest",
+  // Game things, until there's a real icon
+  "haals-hourglass": "hourglass",
+  "sand-of-trial": "hourglass",
+  "chaos-dungeon": "portal",
+  "field-boss": "skull",
+  "guardian-raid": "skull",
+  "chaos-gate": "gate",
+  rest: "flame",
+  "bonus-box": "chest-star",
+  "ebony-cube": "chest",
+  gold: "chest",
+  gems: "star",
+  doomfire: "star",
+};
+
+export function slotGlyphFor(name: string): SlotGlyph | null {
+  return SLOT_GLYPHS[name] ?? null;
+}
 
 /** Alt text for each icon, when it isn't decorative. */
 const LABELS: Record<string, string> = {
@@ -60,6 +130,8 @@ const LABELS: Record<string, string> = {
   "fate-ember": "Fate Ember",
   paradise: "Paradise",
   rest: "Rest bonus",
+  "sand-of-trial": "Sand of Trial",
+  "bonus-box": "Bonus box",
   news: "Lost Ark news",
 };
 

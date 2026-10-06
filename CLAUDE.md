@@ -62,11 +62,13 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   `lib/data/astrogems.ts` with their sources (official KR probability page,
   NA release notes, Maxroll); `lib/astrogems.ts` solves the best play with a
   seeded, memoized estimate.
-- Game icons: `<GameIcon name=... fallback={LucideIcon} />` reads
-  `frontend/lib/data/icons.ts`, which maps names to files in
-  `frontend/public/game-icons/`. A name without a file shows its Lucide
-  fallback, so the app works with none. Never hotlink; add a file only with
-  its line in `public/game-icons/SOURCES.md` (a test checks both).
+- Icons: every feature or game icon is `<GameIcon name=... />` (with
+  `framed` for headers/boxes/menu, `inline` beside text). Names map to files
+  in `frontend/public/game-icons/` (`lib/data/icons.ts` ICON_FILES); a name
+  without a file shows its original glyph (SLOT_GLYPHS, `components/SlotIcon.tsx`)
+  in a gold inventory-slot tile. Lucide is only for interface chrome (close,
+  chevrons, edit, delete, ...). Never hotlink; add a file only with its line
+  in `public/game-icons/SOURCES.md` (a test checks both).
 - In-place updates (`updater.py`, `routes/update.py`): only the packaged app
   (`sys.frozen`), only when the user presses Update now. It downloads this
   system's release file, checks it against the release's `SHA256SUMS`

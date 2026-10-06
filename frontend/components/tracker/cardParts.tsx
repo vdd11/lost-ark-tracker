@@ -1,4 +1,4 @@
-import { Check, CheckCheck, Swords, TrendingUp } from "lucide-react";
+import { Check, CheckCheck, TrendingUp } from "lucide-react";
 
 import { ExtraColumn } from "@/components/tracker/TaskTable";
 import { TrackerData } from "@/components/tracker/useTrackerData";
@@ -7,6 +7,7 @@ import { formatGap, nextUnlock } from "@/lib/itemLevelGoals";
 import { formatItemLevel, GOLD_RAIDS_PER_WEEK, goldRaidWeek, paidRaids } from "@/lib/raids";
 import { cellKey } from "@/lib/trackerSections";
 import { remainingFor } from "@/lib/trackerView";
+import GameIcon from "@/components/GameIcon";
 
 /** The "All" button beside a character's name, while they have something left in the card. */
 export function MarkAllButton({
@@ -78,7 +79,7 @@ export function GoldRaidNote({ character, data }: { character: Character; data: 
     </div>
   ) : (
     <div className="mt-0.5 flex items-center gap-1 text-xs font-medium text-accent" title={title}>
-      <Swords size={12} /> {left} gold raid{left === 1 ? "" : "s"} left
+      <GameIcon name="gold-raids" size={14} inline alt="" /> {left} gold raid{left === 1 ? "" : "s"} left
     </div>
   );
 }

@@ -1,10 +1,11 @@
-import { Check, Coins, Gem, History, Swords, TrendingDown, TrendingUp, X } from "lucide-react";
+import { Check, TrendingDown, TrendingUp, X } from "lucide-react";
 import { ReactNode } from "react";
 
 import { Character, formatCombinedGems, formatGold, WeeklyGems, WeeklyGold } from "@/lib/api";
 import { percentChange } from "@/lib/insights";
 import { formatShortGold } from "@/lib/raids";
 import { topSources } from "@/lib/recap";
+import GameIcon from "@/components/GameIcon";
 
 /**
  * Last week at a glance, shown once after the Wednesday reset: gold against
@@ -40,7 +41,7 @@ export default function RecapCard({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/15 text-accent">
-            <History size={18} />
+            <GameIcon name="recap" size={28} framed alt="" />
           </span>
           <div>
             <h2 className="font-semibold leading-tight">New week! Here&apos;s last week</h2>
@@ -53,7 +54,7 @@ export default function RecapCard({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Fact icon={<Coins size={14} />} label="Gold earned">
+        <Fact icon={<GameIcon name="gold" size={16} alt="" />} label="Gold earned">
           <span className="text-lg font-semibold tabular-nums">{formatGold(gold?.net ?? 0)}</span>
           {change !== null && (
             <span className={`ml-2 inline-flex items-center gap-0.5 text-xs font-medium ${change >= 0 ? "text-done" : "text-danger"}`}>
@@ -66,13 +67,13 @@ export default function RecapCard({
             <p className="mt-0.5 text-xs text-muted tabular-nums">{goldSources.map(([name, amount]) => `${name} ${formatShortGold(amount)}`).join(" · ")}</p>
           )}
         </Fact>
-        <Fact icon={<Gem size={14} />} label="Gems">
+        <Fact icon={<GameIcon name="doomfire" size={16} alt="" />} label="Gems">
           <span className="text-sm font-medium">{gems && gems.total > 0 ? formatCombinedGems(gems.total) : "None tracked"}</span>
           {gemSources.length > 0 && (
             <p className="mt-0.5 text-xs text-muted">{gemSources.map(([name, amount]) => `${name}: ${formatCombinedGems(amount)}`).join(" · ")}</p>
           )}
         </Fact>
-        <Fact icon={<Swords size={14} />} label="Gold raids">
+        <Fact icon={<GameIcon name="gold-raids" size={14} inline alt="" />} label="Gold raids">
           {totalMissed === 0 ? (
             <span className="flex items-center gap-1 text-sm font-medium text-done">
               <Check size={14} /> Every gold raid done

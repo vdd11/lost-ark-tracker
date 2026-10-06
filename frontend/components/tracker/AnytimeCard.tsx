@@ -1,4 +1,3 @@
-import { Box } from "lucide-react";
 
 import { cellKeyboard } from "@/components/tracker/cellKeys";
 import TaskTable from "@/components/tracker/TaskTable";
@@ -22,7 +21,7 @@ export default function AnytimeCard({
   editMode: boolean;
 }) {
   return (
-    <TrackerCard icon={Box} gameIcon="ebony-cube" title="Ebony Cube" subtitle="Tickets, no reset · count runs this week">
+    <TrackerCard icon="ebony-cube" title="Ebony Cube" subtitle="Tickets, no reset · count runs this week">
       <TaskTable
         applies={editMode ? undefined : appliesTo}
         characters={section.rows}

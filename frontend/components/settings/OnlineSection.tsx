@@ -1,11 +1,11 @@
 "use client";
 
-import { Globe } from "lucide-react";
 import { ReactNode } from "react";
 
 import { useUpdateCheck } from "@/components/UpdateNotice";
 import { NEWS_PREFERENCE } from "@/lib/online";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 /**
  * The only things that go online, each with its own switch and exactly what
@@ -18,7 +18,7 @@ export default function OnlineSection() {
   return (
     <section>
       <h2 className="mb-1 flex items-center gap-2 text-2xl font-bold">
-        <Globe size={20} /> Online features
+        <GameIcon name="online" size={32} alt="" /> Online features
       </h2>
       <p className="mb-4 max-w-3xl text-sm text-muted">
         Your roster and gold never leave this computer. These optional features read public pages from the

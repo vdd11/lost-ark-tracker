@@ -1,9 +1,10 @@
 "use client";
 
-import { Keyboard, X } from "lucide-react";
+import { X } from "lucide-react";
 import { ReactNode, useEffect, useRef } from "react";
 
 import { GO_TO } from "@/lib/shortcuts";
+import GameIcon from "@/components/GameIcon";
 
 const GROUPS: { title: string; keys: [string[], string][] }[] = [
   {
@@ -61,7 +62,7 @@ export default function ShortcutHelp({ onClose }: { onClose: () => void }) {
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id="shortcut-help-title" className="flex items-center gap-2 font-semibold">
-            <Keyboard size={18} /> Keyboard shortcuts
+            <GameIcon name="shortcuts" size={24} alt="" /> Keyboard shortcuts
           </h2>
           <button ref={closeButton} onClick={onClose} aria-label="Close" className="rounded p-1 text-muted hover:bg-surface-2">
             <X size={16} />

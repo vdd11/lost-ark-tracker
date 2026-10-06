@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { Coins } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import GameIcon from "@/components/GameIcon";
@@ -19,27 +18,36 @@ afterEach(() => {
 });
 
 describe("GameIcon", () => {
-  it("falls back to the Lucide icon when there's no file", () => {
-    const { container } = render(<GameIcon name="field-boss" fallback={Coins} />);
+  it("shows the slot glyph in a tile when there's no file", () => {
+    const { container } = render(<GameIcon name="field-boss" size={24} />);
+    const tile = container.querySelector(".slot-tile") as HTMLElement;
+    expect(tile).not.toBeNull();
+    expect(tile.style.width).toBe("24px");
+    expect(tile.querySelector("svg")).not.toBeNull();
+    expect(screen.getByRole("img", { name: "Field Boss" })).toBeTruthy();
+  });
+
+  it("shows just the glyph beside text, and nothing for a name it doesn't know", () => {
+    const { container } = render(<GameIcon name="bonus-box" size={12} inline alt="" />);
+    expect(container.querySelector(".slot-tile")).toBeNull();
     expect(container.querySelector("svg")).not.toBeNull();
-    expect(container.querySelector("img")).toBeNull();
+    cleanup();
+    expect(render(<GameIcon name="chaos-gate-ticket" />).container.innerHTML).toBe("");
   });
 
-  it("renders nothing without a file or a fallback", () => {
-    const { container } = render(<GameIcon name="chaos-gate" />);
-    expect(container.innerHTML).toBe("");
-  });
-
-  it("shows the bundled file at a fixed size, and falls back if it fails to load", () => {
+  it("shows the bundled file at a fixed size, framed when asked, and the glyph if it fails to load", () => {
     ICON_FILES.gold = "gold.webp";
     delete ICON_FILES["gold-roster"];
-    render(<GameIcon name="gold-roster" size={20} fallback={Coins} />);
+    render(<GameIcon name="gold-roster" size={20} />);
     const image = screen.getByRole("img", { name: "Roster-bound gold" });
     expect(image.getAttribute("src")).toMatch(/\/game-icons\/gold\.webp$/);
     expect([image.getAttribute("width"), image.getAttribute("height")]).toEqual(["20", "20"]);
-
     fireEvent.error(image);
     expect(screen.queryByRole("img", { name: "Roster-bound gold" })).toBeNull();
+    cleanup();
+
+    const { container } = render(<GameIcon name="ebony-cube" size={30} framed />);
+    expect(container.querySelector(".slot-tile img")?.getAttribute("width")).toBe("24");
   });
 });
 

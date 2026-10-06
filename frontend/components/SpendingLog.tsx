@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, Wallet } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -18,6 +18,7 @@ import {
   spendingBody,
   totalsSince,
 } from "@/lib/spending";
+import GameIcon from "@/components/GameIcon";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -108,7 +109,7 @@ export default function SpendingLog({
     <section className="rounded-md border border-border bg-surface p-4">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-semibold">
-          <Wallet size={16} /> Spending
+          <GameIcon name="spending" size={20} alt="" /> Spending
         </h2>
         <a href={`${API_URL}/export/spending.csv`} download className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
           Export CSV

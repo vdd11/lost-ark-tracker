@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Gavel, Gem, LucideIcon, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { ReactNode } from "react";
 
@@ -23,16 +23,14 @@ import {
 import GameIcon from "@/components/GameIcon";
 
 export function Widget({
-  icon: Icon,
-  gameIcon,
+  icon,
   title,
   hint,
   action,
   children,
 }: {
-  icon: LucideIcon;
-  /** A game icon (lib/data/icons.ts) shown instead of `icon` when its file is bundled. */
-  gameIcon?: string;
+  /** An icon name (lib/data/icons.ts): a game icon, or its slot glyph. */
+  icon: string;
   title: string;
   /** One line saying what the widget is for, under the title. */
   hint?: string;
@@ -43,9 +41,7 @@ export function Widget({
     <section className="flex min-w-0 flex-col rounded-lg border border-border bg-surface p-4">
       <header className={`${hint ? "mb-1" : "mb-3"} flex items-center justify-between gap-2`}>
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/15 text-accent">
-            {gameIcon ? <GameIcon name={gameIcon} size={20} fallback={Icon} alt="" /> : <Icon size={16} />}
-          </span>
+          <GameIcon name={icon} size={28} framed alt="" />
           {title}
         </h2>
         {action}
@@ -94,8 +90,7 @@ export function GoldMonthWidget({
 
   return (
     <Widget
-      icon={TrendingUp}
-      gameIcon="gold"
+      icon="gold"
       title="Gold"
       hint="Gold you earned, after bonus boxes, by week."
       action={
@@ -187,7 +182,7 @@ export function GoldGoalWidget({
   const counted = mode === "tradeable" ? "tradeable" : "tradeable + roster-bound";
 
   return (
-    <Widget icon={Target} title="Gold goal" hint="How long until you reach a gold target at your current pace.">
+    <Widget icon="gold-goal" title="Gold goal" hint="How long until you reach a gold target at your current pace.">
       <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
         <select value={mode} onChange={(e) => onMode(e.target.value as GoalMode)} aria-label="What counts toward the goal" className="px-1.5 py-1 text-xs">
           {GOAL_MODES.map((m) => (
@@ -254,8 +249,7 @@ export function GemWidget({
 
   return (
     <Widget
-      icon={Gem}
-      gameIcon="doomfire"
+      icon="doomfire"
       title="Gem progress"
       hint="Your tracked gems combined, and when the next Lv9 and Lv10 land."
       action={
@@ -322,7 +316,7 @@ export function ResetClockWidget({ nextDaily, nextWeekly, now }: { nextDaily: st
     { label: "Weekly reset", reset: describeReset(nextWeekly, now) },
   ];
   return (
-    <Widget icon={Clock} title="Resets" hint="When the next daily and weekly resets are.">
+    <Widget icon="resets" title="Resets" hint="When the next daily and weekly resets are.">
       <table className="w-full text-sm">
         <tbody>
           {rows.map(({ label, reset }) => (
@@ -344,7 +338,7 @@ export function ResetClockWidget({ nextDaily, nextWeekly, now }: { nextDaily: st
 export function AuctionWidget() {
   return (
     <Widget
-      icon={Gavel}
+      icon="auction"
       title="Auction calculator"
       hint="What to bid on a raid drop so winning it beats your share of someone else's bid."
     >

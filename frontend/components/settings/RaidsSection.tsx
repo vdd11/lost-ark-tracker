@@ -7,6 +7,7 @@ import NumberInput from "@/components/NumberInput";
 import EventForm from "@/components/settings/EventForm";
 import { api, CatalogReference, Difficulty, formatGold, send, Task } from "@/lib/api";
 import { boundLabel, formatItemLevel, settingsRaidLists } from "@/lib/raids";
+import GameIcon from "@/components/GameIcon";
 
 const formatDate = (day: string) => new Date(`${day}T00:00:00`).toLocaleDateString();
 
@@ -50,7 +51,9 @@ export default function RaidsSection({ dataVersion, onError }: { dataVersion: nu
 
   return (
     <section id="raids" className="scroll-mt-4">
-      <h2 className="mb-1 text-2xl font-bold">Raids</h2>
+      <h2 className="flex items-center gap-2 mb-1 text-2xl font-bold">
+          <GameIcon name="raids" size={32} framed alt="" /> Raids
+        </h2>
       <p className="mb-4 max-w-3xl text-sm text-muted">
         Raid item levels, gold and bonus box costs come with each app update, so they&apos;re always the current
         patch&apos;s. Which raids each character runs is set with <strong>Edit who does what</strong> on the tracker.

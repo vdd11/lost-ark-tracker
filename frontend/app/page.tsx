@@ -1,6 +1,6 @@
 "use client";
 
-import { FileSearch, ListTodo, Move, Pencil, Settings2 } from "lucide-react";
+import { Move, Pencil } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
 
@@ -30,6 +30,7 @@ import { SECTION_KEYS } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 import FirstRun from "@/components/tracker/FirstRun";
 import { FIRST_RUN_PREFERENCE, FIRST_RUN_STATES, FirstRunState, showFirstRun } from "@/lib/firstRun";
+import GameIcon from "@/components/GameIcon";
 
 const MODES = ["grid", "left"] as const;
 const BLOCK_LABELS: Record<string, string> = {
@@ -89,7 +90,9 @@ export default function TrackerPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold">Roster</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <GameIcon name="tracker" size={32} framed alt="" /> Roster
+        </h1>
           <AccountTabs accounts={data.accounts} value={data.accountId} onChange={data.setAccountId} />
           <GoldEarnerCount data={data} />
         </div>
@@ -103,18 +106,18 @@ export default function TrackerPage() {
             Keyboard: press ?
           </button>
           {loaEnabled && (
-            <ToolbarButton active={importing} onClick={() => setImporting(true)} icon={<FileSearch size={16} />}>
+            <ToolbarButton active={importing} onClick={() => setImporting(true)} icon={<GameIcon name="loa-logs" size={16} inline alt="" />}>
               Import clears
             </ToolbarButton>
           )}
           <ToolbarButton
             active={mode === "left"}
             onClick={() => setMode(mode === "left" ? "grid" : "left")}
-            icon={<ListTodo size={16} />}
+            icon={<GameIcon name="whats-left" size={16} inline alt="" />}
           >
             What&apos;s left
           </ToolbarButton>
-          <ToolbarButton active={customizing} onClick={() => setCustomizing(true)} icon={<Settings2 size={16} />}>
+          <ToolbarButton active={customizing} onClick={() => setCustomizing(true)} icon={<GameIcon name="settings" size={16} inline alt="" />}>
             Customize
           </ToolbarButton>
           <ToolbarButton active={editMode} onClick={() => setEditMode((v) => !v)} icon={<Pencil size={16} />}>

@@ -14,6 +14,7 @@ import {
   TextSize,
 } from "@/lib/appearance";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 function Choice<T extends string>({ label, options, labels, value, onChange }: { label: string; options: readonly T[]; labels: Record<T, string>; value: T; onChange: (v: T) => void }) {
   return (
@@ -47,7 +48,9 @@ export default function AppearanceSection() {
 
   return (
     <section>
-      <h2 className="mb-1 text-2xl font-bold">Appearance</h2>
+      <h2 className="flex items-center gap-2 mb-1 text-2xl font-bold">
+          <GameIcon name="appearance" size={32} framed alt="" /> Appearance
+        </h2>
       <p className="mb-4 text-sm text-muted">How big the text is and how much room things get. Saved in this browser.</p>
       <div className="space-y-3">
         <Choice label="Text size" options={TEXT_SIZES} labels={TEXT_SIZE_LABELS} value={textSize} onChange={setTextSize} />

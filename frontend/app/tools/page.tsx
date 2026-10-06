@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Gem, Hammer, Wrench } from "lucide-react";
+import { ChevronRight, Gem } from "lucide-react";
 import Link from "next/link";
 
 import { Tool, TOOLS } from "@/lib/tools";
@@ -13,7 +13,7 @@ export default function ToolsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="mb-1 flex items-center gap-2 text-2xl font-bold">
-          <Wrench size={22} /> Tools
+          <GameIcon name="tools" size={32} alt="" /> Tools
         </h1>
         <p className="text-sm text-muted">
           Helpers to keep open beside the game. Everything runs on this computer; numbers you enter stay here.
@@ -30,7 +30,7 @@ export default function ToolsPage() {
             >
               <span className="flex items-center gap-2 font-semibold">
                 {tool.gameIcon ? (
-                  <GameIcon name={tool.gameIcon} size={22} fallback={Icon} alt="" className="text-accent" />
+                  <GameIcon name={tool.gameIcon} size={28} alt="" />
                 ) : (
                   <Icon size={18} className="text-accent" />
                 )}{" "}
@@ -43,7 +43,7 @@ export default function ToolsPage() {
         })}
       </div>
       <p className="text-sm text-muted">
-        <Hammer size={14} className="mr-1.5 inline align-[-2px]" />
+        <GameIcon name="tools" size={14} inline alt="" className="mr-1.5 inline align-[-2px]" />
         Looking for honing? Other sites do it best: see{" "}
         <Link href="/guides/#honing-and-gear" className="underline hover:text-foreground">
           Guides → Honing and gear

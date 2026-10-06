@@ -1,8 +1,8 @@
-import { Coins } from "lucide-react";
 import Link from "next/link";
 
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { goldEarnerCounts } from "@/lib/goldEarners";
+import GameIcon from "@/components/GameIcon";
 
 /** "5/6 gold earners" for the account shown, or for each account. */
 export default function GoldEarnerCount({ data }: { data: TrackerData }) {
@@ -21,7 +21,7 @@ export default function GoldEarnerCount({ data }: { data: TrackerData }) {
       className="flex items-center gap-1 text-xs text-muted tabular-nums"
       title={`Gold earners (paid for 3 raids a week; 6 per account). Click GOLD beside a name to change.\n${names}`}
     >
-      <Coins size={13} />
+      <GameIcon name="gold" size={14} alt="" />
       {counts.map((c, i) => (
         <span key={c.account.id} className={c.earners > c.max ? "text-danger" : ""}>
           {i > 0 && " · "}

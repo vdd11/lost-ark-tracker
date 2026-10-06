@@ -20,6 +20,7 @@ import { useDragReorder } from "@/components/useDragReorder";
 import { Account, api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task } from "@/lib/api";
 import { renumber } from "@/lib/order";
 import { isActiveRaid } from "@/lib/raids";
+import GameIcon from "@/components/GameIcon";
 
 type Positioned = { id: number; position: number };
 
@@ -87,7 +88,9 @@ export default function SettingsPage() {
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       <section>
-        <h1 className="mb-1 text-2xl font-bold">Characters</h1>
+        <h1 className="flex items-center gap-2 mb-1 text-2xl font-bold">
+          <GameIcon name="characters" size={32} framed alt="" /> Characters
+        </h1>
         <p className="mb-4 text-sm text-muted">
           Gold earners get raid gold counted toward your weekly total (up to {MAX_GOLD_EARNERS} per account).
         </p>
@@ -163,7 +166,9 @@ export default function SettingsPage() {
       </section>
 
       <section>
-        <h2 className="mb-1 text-2xl font-bold">Tasks</h2>
+        <h2 className="flex items-center gap-2 mb-1 text-2xl font-bold">
+          <GameIcon name="tasks" size={32} framed alt="" /> Tasks
+        </h2>
         <p className="mb-4 text-sm text-muted">
           Daily and weekly tracker columns. Dailies reset at 10:00 UTC, weeklies on Wednesday 10:00 UTC. New ones go
           to every character. Dailies can track a rest bonus: set Max to 0 to turn it off, or adjust the numbers if a

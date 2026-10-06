@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="tile" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#2a2f3a"/>
+      <stop offset="1" stop-color="#14171d"/>
+    </radialGradient>
+    <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6dc95"/>
+      <stop offset="1" stop-color="#c9952f"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="url(#tile)" stroke="#8a7444" stroke-width="3"/>
+  <path d="M32 12 50 32 32 52 14 32z" fill="url(#gem)" stroke="#5c4a24" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M32 12 50 32H32z" fill="#fff" opacity=".25"/>
+</svg>

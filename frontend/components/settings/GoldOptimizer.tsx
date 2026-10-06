@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Sparkles, X } from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
 import { useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/optimizer";
 import { formatItemLevel, formatShortGold } from "@/lib/raids";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 async function run(changes: Change[]) {
   for (const change of changes) await send(change.method, change.path, change.body);
@@ -85,7 +86,7 @@ export default function GoldOptimizer({
         onClick={() => setOpen(true)}
         className="mb-4 flex scroll-mt-4 items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-sm hover:bg-surface-2"
       >
-        <Sparkles size={16} className="text-accent" /> Suggest my gold setup
+        <GameIcon name="optimizer" size={16} inline alt="" /> Suggest my gold setup
       </button>
     );
   }
@@ -95,7 +96,7 @@ export default function GoldOptimizer({
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 font-semibold">
-            <Sparkles size={16} className="text-accent" /> Suggested gold setup
+            <GameIcon name="optimizer" size={20} alt="" /> Suggested gold setup
           </h2>
           <p className="max-w-2xl text-xs text-muted">
             For each account: the {MAX_GOLD_EARNERS} characters and 3 raids each that pay the most per week, at the best difficulty

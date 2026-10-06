@@ -1,6 +1,5 @@
 "use client";
 
-import { History } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api, byPosition, Character, formatGold, Task } from "@/lib/api";
@@ -38,7 +37,7 @@ export default function HistoryGrid({ characters, tasks }: { characters: Charact
   return (
     <section className="overflow-x-auto rounded-md border border-border bg-surface p-4">
       <h2 className="mb-1 flex items-center gap-2 font-semibold">
-        <History size={16} /> Weekly history
+        <GameIcon name="history" size={20} alt="" /> Weekly history
       </h2>
       <p className="mb-3 text-xs text-muted">
         Paid gold raids out of each gold earner&apos;s slots (from the raids they can enter now) and gold earned, per

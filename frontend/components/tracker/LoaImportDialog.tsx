@@ -1,6 +1,6 @@
 "use client";
 
-import { FileSearch, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -9,6 +9,7 @@ import { TrackerData } from "@/components/tracker/useTrackerData";
 import { LoaPreview, parseUtc, send, Task } from "@/lib/api";
 import { LOA_KEYS, parseMapping } from "@/lib/loaLogs";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 const when = (iso: string) =>
   parseUtc(iso).toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" });
@@ -97,7 +98,7 @@ export default function LoaImportDialog({ data, onClose }: { data: TrackerData; 
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h2 id="loa-import-title" className="flex items-center gap-2 font-semibold">
-              <FileSearch size={18} /> Import clears from LOA Logs
+              <GameIcon name="loa-logs" size={24} alt="" /> Import clears from LOA Logs
             </h2>
             {preview && (
               <p className="text-xs text-muted">

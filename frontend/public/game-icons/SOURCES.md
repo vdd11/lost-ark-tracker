@@ -20,6 +20,9 @@ came from, so any of them can be removed fast: delete the file and its line in
 | astrogem-corrosion.webp | Chaos Astrogem: Corrosion | [Lost Ark Codex: Chaos Astrogem: Corrosion](https://lostarkcodex.com/us/item/60002463/), `/icons/use_13_107.webp` |
 | astrogem-distortion.webp | Chaos Astrogem: Distortion | [Lost Ark Codex: Chaos Astrogem: Distortion](https://lostarkcodex.com/us/item/60002464/), `/icons/use_13_108.webp` |
 | astrogem-destruction.webp | Chaos Astrogem: Destruction | [Lost Ark Codex: Chaos Astrogem: Destruction](https://lostarkcodex.com/us/item/60002465/), `/icons/use_13_109.webp` |
+| sand-of-trial.webp | Sand of Trial, Haal's Hourglass | [Lost Ark Codex: Sand of Trial](https://lostarkcodex.com/us/item/62203410/), `/icons/use_14_9.webp` |
+| guardian-raid.webp | Guardian Raid | [Lost Ark Codex: Guardian Raid Token](https://lostarkcodex.com/us/item/41611640/), `/icons/tokenitem_71.webp` |
+| rest.webp | Rest bonus | [Lost Ark Codex: Rest Bonus Recovery Brew](https://lostarkcodex.com/us/item/40620517/), `/icons/use_11_251.webp` |
 | class-berserker.webp | Berserker class | [LOA Logs](https://github.com/snoww/loa-logs) `static/images/classes/102.png` |
 | class-destroyer.webp | Destroyer class | [LOA Logs](https://github.com/snoww/loa-logs) `static/images/classes/103.png` |
 | class-gunlancer.webp | Gunlancer class | [LOA Logs](https://github.com/snoww/loa-logs) `static/images/classes/104.png` |
@@ -59,3 +62,7 @@ are a few pixels wide at this size.
 
 The astrogem type icons were added on 2026-10-05. Raids stay text only by
 choice: their names read better than pictures.
+
+Sand of Trial, Guardian Raid Token and Rest Bonus Recovery Brew were added on
+2026-10-06. Features without game art use original slot glyphs
+(`components/SlotIcon.tsx`), not files here.

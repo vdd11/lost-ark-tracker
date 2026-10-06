@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ExternalLink, RefreshCw, Sparkles, X } from "lucide-react";
+import { Download, ExternalLink, RefreshCw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/updates";
 import { usePreference } from "@/lib/usePreference";
 import { isNewer } from "@/lib/version";
+import GameIcon from "@/components/GameIcon";
 
 const RELEASES_API = "https://api.github.com/repos/vdd11/lost-ark-tracker/releases/latest";
 const CACHE_KEY = "latest-release-v2";
@@ -115,7 +116,7 @@ export default function UpdateNotice({ enabled }: { enabled: boolean }) {
   if (updatedTo) {
     return (
       <span className="flex items-center gap-1 rounded-md border border-done/40 bg-done/10 px-2 py-1 text-xs">
-        <Sparkles size={12} className="text-done" />
+        <GameIcon name="whats-new" size={12} inline alt="" />
         <a href={releasePage(updatedTo)} target="_blank" rel="noreferrer" className="hover:underline">
           Updated to v{updatedTo}: what&apos;s new
         </a>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Gem, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import GameIcon from "@/components/GameIcon";
 import { formatGold } from "@/lib/api";
@@ -172,7 +172,7 @@ export default function AstrogemPanel({
 
         <div className="flex flex-col items-center gap-1">
           <label className="flex items-center gap-2">
-            <GameIcon name={type ? astrogemIconName(type.key) : "astrogem-order"} size={36} fallback={Gem} alt="" />
+            <GameIcon name={type ? astrogemIconName(type.key) : "astrogem-order"} size={36} alt="" />
             <select
               value={session.gemType ?? ""}
               onChange={(e) => save({ ...session, gemType: e.target.value || undefined, effects: [null, null] })}
@@ -296,14 +296,14 @@ export default function AstrogemPanel({
                 <option value={1}>+100%</option>
               </select>
               {formatGold(attemptCost(gem, baseCost))}
-              <GameIcon name="gold" size={18} fallback={Coins} alt="gold" />
+              <GameIcon name="gold" size={18} alt="gold" />
             </dd>
           </div>
           <div className="flex items-center justify-between gap-2 text-muted">
             <dt>Spent on this gem so far</dt>
             <dd className="flex items-center gap-1.5 tabular-nums">
               {formatGold(session.gold)}
-              <GameIcon name="gold" size={18} fallback={Coins} alt="gold" />
+              <GameIcon name="gold" size={18} alt="gold" />
             </dd>
           </div>
         </dl>

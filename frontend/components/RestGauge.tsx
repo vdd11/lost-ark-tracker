@@ -1,9 +1,10 @@
 "use client";
 
-import { Flame, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { KeyboardEvent, useRef, useState } from "react";
 
 import { RestState, Task } from "@/lib/api";
+import GameIcon from "@/components/GameIcon";
 
 /**
  * A character's rest bonus for a daily: a bar with -/+ (one day's worth of
@@ -97,7 +98,7 @@ export default function RestGauge({
       <span className="flex h-5 items-center">
         {state.rested_run_available && (
           <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent" title={`Today's run uses ${task.rest_cost} rest for bonus rewards`}>
-            <Flame size={12} /> Rested
+            <GameIcon name="rest" size={14} alt="" /> Rested
           </span>
         )}
       </span>

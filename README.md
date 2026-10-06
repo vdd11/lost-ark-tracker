@@ -189,8 +189,10 @@ The screenshots use made-up characters.
   history for a spreadsheet; the spending log has
   its own export.
 - **Game icons**: class emblems and item icons (gold, gems, astrogems, the
-  Ebony Cube ticket, Fate Ember, Paradise) ship inside the app, so nothing
-  is loaded from the web. Each file and its source is listed in
+  Ebony Cube ticket, Sand of Trial, Guardian Raid, rest bonus, Fate Ember,
+  Paradise) ship inside the app, so nothing is loaded from the web. Features
+  without game art (the menu, cards, widgets) use original glyphs in the same
+  gold inventory-slot tiles. Each file and its source is listed in
   `frontend/public/game-icons/SOURCES.md`; Lost Ark and its images are
   trademarks and property of Smilegate RPG / Amazon Games.
 - **Settings**: add characters (their usual raids are pre-selected from item

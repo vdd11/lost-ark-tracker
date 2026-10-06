@@ -1,11 +1,11 @@
 "use client";
 
-import { FileSearch } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import { LOA_KEYS } from "@/lib/loaLogs";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 /**
  * Opt-in import of raid clears from LOA Logs' local database. Read-only and
@@ -30,7 +30,7 @@ export default function LoaLogsSection() {
   return (
     <section>
       <h2 className="mb-1 flex items-center gap-2 text-2xl font-bold">
-        <FileSearch size={20} /> LOA Logs import
+        <GameIcon name="loa-logs" size={32} alt="" /> LOA Logs import
       </h2>
       <p className="mb-4 max-w-3xl text-sm text-muted">
         If you run the LOA Logs DPS meter (Windows or Linux), the tracker can read the raids it saw you clear this

@@ -1,4 +1,3 @@
-import { CalendarDays } from "lucide-react";
 
 import {
   characterBoundColumn,
@@ -36,7 +35,7 @@ export default function WeekCard({
   const goldLeft = goldRaidsLeft(section.rows, data.tasks, data.runs).left;
   return (
     <TrackerCard
-      icon={CalendarDays}
+      icon="this-week"
       title="This week"
       subtitle={
         tracker

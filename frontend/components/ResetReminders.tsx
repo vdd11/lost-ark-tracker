@@ -1,6 +1,6 @@
 "use client";
 
-import { AlarmClock, X } from "lucide-react";
+import { X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -17,6 +17,7 @@ import {
 } from "@/lib/reminders";
 import { cellKey } from "@/lib/trackerSections";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 const CHECK_EVERY_MS = 5 * 60 * 1000;
 
@@ -106,7 +107,7 @@ export default function ResetReminders() {
     <div className="border-b border-accent/40 bg-accent/10">
       {banners.map((banner) => (
         <div key={banner.title} role="alert" className="mx-auto flex max-w-7xl items-start gap-3 px-4 py-2 text-sm">
-          <AlarmClock size={16} className="mt-0.5 shrink-0 text-accent" />
+          <GameIcon name="reminders" size={16} inline alt="" className="mt-0.5" />
           <span className="min-w-0 flex-1">
             <span className="font-medium">{banner.title}:</span> {banner.body}{" "}
             <Link href="/" className="underline">Open the tracker</Link>

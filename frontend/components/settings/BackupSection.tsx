@@ -4,6 +4,7 @@ import { ChangeEvent, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
 import { api, send } from "@/lib/api";
+import GameIcon from "@/components/GameIcon";
 
 export default function BackupSection({ onError, onRestored }: { onError: (error: string) => void; onRestored: () => void }) {
   const [message, setMessage] = useState<string | null>(null);
@@ -39,7 +40,9 @@ export default function BackupSection({ onError, onRestored }: { onError: (error
 
   return (
     <section>
-      <h2 className="mb-1 text-2xl font-bold">Backup &amp; restore</h2>
+      <h2 className="flex items-center gap-2 mb-1 text-2xl font-bold">
+          <GameIcon name="backup" size={32} framed alt="" /> Backup &amp; restore
+        </h2>
       <p className="mb-4 text-sm text-muted">
         Your data lives only on this computer. The app also saves a copy each day you open it (the last 10 days),
         in a backups folder next to database.db. Download a backup to move your roster to another machine.

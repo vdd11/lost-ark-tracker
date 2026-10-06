@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Plus, RotateCcw, Search } from "lucide-react";
+import { Plus, RotateCcw, Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
@@ -19,6 +19,7 @@ import {
   GuideLink,
   GUIDES_CHECKED,
 } from "@/lib/guides";
+import GameIcon from "@/components/GameIcon";
 
 type GuidesData = { links: GuideLink[]; hidden: string[] };
 
@@ -102,7 +103,7 @@ export default function GuidesPage() {
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
       <div>
         <h1 className="mb-1 flex items-center gap-2 text-2xl font-bold">
-          <BookOpen size={22} /> Guides
+          <GameIcon name="guides" size={32} alt="" /> Guides
         </h1>
         <p className="text-sm text-muted">
           Hand-picked guides, tools and databases from around the community, plus your own links. They open in your

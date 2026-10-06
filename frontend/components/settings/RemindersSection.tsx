@@ -1,11 +1,11 @@
 "use client";
 
-import { AlarmClock } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 
 import { notificationStatus, notify } from "@/components/ResetReminders";
 import { DEFAULT_LEAD, LEAD_HOURS, REMINDER_KEYS } from "@/lib/reminders";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 const STATUS_TEXT = {
   granted: "Reminders show as system notifications.",
@@ -54,7 +54,7 @@ export default function RemindersSection() {
   return (
     <section>
       <h2 className="mb-1 flex items-center gap-2 text-2xl font-bold">
-        <AlarmClock size={20} /> Reminders
+        <GameIcon name="reminders" size={32} alt="" /> Reminders
       </h2>
       <p className="mb-4 max-w-3xl text-sm text-muted">
         Get a nudge before a reset. The app checks while any of its pages is open in your browser (it has no

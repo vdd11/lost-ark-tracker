@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ClipboardCopy, Flame, ListTodo } from "lucide-react";
+import { Check, ClipboardCopy } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { cellKeyboard } from "@/components/tracker/cellKeys";
@@ -45,7 +45,7 @@ export default function WhatsLeft({ data, columns }: { data: TrackerData; column
 
   return (
     <TrackerCard
-      icon={ListTodo}
+      icon="whats-left"
       title="What's left"
       subtitle={count ? `${count} task${count === 1 ? "" : "s"} · ${formatGold(gold)} gold still to earn` : "All caught up"}
       extra={
@@ -114,7 +114,7 @@ export default function WhatsLeft({ data, columns }: { data: TrackerData; column
                         )}
                         {rested && (
                           <span className="flex items-center gap-0.5 text-xs text-accent">
-                            <GameIcon name="rest" size={12} fallback={Flame} alt="" /> rested
+                            <GameIcon name="rest" size={14} alt="" /> rested
                           </span>
                         )}
                       </button>

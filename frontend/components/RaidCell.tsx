@@ -1,11 +1,12 @@
 "use client";
 
-import { Check, Gift } from "lucide-react";
+import { Check } from "lucide-react";
 import { useState } from "react";
 
 import DifficultySelect from "@/components/DifficultySelect";
 import { Character, formatGold, Run, Task } from "@/lib/api";
 import { bestDifficulty, difficultyOf, formatShortGold, FREE_BONUS_RAIDS_PER_WEEK } from "@/lib/raids";
+import GameIcon from "@/components/GameIcon";
 
 /**
  * A raid cell: a checkbox, the difficulty (a dropdown you can change right
@@ -113,7 +114,7 @@ export default function RaidCell({
                 : "border border-dashed border-border text-muted hover:border-accent/60 hover:text-foreground"
             }`}
           >
-            <Gift size={12} />
+            <GameIcon name="bonus-box" size={12} inline alt="" />
             {freeBonus ? "Free" : run!.bought_bonus ? `Bought −${formatShortGold(run!.bonus_spent || shown?.bonus_cost || null)}` : "Bonus box"}
           </button>
         )}

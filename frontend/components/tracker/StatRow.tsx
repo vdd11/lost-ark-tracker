@@ -1,4 +1,3 @@
-import { Coins, Swords } from "lucide-react";
 import Link from "next/link";
 import { ReactNode } from "react";
 
@@ -29,7 +28,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
       key: STAT_KEYS.raidsLeft,
       node: (
         <Stat
-          icon={<Swords size={16} />}
+          icon={<GameIcon name="gold-raids" size={24} framed alt="" />}
           label="Gold raids left"
           value={String(raidsLeft.left)}
           sub={
@@ -46,7 +45,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
       key: STAT_KEYS.raidGold,
       node: (
         <Stat
-          icon={<GameIcon name="gold" size={18} fallback={Coins} alt="" />}
+          icon={<GameIcon name="gold" size={24} framed alt="" />}
           label="Gold this week"
           action={
             <span className="flex items-center gap-2">

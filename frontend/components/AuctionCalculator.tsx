@@ -1,19 +1,20 @@
 "use client";
 
-import { Gavel, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { useState } from "react";
 
 import NumberInput from "@/components/NumberInput";
 import { formatGold } from "@/lib/api";
 import { auctionBids, auctionFormula, PARTY_SIZES } from "@/lib/auction";
 import { usePreference } from "@/lib/usePreference";
+import GameIcon from "@/components/GameIcon";
 
 /** How much to bid on a raid drop: break-even and a bid that still leaves a profit. */
 export default function AuctionCalculator() {
   return (
     <section className="rounded-md border border-border bg-surface p-4">
       <h2 className="mb-1 flex items-center gap-2 font-semibold">
-        <Gavel size={16} /> Auction calculator
+        <GameIcon name="auction" size={20} alt="" /> Auction calculator
       </h2>
       <p className="mb-3 text-xs text-muted">How much to bid on a raid drop so winning it is worth more than your share of someone else&apos;s bid.</p>
       <AuctionForm />

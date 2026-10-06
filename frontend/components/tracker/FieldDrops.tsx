@@ -1,6 +1,5 @@
 "use client";
 
-import { Skull, Tornado } from "lucide-react";
 import { useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -12,7 +11,6 @@ import { formatGold, send } from "@/lib/api";
 import { sourceIconName } from "@/lib/data/icons";
 import { dropsFrom, eventsOn, FieldEvent, nextEvent } from "@/lib/fieldEvents";
 
-const ICONS = { "Field Boss": Skull, "Chaos Gate": Tornado } as const;
 const GEM_LEVELS = [1, 2, 3, 4, 5];
 
 /**
@@ -38,7 +36,7 @@ export default function FieldDrops({ data }: { data: TrackerData }) {
         )}
         {today.map((event) => (
           <span key={event} className="flex items-center gap-2">
-            <GameIcon name={sourceIconName(event)} size={16} fallback={ICONS[event]} alt="" className="text-accent" />
+            <GameIcon name={sourceIconName(event)} size={20} alt="" />
             <span className="font-medium">{event} today</span>
             {logged[event] && <span className="text-xs text-done">logged {logged[event]}</span>}
             <button

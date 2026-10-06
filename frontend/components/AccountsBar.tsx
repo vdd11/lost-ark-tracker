@@ -1,9 +1,10 @@
 "use client";
 
-import { Plus, Users, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { Account } from "@/lib/api";
+import GameIcon from "@/components/GameIcon";
 
 /**
  * The game accounts characters belong to. Each is its own roster: up to 6
@@ -24,7 +25,7 @@ export default function AccountsBar({
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
       <span className="flex items-center gap-1.5 text-muted">
-        <Users size={16} /> Accounts
+        <GameIcon name="accounts" size={20} alt="" /> Accounts
       </span>
       {accounts.map((account) => (
         <AccountChip

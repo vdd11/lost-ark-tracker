@@ -30,6 +30,7 @@ import { formatItemLevel } from "@/lib/raids";
 import { gemEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
 import CharacterName from "@/components/CharacterName";
+import GameIcon from "@/components/GameIcon";
 
 // Fixed order and colors; anything else folds into "Other". Ebony Cube and
 // Haal's Hourglass are filled in from the tracker, the rest are logged here.
@@ -141,7 +142,9 @@ export default function GemsPage() {
     <div className="space-y-8">
       <div>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold">Gems</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <GameIcon name="doomfire" size={32} framed alt="" /> Gems
+        </h1>
           <AccountTabs accounts={accounts} value={accountId} onChange={setAccountId} />
         </div>
         <p className="mt-1 max-w-3xl text-sm text-muted">

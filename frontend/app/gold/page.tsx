@@ -111,7 +111,9 @@ export default function GoldPage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">Gold</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <GameIcon name="gold" size={32} framed alt="" /> Gold
+        </h1>
         <AccountTabs accounts={accounts} value={accountId} onChange={setAccountId} />
       </div>
       <ErrorBanner error={error} onDismiss={() => setError(null)} />

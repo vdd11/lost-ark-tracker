@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Newspaper } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { api, NewsFeed, ServerStatus } from "@/lib/api";
@@ -67,9 +67,7 @@ export default function NewsWidget() {
     <section className="flex min-w-0 flex-col rounded-lg border border-border bg-surface p-4">
       <header className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/15 text-accent">
-            <GameIcon name="news" size={20} fallback={Newspaper} alt="" />
-          </span>
+          <GameIcon name="news" size={28} framed alt="" />
           Lost Ark updates
         </h2>
         <div role="tablist" className="flex gap-0.5">

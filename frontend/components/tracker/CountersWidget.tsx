@@ -1,6 +1,6 @@
 "use client";
 
-import { ListChecks, Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -85,7 +85,7 @@ export default function CountersWidget({
 
   return (
     <Widget
-      icon={ListChecks}
+      icon="counters"
       title="Counters"
       hint="Anything you count by hand: collectibles, tokens, reputation."
       action={

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Pencil, Trash2, Users } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -109,7 +109,7 @@ export default function RaidGroupsWidget({
 
   return (
     <Widget
-      icon={Users}
+      icon="raid-groups"
       title="Raid groups"
       hint="Your statics, and which of your characters in each still need the raid."
       action={

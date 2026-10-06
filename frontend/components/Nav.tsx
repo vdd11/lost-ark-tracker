@@ -1,6 +1,5 @@
 "use client";
 
-import { BookOpen, Coins, Gem, Keyboard, LayoutGrid, Settings2, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,15 +9,16 @@ import UpdateNotice, { UpdateCheckPrompt, useUpdateCheck } from "@/components/Up
 import { DEFAULT_HIDDEN_RAW, HIDDEN_PREFERENCE, PAGE_KEYS, parseHidden } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 import GameIcon from "@/components/GameIcon";
+import SlotIcon from "@/components/SlotIcon";
 
 /** `key` marks pages that can be hidden under Customize on the tracker. */
-const LINKS: { href: string; label: string; icon: typeof Coins; gameIcon?: string; key?: string }[] = [
-  { href: "/", label: "Tracker", icon: LayoutGrid },
-  { href: "/gold", label: "Gold", icon: Coins, gameIcon: "gold", key: PAGE_KEYS.gold },
-  { href: "/gems", label: "Gems", icon: Gem, gameIcon: "doomfire", key: PAGE_KEYS.gems },
-  { href: "/tools", label: "Tools", icon: Wrench, key: PAGE_KEYS.tools },
-  { href: "/guides", label: "Guides", icon: BookOpen, key: PAGE_KEYS.guides },
-  { href: "/settings", label: "Settings", icon: Settings2 },
+const LINKS: { href: string; label: string; icon: string; key?: string }[] = [
+  { href: "/", label: "Tracker", icon: "tracker" },
+  { href: "/gold", label: "Gold", icon: "gold", key: PAGE_KEYS.gold },
+  { href: "/gems", label: "Gems", icon: "doomfire", key: PAGE_KEYS.gems },
+  { href: "/tools", label: "Tools", icon: "tools", key: PAGE_KEYS.tools },
+  { href: "/guides", label: "Guides", icon: "guides", key: PAGE_KEYS.guides },
+  { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
 export default function Nav() {
@@ -36,7 +36,10 @@ export default function Nav() {
   return (
     <header className="border-b border-border bg-surface">
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <span className="font-semibold text-accent">Lost Ark Tracker</span>
+        <span className="flex items-center gap-2 font-semibold text-accent">
+          <SlotIcon glyph="slot" size={22} />
+          Lost Ark Tracker
+        </span>
         {/* On a phone the links get their own row, as icons; the current page keeps its label. */}
         <div className="order-last flex w-full flex-wrap gap-1 md:order-none md:w-auto">
           {links.map((link) => {
@@ -52,7 +55,7 @@ export default function Nav() {
                   current ? "bg-surface-2 font-medium" : "text-muted hover:bg-surface-2"
                 }`}
               >
-                {link.gameIcon ? <GameIcon name={link.gameIcon} size={18} fallback={link.icon} alt="" /> : <link.icon size={16} />}
+                <GameIcon name={link.icon} size={20} framed alt="" />
                 <span className={current ? "" : "hidden lg:inline"}>{link.label}</span>
               </Link>
             );
@@ -66,7 +69,7 @@ export default function Nav() {
             title="Keyboard shortcuts (?)"
             className="rounded-md p-1.5 text-muted hover:bg-surface-2 hover:text-foreground"
           >
-            <Keyboard size={18} />
+            <GameIcon name="shortcuts" size={20} alt="" />
           </button>
           <ThemeToggle />
         </div>

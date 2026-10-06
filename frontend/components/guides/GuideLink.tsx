@@ -1,6 +1,6 @@
-import { BookOpen } from "lucide-react";
 
 import { guideById } from "@/lib/guides";
+import GameIcon from "@/components/GameIcon";
 
 /** A small "Guide" link to a built-in Guides entry, for pages a guide explains. */
 export default function GuideLink({ id, label = "Guide" }: { id: string; label?: string }) {
@@ -14,7 +14,7 @@ export default function GuideLink({ id, label = "Guide" }: { id: string; label?:
       title={`${guide.title} (opens in your browser)`}
       className="inline-flex items-center gap-1 text-xs text-muted hover:text-accent"
     >
-      <BookOpen size={12} /> {label}
+      <GameIcon name="guides" size={12} inline alt="" /> {label}
     </a>
   );
 }

@@ -1,4 +1,3 @@
-import { Flame, Sun } from "lucide-react";
 
 import { FinishedNote, MarkAllButton } from "@/components/tracker/cardParts";
 import { cellKeyboard } from "@/components/tracker/cellKeys";
@@ -35,7 +34,7 @@ export default function TodayCard({
   const [fieldEventsOn] = usePreference<boolean>(FIELD_EVENTS_PREFERENCE, false);
   return (
     <TrackerCard
-      icon={Sun}
+      icon="today"
       title="Today"
       subtitle={tracker ? `Dailies · resets in ${formatCountdown(parseUtc(tracker.next_daily_reset), now)}` : "Dailies"}
       done={section.done}
@@ -43,7 +42,7 @@ export default function TodayCard({
       extra={
         restedRuns > 0 ? (
           <span className="flex items-center gap-1 font-medium text-accent">
-            <GameIcon name="rest" size={14} fallback={Flame} alt="" /> {restedRuns} rested
+            <GameIcon name="rest" size={16} alt="" /> {restedRuns} rested
           </span>
         ) : undefined
       }
