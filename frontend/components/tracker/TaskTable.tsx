@@ -226,7 +226,7 @@ export default function TaskTable({
             {columns.map((task) => (
               <th key={task.id} className="px-2 py-2 text-center align-bottom font-medium">
                 <div className="flex flex-col items-center gap-1 text-sm leading-tight text-foreground">
-                  <GameIcon name={taskIconName(task)} size={24} alt="" />
+                  {taskIconName(task) && <GameIcon name={taskIconName(task)!} size={24} alt="" />}
                   {task.name}
                 </div>
                 {columnNote?.(task)}

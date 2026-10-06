@@ -10,9 +10,11 @@ const FOLDER = join(__dirname, "..", "..", "public", "game-icons");
 
 describe("icon names", () => {
   it("maps built-in tasks by key and others by name", () => {
-    expect(taskIconName({ catalog_key: "kazeros-denouement", name: "The Final Day" })).toBe("the-final-day");
-    expect(taskIconName({ catalog_key: null, name: "Chaos Dungeon" })).toBe("chaos-dungeon");
-    expect(taskIconName({ catalog_key: "haals-hourglass", name: "My hourglass" })).toBe("haals-hourglass");
+    expect(taskIconName({ catalog_key: "ebony-cube", name: "Ebony Cube", category: "weekly" })).toBe("ebony-cube");
+    expect(taskIconName({ catalog_key: null, name: "Chaos Dungeon", category: "daily" })).toBe("chaos-dungeon");
+    expect(taskIconName({ catalog_key: "haals-hourglass", name: "My hourglass", category: "weekly" })).toBe("haals-hourglass");
+    // Raids are text only.
+    expect(taskIconName({ catalog_key: "kazeros-denouement", name: "The Final Day", category: "raid" })).toBeNull();
     expect(sourceIconName("Field Boss")).toBe("field-boss");
     expect(slug("Haal's Hourglass")).toBe("haals-hourglass");
   });

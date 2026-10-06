@@ -16,6 +16,11 @@ export const ICON_FILES: Record<string, string> = {
   doomfire: "doomfire.webp",
   blazing: "blazing.webp",
   "astrogem-order": "astrogem-order.webp",
+  "astrogem-solidity": "astrogem-solidity.webp",
+  "astrogem-immutability": "astrogem-immutability.webp",
+  "astrogem-corrosion": "astrogem-corrosion.webp",
+  "astrogem-distortion": "astrogem-distortion.webp",
+  "astrogem-destruction": "astrogem-destruction.webp",
   "fate-ember": "fate-ember.webp",
   paradise: "paradise.webp",
   // Every class in lib/classes.ts has one: class-bard.webp, ...
@@ -54,10 +59,6 @@ const LABELS: Record<string, string> = {
   "chaos-gate": "Chaos Gate",
   "fate-ember": "Fate Ember",
   paradise: "Paradise",
-  serca: "Serca",
-  "horizon-cathedral": "Horizon Cathedral",
-  "the-final-day": "The Final Day",
-  "act-4": "Act 4",
   rest: "Rest bonus",
   news: "Lost Ark news",
 };
@@ -73,15 +74,13 @@ export function slug(text: string) {
 
 /** Built-in tasks by catalog key; others go by their name. */
 const TASK_ICONS: Record<string, string> = {
-  "shadow-serca": "serca",
-  "abyss-cathedral": "horizon-cathedral",
-  "kazeros-denouement": "the-final-day",
-  "kazeros-act-4": "act-4",
   "ebony-cube": "ebony-cube",
   "haals-hourglass": "haals-hourglass",
 };
 
-export function taskIconName(task: { catalog_key: string | null; name: string }) {
+/** A task's icon name, or null for raids: their names read better than pictures (the user's call). */
+export function taskIconName(task: { catalog_key: string | null; name: string; category: string }): string | null {
+  if (task.category === "raid") return null;
   return (task.catalog_key && TASK_ICONS[task.catalog_key]) || slug(task.name);
 }
 
