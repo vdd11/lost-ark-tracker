@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, NewsFeed, ServerStatus } from "@/lib/api";
 import { usePreference } from "@/lib/usePreference";
 import GameIcon from "@/components/GameIcon";
+import { Skeleton } from "@/components/Skeleton";
 
 const REFRESH_MS = 10 * 60 * 1000;
 const TABS = ["servers", "news", "x"] as const;
@@ -83,7 +84,11 @@ export default function NewsWidget() {
       ) : failed && !feed ? (
         <p className="text-sm text-muted">Couldn&apos;t load updates. Check your internet connection.</p>
       ) : !feed ? (
-        <p className="text-sm text-muted">Loading…</p>
+        <div className="space-y-2" role="status" aria-label="Loading updates">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
       ) : tab === "servers" ? (
         <Servers servers={feed.servers} error={feed.servers_error} />
       ) : (

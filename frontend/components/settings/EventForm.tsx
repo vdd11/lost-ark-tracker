@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { describeError } from "@/components/ErrorBanner";
 import NumberInput from "@/components/NumberInput";
 import { api, DifficultyDraft, EventTemplate } from "@/lib/api";
+import { Skeleton } from "@/components/Skeleton";
 
 const OTHER_BASE = "__other__";
 
@@ -48,7 +49,7 @@ export default function EventForm({ onCreate, onError }: { onCreate: (data: obje
     setEndsOn(defaultEventEnd());
   }
 
-  if (!template) return null;
+  if (!template) return <Skeleton className="h-44" />;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-md border border-border bg-surface p-4 text-sm">

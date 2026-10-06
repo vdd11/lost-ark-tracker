@@ -8,6 +8,7 @@ import EventForm from "@/components/settings/EventForm";
 import { api, CatalogReference, Difficulty, formatGold, send, Task } from "@/lib/api";
 import { boundLabel, formatItemLevel, settingsRaidLists } from "@/lib/raids";
 import GameIcon from "@/components/GameIcon";
+import { Skeleton } from "@/components/Skeleton";
 
 const formatDate = (day: string) => new Date(`${day}T00:00:00`).toLocaleDateString();
 
@@ -60,6 +61,7 @@ export default function RaidsSection({ dataVersion, onError }: { dataVersion: nu
         {reference && <> Raid data last reviewed: {formatDate(reference.reviewed)}.</>}
       </p>
 
+      {!reference && <Skeleton className="mb-6 h-10" />}
       {reference && (
         <details className="mb-6 rounded-md border border-border bg-surface">
           <summary className="cursor-pointer px-4 py-2 text-sm font-medium">Raid reference</summary>

@@ -7,6 +7,7 @@ import { CellTone, firstTrackedWeek, missedRaids, weekTone, WeeklyHistory } from
 import { formatShortGold, goldRaidWeek } from "@/lib/raids";
 import GameIcon from "@/components/GameIcon";
 import { classIconName } from "@/lib/data/icons";
+import { Skeleton } from "@/components/Skeleton";
 
 const TONES: Record<CellTone, string> = {
   full: "bg-done/20 text-foreground",
@@ -24,14 +25,17 @@ const shortWeek = (week: string) => new Date(`${week}T00:00:00`).toLocaleDateStr
  */
 export default function HistoryGrid({ characters, tasks }: { characters: Character[]; tasks: Task[] }) {
   const [history, setHistory] = useState<WeeklyHistory | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     api<WeeklyHistory>("/history/weekly?weeks=8")
       .then(setHistory)
-      .catch(() => setHistory(null));
+      .catch(() => setFailed(true));
   }, []);
 
-  if (!history || characters.length === 0) return null;
+  if (characters.length === 0 || failed) return null;
+  // The grid's rough shape while it loads, so the page doesn't jump.
+  if (!history) return <Skeleton className="h-48" />;
   const roster = [...characters].sort(byPosition);
 
   return (
