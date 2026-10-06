@@ -251,7 +251,8 @@ that restores your data on another computer, or after a reinstall.
 **Updating.** With the update check on, the nav shows *Update available*
 when there's a new release; click it for what's new and **Update now**. The
 app downloads the new version for your system, checks it against the
-release's published SHA-256 checksums, backs up your data, swaps the file and
+release's SHA-256 checksums (which must be signed with the developer's key),
+backs up your data, swaps the file and
 restarts; the page reloads by itself (about 5 seconds). Nothing happens unless
 you press it, and if anything fails the old version keeps running and the
 dialog falls back to the manual steps: download, quit the tracker, replace the
@@ -348,6 +349,21 @@ git tag v1.1.0
 git push origin v1.1.0
 ```
 
-The Release workflow builds Windows, macOS and Linux binaries and attaches them
-to a GitHub release. The CI workflow runs tests, lint, and a build on every
+The Release workflow builds Windows, macOS and Linux binaries and attaches them,
+with their `SHA256SUMS`, to a **draft** GitHub release. Nobody sees a draft
+until it's signed and published from the computer that holds the signing key
+(see `docs/security.md`):
+
+```sh
+# once: make the key (~/.lost-ark-tracker/update-signing-key.pem) and back it up
+backend/.venv/Scripts/python scripts/sign_release.py keygen
+# each release, after the workflow is green; GITHUB_TOKEN is a fine-grained
+# token for this repo with Contents: read and write
+GITHUB_TOKEN=... backend/.venv/Scripts/python scripts/sign_release.py publish v1.1.0
+```
+
+It checks every download against `SHA256SUMS`, signs it (`SHA256SUMS.sig`)
+and publishes the release. Update now only installs signed releases.
+
+The CI workflow runs tests, lint, the end-to-end tests and a build on every
 push to `main` and on pull requests.
