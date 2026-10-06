@@ -44,8 +44,10 @@ The screenshots use made-up characters.
     pinned. After an update that changes raid values, a one-time note lists
     what changed. Non-earners get no raid gold, so their
     cells show none, and their bonus boxes are free for 3 raids a week.
-    "Raid gold this week" shows tradeable + roster-bound gold, with
-    character-bound gold and how many characters it's on beneath. The
+    **Gold this week** is your tradeable + roster-bound gold this week:
+    raids and other gold, after the bonus boxes it paid for (raid / other /
+    bonus listed beneath), with character-bound gold and how many characters
+    it's on, and a quick log for other gold. The
     **gold goal** widget counts tradeable gold only or tradeable + roster-bound
     (the default), each with its own target.
   - **Today**: Chaos Dungeon (and Guardian Raid if you turn it on), reset

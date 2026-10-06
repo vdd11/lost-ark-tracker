@@ -1,4 +1,4 @@
-import { Coins, Swords, Wallet } from "lucide-react";
+import { Coins, Swords } from "lucide-react";
 import Link from "next/link";
 import { ReactNode } from "react";
 
@@ -7,13 +7,13 @@ import QuickGold from "@/components/QuickGold";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { formatGold } from "@/lib/api";
-import { raidGoldSplit } from "@/lib/goldEarners";
+import { goldThisWeek, goldThisWeekParts, raidGoldSplit } from "@/lib/goldEarners";
 import { goldRaidsLeft, possibleRaidGold } from "@/lib/raids";
 import { STAT_KEYS } from "@/lib/trackerView";
 import GameIcon from "@/components/GameIcon";
 
 // Static class names so Tailwind generates them: the row fits however many boxes are shown.
-const STAT_COLUMNS = ["", "lg:grid-cols-1", "lg:grid-cols-2", "lg:grid-cols-3", "lg:grid-cols-4", "lg:grid-cols-5"];
+const STAT_COLUMNS = ["", "sm:grid-cols-1", "sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"];
 
 /** The boxes along the top of the tracker, each of which can be hidden in Customize. */
 export default function StatRow({ data, view }: { data: TrackerData; view: TrackerView }) {
@@ -22,6 +22,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
   const possibleGold = possibleRaidGold(characters, tasks, runs);
   const raidsLeft = goldRaidsLeft(characters, tasks, runs);
   const split = raidGoldSplit(thisWeek);
+  const gold = goldThisWeek(thisWeek);
 
   const stats = [
     {
@@ -46,30 +47,8 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
       node: (
         <Stat
           icon={<GameIcon name="gold" size={18} fallback={Coins} alt="" />}
-          label="Raid gold this week"
-          value={formatGold(split.shared)}
-          sub={
-            <>
-              <span className="block">
-                {split.characterBound > 0
-                  ? `+ ${formatGold(split.characterBound)} bound to ${split.spreadOver} character${split.spreadOver === 1 ? "" : "s"}`
-                  : "tradeable + roster-bound"}
-              </span>
-              <span className="block">of {formatGold(possibleGold)} possible</span>
-            </>
-          }
-          title="Tradeable and roster-bound raid gold, which any character can spend; character-bound gold only its own character can use"
-        />
-      ),
-    },
-    {
-      key: STAT_KEYS.otherGold,
-      node: (
-        <Stat
-          icon={<GameIcon name="gold" size={18} fallback={Coins} alt="" />}
-          label="Other gold this week"
-          value={formatGold(thisWeek.other_gold)}
-          sub={
+          label="Gold this week"
+          action={
             <span className="flex items-center gap-2">
               <QuickGold
                 accountId={data.accountId || null}
@@ -79,30 +58,20 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
               <Link href="/gold" className="underline">Gold page</Link>
             </span>
           }
-        />
-      ),
-    },
-    {
-      key: STAT_KEYS.total,
-      node: (
-        <Stat
-          icon={<Wallet size={16} />}
-          label="Total this week"
-          value={formatGold(thisWeek.net)}
-          sub={thisWeek.bonus_spent > 0 ? `after ${formatGold(thisWeek.bonus_spent)} on bonus boxes` : undefined}
+          value={formatGold(gold.total)}
           accent
-        />
-      ),
-    },
-    {
-      key: STAT_KEYS.leftToUse,
-      node: (
-        <Stat
-          icon={<Wallet size={16} />}
-          label="Left to use"
-          value={formatGold(thisWeek.tradeable_left)}
-          sub={`tradeable · ${formatGold(thisWeek.roster_bound_left)} roster-bound`}
-          title="After bonus boxes, which use character-bound gold first, then roster-bound, then tradeable"
+          sub={
+            <>
+              <span className="block">{goldThisWeekParts(gold, formatGold) || "nothing yet"}</span>
+              {split.characterBound > 0 && (
+                <span className="block">
+                  + {formatGold(split.characterBound)} bound to {split.spreadOver} character{split.spreadOver === 1 ? "" : "s"}
+                </span>
+              )}
+              <span className="block">of {formatGold(possibleGold)} raid gold possible</span>
+            </>
+          }
+          title="Tradeable + roster-bound gold this week: raids and other gold, after the bonus boxes those paid for. Character-bound gold, which only its own character can spend, is listed beneath."
         />
       ),
     },
@@ -110,7 +79,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
 
   if (stats.length === 0) return null;
   return (
-    <div className={`grid gap-3 sm:grid-cols-2 ${STAT_COLUMNS[stats.length]}`}>
+    <div className={`grid gap-3 ${STAT_COLUMNS[stats.length]}`}>
       {stats.map((stat) => (
         <div key={stat.key}>{stat.node}</div>
       ))}
@@ -125,9 +94,12 @@ function Stat({
   sub,
   accent,
   title,
+  action,
 }: {
   icon: ReactNode;
   label: string;
+  /** Small controls at the right of the label, e.g. the quick log. */
+  action?: ReactNode;
   value: string;
   sub?: ReactNode;
   accent?: boolean;
@@ -135,13 +107,15 @@ function Stat({
 }) {
   return (
     <div className="h-full rounded-lg border border-border bg-surface px-4 py-3" title={title}>
-      <div className="flex items-center gap-1.5 text-xs text-muted">
+      {/* A fixed height, so a box with controls lines up with one without. */}
+      <div className="flex h-6 items-center gap-1.5 text-xs text-muted">
         {icon}
         {label}
+        {action && <span className="ml-auto">{action}</span>}
       </div>
       <div className={`text-xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{value}</div>
-      {/* Two lines are always reserved, so a longer line after a tick doesn't grow the row and move the cards. */}
-      <div className="line-clamp-2 min-h-8 text-xs text-muted">{sub}</div>
+      {/* Three lines are always reserved, so a line appearing after a tick doesn't grow the row and move the cards. */}
+      <div className="line-clamp-3 min-h-12 text-xs leading-4 text-muted">{sub}</div>
     </div>
   );
 }

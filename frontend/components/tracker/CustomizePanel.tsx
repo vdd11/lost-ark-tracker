@@ -101,10 +101,7 @@ export default function CustomizePanel({
       title: "Top boxes",
       items: [
         { key: STAT_KEYS.raidsLeft, label: "Gold raids left" },
-        { key: STAT_KEYS.raidGold, label: "Raid gold" },
-        { key: STAT_KEYS.otherGold, label: "Other gold (+ quick log)" },
-        { key: STAT_KEYS.total, label: "Total this week" },
-        { key: STAT_KEYS.leftToUse, label: "Left to use" },
+        { key: STAT_KEYS.raidGold, label: "Gold this week (+ quick log)" },
       ],
     },
     {

@@ -34,10 +34,8 @@ export const RAID_PICKERS_KEY = "cells:raid-pickers";
 /** The boxes along the top of the tracker. */
 export const STAT_KEYS = {
   raidsLeft: "stat:raids-left",
+  /** "Gold this week" (the key from when it was "Raid gold", so hiding it carries over). */
   raidGold: "stat:raid-gold",
-  otherGold: "stat:other-gold",
-  total: "stat:total",
-  leftToUse: "stat:left-to-use",
 } as const;
 
 /** Insight widgets under the tracker. */
@@ -48,7 +46,8 @@ export const WIDGET_KEYS = {
   auction: "widget:auction",
 } as const;
 /** Older versions kept the (then default-on) news widget in the hidden set; it's opt-in now (lib/online.ts). */
-const RETIRED_KEYS = ["widget:news"];
+// Boxes and widgets that no longer exist; saved settings naming them are ignored.
+const RETIRED_KEYS = ["widget:news", "stat:other-gold", "stat:total", "stat:left-to-use"];
 
 /** Pages that can be dropped from the menu. */
 export const PAGE_KEYS = { gold: "page:gold", gems: "page:gems", tools: "page:tools", guides: "page:guides" } as const;
@@ -83,9 +82,6 @@ export function styleHidden(style: Style, tasks: Task[]): Set<string> {
     SECTION_KEYS.today,
     SECTION_KEYS.anytime,
     CHARACTER_BOUND_KEY,
-    STAT_KEYS.otherGold,
-    STAT_KEYS.total,
-    STAT_KEYS.leftToUse,
     PAGE_KEYS.gems,
     PAGE_KEYS.tools,
     ...Object.values(WIDGET_KEYS),

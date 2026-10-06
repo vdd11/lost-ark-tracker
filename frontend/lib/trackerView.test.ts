@@ -41,6 +41,11 @@ describe("tracker sections", () => {
     expect(parseHidden("").size).toBe(0);
   });
 
+  it("ignores the gold boxes that were folded into Gold this week", () => {
+    const hidden = parseHidden("stat:total|stat:left-to-use|stat:other-gold|stat:raid-gold|task:x");
+    expect(serializeHidden(hidden)).toBe("stat:raid-gold|task:x");
+  });
+
   it("drops the news widget, which is opt-in now", () => {
     expect(parseHidden("widget:news|task:x").has("widget:news")).toBe(false);
   });

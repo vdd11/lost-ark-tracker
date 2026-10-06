@@ -108,11 +108,11 @@ export function TrackerBanners({ data, view }: { data: TrackerData; view: Tracke
       lastWeekGems: lastGemWeek?.total ?? 0,
       paidRaidCharacters: Object.keys(recap.paid_raids).length,
     });
-  // Check-ins are about spending, so they follow the "Left to use" box.
+  // Check-ins are about gold on hand, so they follow the "Gold this week" box.
   const needsCheckIn =
     tracker &&
     shouldRemindCheckIn({
-      enabled: view.isShown(STAT_KEYS.leftToUse),
+      enabled: view.isShown(STAT_KEYS.raidGold),
       weeklyPeriod: tracker.weekly_period,
       dismissedWeek: checkInDismissed,
       lastCheckIn,
