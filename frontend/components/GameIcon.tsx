@@ -19,6 +19,7 @@ export default function GameIcon({
   className = "",
   framed = false,
   inline = false,
+  rem = false,
 }: {
   name: string;
   size?: number;
@@ -29,6 +30,8 @@ export default function GameIcon({
   framed?: boolean;
   /** Beside text at 12-16px: a glyph without its tile, in gold. */
   inline?: boolean;
+  /** Size in rem (size / 16), so it grows with Settings → Appearance → Text size. */
+  rem?: boolean;
 }) {
   const src = iconSrc(name);
   const [failed, setFailed] = useState<string | null>(null);
@@ -42,6 +45,7 @@ export default function GameIcon({
   }
 
   const imageSize = framed ? Math.round(size * 0.8) : size;
+  const box = (px: number) => (rem ? `${px / 16}rem` : px);
   const image = (
     <Image
       src={src}
@@ -52,13 +56,13 @@ export default function GameIcon({
       alt={label}
       onError={() => setFailed(src)}
       // Class emblems are pale, like in game: a dark backdrop keeps them visible on light pages.
-      className={`shrink-0 object-contain ${!framed && name.startsWith("class-") ? "rounded-md bg-[#1d2229] p-px" : ""} ${framed ? "" : className}`}
-      style={{ width: imageSize, height: imageSize }}
+      className={`shrink-0 object-contain ${!framed && name.startsWith("class-") ? "slot-tile p-px" : ""} ${framed ? "" : className}`}
+      style={{ width: box(imageSize), height: box(imageSize) }}
     />
   );
   if (!framed) return image;
   return (
-    <span className={`slot-tile inline-flex shrink-0 items-center justify-center ${className}`} style={{ width: size, height: size }}>
+    <span className={`slot-tile inline-flex shrink-0 items-center justify-center ${className}`} style={{ width: box(size), height: box(size) }}>
       {image}
     </span>
   );

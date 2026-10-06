@@ -48,7 +48,7 @@ export default function CharacterRow({
       </td>
       <td className="px-3 py-1.5">
         <div className="flex items-center gap-2">
-          <GameIcon name={classIconName(draft.class_name)} size={22} alt="" />
+          <GameIcon name={classIconName(draft.class_name)} size={28} rem alt="" />
           <ClassInput
           value={draft.class_name}
           onChange={(value) => setDraft((prev) => ({ ...prev, class_name: value }))}

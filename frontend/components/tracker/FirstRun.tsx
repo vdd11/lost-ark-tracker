@@ -101,7 +101,7 @@ export default function FirstRun({ data, view, onStart, onFinish }: { data: Trac
             <ul className="flex flex-wrap gap-2" aria-label="Characters added">
               {characters.map((c) => (
                 <li key={c.id} className="flex items-center gap-2 rounded-md border border-border bg-surface-2/50 px-2 py-1 text-sm">
-                  <GameIcon name={classIconName(c.class_name)} size={24} alt="" />
+                  <GameIcon name={classIconName(c.class_name)} size={28} rem alt="" />
                   <span className="font-medium">{c.name}</span>
                   <span className="text-xs text-muted">
                     {c.class_name} · {formatItemLevel(c.item_level)}
@@ -141,7 +141,7 @@ export default function FirstRun({ data, view, onStart, onFinish }: { data: Trac
                         c.is_gold_earner ? "border-accent bg-accent/15" : "border-border text-muted hover:text-foreground"
                       }`}
                     >
-                      <GameIcon name={classIconName(c.class_name)} size={24} alt="" />
+                      <GameIcon name={classIconName(c.class_name)} size={28} rem alt="" />
                       {c.name}
                       <span className={`rounded px-1.5 text-xs font-semibold ${c.is_gold_earner ? "bg-accent/20 text-accent" : "border border-dashed border-border"}`}>
                         GOLD

@@ -27,7 +27,7 @@ export type ExtraColumn = {
  * Keys only act on the box itself, so the controls inside keep working as usual.
  */
 /** Column widths in rem for the desktop table (see the colgroup below), so they scale with the text size. */
-const CHARACTER_COLUMN = 10.5;
+const CHARACTER_COLUMN = 12.5;
 /** More characters than this and the table scrolls inside the card with its header row pinned. */
 const TALL_ROSTER = 8;
 const TASK_COLUMN = 7.5;
@@ -150,11 +150,17 @@ export default function TaskTable({
 
   const who = (character: Character) => (
     <>
+      <div className="flex items-start gap-2">
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          {/* Decorative: the class is written beside it. Sized in rem to follow the text size. */}
+          <GameIcon name={classIconName(character.class_name)} size={34} rem alt="" />
+          {/* Its slot keeps its height when All goes away, so the row never moves. */}
+          {characterAction && <div className="flex h-6 items-center">{characterAction(character)}</div>}
+        </div>
+        <div className="min-w-0 flex-1">
       {/* A fixed height: the All button coming and going never changes the row. */}
       <div className="flex h-6 items-center gap-1.5">
-        {/* Decorative: the class is written on the line below. */}
-        <GameIcon name={classIconName(character.class_name)} size={22} alt="" />
-        <span className="font-medium">{character.name}</span>
+        <span className="min-w-0 truncate font-medium" title={character.name}>{character.name}</span>
         {onGoldEarner ? (
           <button
             onClick={() => onGoldEarner(character, !character.is_gold_earner)}
@@ -178,9 +184,8 @@ export default function TaskTable({
             </span>
           )
         )}
-        {characterAction?.(character)}
       </div>
-      <div className="text-xs text-muted">
+      <div className="truncate text-xs text-muted">
         {character.class_name} ·{" "}
         <ItemLevelEdit
           value={character.item_level}
@@ -188,6 +193,8 @@ export default function TaskTable({
           onSave={(value) => onItemLevel(character, value)}
           {...(raids ? tierProps(character.item_level, raids) : {})}
         />
+      </div>
+        </div>
       </div>
       {characterGoal?.(character)}
       {characterNote?.(character)}

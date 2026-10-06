@@ -29,7 +29,7 @@ export function MarkAllButton({
       onClick={() => data.actions.completeAll(character, todo)}
       title={`Mark ${character.name}'s remaining ${what} done: ${names}`}
       aria-label={`Mark ${character.name}'s remaining ${what} done`}
-      className="ml-auto flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-xs text-muted hover:border-done/60 hover:text-done"
+      className="flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-xs text-muted hover:border-done/60 hover:text-done"
     >
       <CheckCheck size={12} /> All
     </button>

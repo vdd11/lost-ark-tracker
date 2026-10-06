@@ -70,7 +70,7 @@ export default function HistoryGrid({ characters, tasks }: { characters: Charact
               <tr key={character.id}>
                 <td className="whitespace-nowrap px-1 py-0.5 text-sm font-medium">
                   <span className="flex items-center gap-1.5">
-                    <GameIcon name={classIconName(character.class_name)} size={16} alt="" />
+                    <GameIcon name={classIconName(character.class_name)} size={28} rem alt="" />
                     {character.name}
                   </span>
                 </td>

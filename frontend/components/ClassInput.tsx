@@ -149,7 +149,7 @@ export default function ClassInput({
                       onClick={() => pick(name)}
                       className={`flex cursor-pointer items-center gap-2 px-3 py-1 ${index === active ? "bg-surface-2" : ""} ${selected ? "font-medium text-accent" : ""}`}
                     >
-                      <GameIcon name={classIconName(name)} size={18} alt="" />
+                      <GameIcon name={classIconName(name)} size={22} rem alt="" />
                       {name}
                     </li>
                   );

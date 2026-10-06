@@ -78,7 +78,7 @@ export default function WhatsLeft({ data, columns }: { data: TrackerData; column
             <li key={character.id} className="px-4 py-3">
               <div className="mb-1.5 flex items-baseline justify-between gap-2">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <GameIcon name={classIconName(character.class_name)} size={18} alt="" />
+                  <GameIcon name={classIconName(character.class_name)} size={24} rem alt="" />
                   {character.name} <span className="text-xs font-normal text-muted">{character.class_name}</span>
                 </span>
                 {characterGold > 0 && <span className="text-xs tabular-nums text-muted">{formatGold(characterGold)}</span>}
