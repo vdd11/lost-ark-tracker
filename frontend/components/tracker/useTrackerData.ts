@@ -375,6 +375,8 @@ export function useTrackerData() {
     setError,
     loadWeeklyGold,
     refreshTracker,
+    /** Reload characters, tasks and the tracker (after adding characters elsewhere). */
+    reload: loadAll,
     actions: {
       toggleCompletion,
       toggleRaid,

@@ -28,6 +28,8 @@ import { mergeOrder } from "@/lib/order";
 import { buildSection } from "@/lib/trackerSections";
 import { SECTION_KEYS } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
+import FirstRun from "@/components/tracker/FirstRun";
+import { FIRST_RUN_PREFERENCE, FIRST_RUN_STATES, FirstRunState, showFirstRun } from "@/lib/firstRun";
 
 const MODES = ["grid", "left"] as const;
 const BLOCK_LABELS: Record<string, string> = {
@@ -47,6 +49,8 @@ export default function TrackerPage() {
   // Rearranging the page's blocks is its own mode, with its own Done.
   const [arranging, setArranging] = useState(false);
   const [, setWidgetOrderRaw] = usePreference<string>(WIDGET_ORDER_PREFERENCE, "");
+  const [firstRun, setFirstRun] = usePreference<FirstRunState>(FIRST_RUN_PREFERENCE, "", FIRST_RUN_STATES);
+  const firstRunShown = showFirstRun(data.loaded, data.allCharacters.length, firstRun);
   // The full grid, or only what's left (remembered in this browser).
   const [mode, setMode] = usePreference<(typeof MODES)[number]>("tracker-mode", "grid", MODES);
   const showLeft = mode === "left" && !editMode;
@@ -118,7 +122,16 @@ export default function TrackerPage() {
         </div>
       </div>
 
-      {data.allCharacters.length > 0 && !view.styleChosen && <WelcomeStyle view={view} />}
+      {data.allCharacters.length > 0 && !view.styleChosen && !firstRunShown && <WelcomeStyle view={view} />}
+
+      {firstRunShown && (
+        <FirstRun
+          data={data}
+          view={view}
+          onStart={() => firstRun !== "active" && setFirstRun("active")}
+          onFinish={() => setFirstRun("done")}
+        />
+      )}
 
       {importing && <LoaImportDialog data={data} onClose={() => setImporting(false)} />}
 
@@ -181,10 +194,12 @@ export default function TrackerPage() {
           </div>
         </div>
       ) : data.characters.length === 0 && !data.error ? (
-        <p className="rounded-lg border border-border bg-surface p-8 text-center text-muted">
-          {data.allCharacters.length > 0 ? "No characters on this account yet." : "No characters yet."}{" "}
-          <Link href="/settings" className="underline">Add your roster in Settings</Link>.
-        </p>
+        firstRunShown ? null : (
+          <p className="rounded-lg border border-border bg-surface p-8 text-center text-muted">
+            {data.allCharacters.length > 0 ? "No characters on this account yet." : "No characters yet."}{" "}
+            <Link href="/settings" className="underline">Add your roster in Settings</Link>.
+          </p>
+        )
       ) : (
         <ArrangeableList
           className="space-y-4"

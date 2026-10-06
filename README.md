@@ -17,13 +17,31 @@ sources to see your weekly gold over time.
 
 The screenshots use made-up characters.
 
+## What makes it different
+
+- **Local and private.** One program on your computer, with your data in a
+  file next to it. No account, no sign-in, no ads, nothing sent anywhere
+  unless you turn on one of the few clearly labelled online extras.
+- **Knows the game's rules.** 3 paid raids per character, 6 gold earners
+  per account, bound gold and the order it's spent in, bonus boxes, rest
+  bonus, Extreme events that pay once per roster. Raid values come with
+  each update, checked against the patch notes.
+- **Made for the weekly routine.** Tick a clear, see what's left and what
+  it pays, and look back at where your gold and gems came from.
+
+- **First run**: three short steps: how much to track, add your characters
+  (paste a roster or one at a time, with class icons), and who earns gold.
 - **Tracker**: three cards, by how often things reset.
   - **This week**: raids and Haal's Hourglass (1730+), reset Wednesday 10:00
     UTC. Each raid shows a checkbox, a difficulty dropdown, and once cleared a
     "Bonus box" button. Raids a character can enter but doesn't usually run
     show faded, so an extra clear can be ticked. **GOLD** beside a name
     toggles whether the character earns raid gold (6 per account; the count
-    shows next to the account tabs). Non-earners get no raid gold, so their
+    shows next to the account tabs). Item levels are coloured by the best raid
+    tier they reach (hover for which), the card's header counts gold raids
+    left, and a big roster scrolls inside the card with its header row
+    pinned. After an update that changes raid values, a one-time note lists
+    what changed. Non-earners get no raid gold, so their
     cells show none, and their bonus boxes are free for 3 raids a week.
     "Raid gold this week" shows tradeable + roster-bound gold, with
     character-bound gold and how many characters it's on beneath. The
@@ -188,8 +206,9 @@ The screenshots use made-up characters.
      the tracker and close it to stop.
 
    Running it again while it's open just reopens the browser tab.
-3. First time: add your characters in **Settings**. Their usual raids are
-   picked from item level, and you can adjust them before adding.
+3. First time: the tracker walks you through adding your characters (or use
+   **Settings**). Their usual raids are picked from item level, and you can
+   adjust them before adding.
 
 Everything stays on your computer. There are no accounts and none of your data is sent anywhere. See
 [Privacy and network](#privacy-and-network) for the few optional things that go online.

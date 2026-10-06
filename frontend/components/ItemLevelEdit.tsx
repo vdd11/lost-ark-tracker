@@ -10,10 +10,16 @@ export default function ItemLevelEdit({
   value,
   characterName,
   onSave,
+  tone = "",
+  hint,
 }: {
   value: number;
   characterName: string;
   onSave: (value: number) => void;
+  /** A text colour for the number, e.g. by the raid tier it reaches. */
+  tone?: string;
+  /** Added to the tooltip, e.g. "Can enter up to Serca Hard (1730)". */
+  hint?: string;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   // Enter/Escape close the input, which also fires blur; handle only the first.
@@ -60,9 +66,9 @@ export default function ItemLevelEdit({
   return (
     <button
       onClick={open}
-      title="Click to update item level"
+      title={hint ? `${hint}. Click to update item level` : "Click to update item level"}
       aria-label={`${characterName} item level ${value || "not set"}. Click to edit`}
-      className="inline-flex items-center gap-1 rounded px-0.5 tabular-nums hover:bg-surface-2 hover:text-foreground"
+      className={`inline-flex items-center gap-1 rounded px-0.5 font-medium tabular-nums hover:bg-surface-2 hover:text-foreground ${tone}`}
     >
       {value > 0 ? formatItemLevel(value) : "set ilvl"}
       <Pencil size={10} className="opacity-60" />

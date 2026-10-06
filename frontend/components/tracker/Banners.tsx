@@ -1,28 +1,72 @@
 import { X } from "lucide-react";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import RecapCard from "@/components/tracker/RecapCard";
 import StyleChooser from "@/components/tracker/StyleChooser";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
+import { api, CatalogReference } from "@/lib/api";
 import { shouldRemindCheckIn, shouldShowRecap } from "@/lib/banners";
+import { CATALOG_SEEN_PREFERENCE, CatalogSnapshot, catalogChanges, parseSnapshot, snapshotOf } from "@/lib/catalogDiff";
 import { isActiveRaid, raidGold } from "@/lib/raids";
 import { missedGoldRaids } from "@/lib/recap";
 import { isTiered } from "@/lib/trackerSections";
 import { SECTION_KEYS, STAT_KEYS } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 
-export function Notice({ children, onDismiss }: { children: ReactNode; onDismiss?: () => void }) {
+export function Notice({
+  children,
+  onDismiss,
+  dismissLabel = "Dismiss until next week",
+}: {
+  children: ReactNode;
+  onDismiss?: () => void;
+  dismissLabel?: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-sm">
-      <span>{children}</span>
+      <div>{children}</div>
       {onDismiss && (
-        <button onClick={onDismiss} aria-label="Dismiss until next week" className="rounded p-1 text-muted hover:bg-surface-2">
+        <button onClick={onDismiss} aria-label={dismissLabel} title={dismissLabel} className="shrink-0 self-start rounded p-1 text-muted hover:bg-surface-2">
           <X size={14} />
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * After an update that changed raid values, a one-time note of what changed,
+ * against what this browser last saw. The first visit just remembers them.
+ */
+export function RaidDataNotice() {
+  const [seenRaw, setSeenRaw] = usePreference<string>(CATALOG_SEEN_PREFERENCE, "");
+  const [current, setCurrent] = useState<CatalogSnapshot | null>(null);
+
+  useEffect(() => {
+    api<CatalogReference>("/raid-catalog")
+      .then((reference) => setCurrent(snapshotOf(reference)))
+      .catch(() => {});
+  }, []);
+
+  const seen = parseSnapshot(seenRaw);
+  useEffect(() => {
+    if (current && !parseSnapshot(seenRaw)) setSeenRaw(JSON.stringify(current));
+  }, [current, seenRaw, setSeenRaw]);
+
+  const changes = current && seen ? catalogChanges(seen, current) : [];
+  if (!current || changes.length === 0) return null;
+  return (
+    <Notice onDismiss={() => setSeenRaw(JSON.stringify(current))} dismissLabel="Got it">
+      <span className="font-medium">Raid data changed in this update:</span>
+      <ul className="my-1 list-disc pl-5">
+        {changes.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+      <Link href="/settings/#raids" className="underline">See the raid reference</Link>
+    </Notice>
   );
 }
 
@@ -79,6 +123,8 @@ export function TrackerBanners({ data, view }: { data: TrackerData; view: Tracke
 
   return (
     <>
+      <RaidDataNotice />
+
       {showRecap && (
         <RecapCard
           week={recap!.week}

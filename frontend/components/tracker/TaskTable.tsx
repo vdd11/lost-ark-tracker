@@ -7,6 +7,7 @@ import { GridPosition, isTypingTarget, moveFocus } from "@/lib/shortcuts";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import GameIcon from "@/components/GameIcon";
 import { taskIconName } from "@/lib/data/icons";
+import { bestRaidTier, tierHint, tierTone } from "@/lib/itemLevelTier";
 
 export type ExtraColumn = {
   key: string;
@@ -27,11 +28,18 @@ export type ExtraColumn = {
  */
 /** Column widths in rem for the desktop table (see the colgroup below), so they scale with the text size. */
 const CHARACTER_COLUMN = 8.5;
+/** More characters than this and the table scrolls inside the card with its header row pinned. */
+const TALL_ROSTER = 8;
 /** The class icon that marks a character's row done (`rowButton`). */
 const ROW_BUTTON_COLUMN = 2.5;
 const TASK_COLUMN = 7.5;
 const EXTRA_COLUMN = 7;
 const rem = (n: number) => `${n}rem`;
+
+function tierProps(itemLevel: number, raids: Task[]) {
+  const tier = bestRaidTier(itemLevel, raids);
+  return { tone: tierTone(tier), hint: tierHint(tier) };
+}
 
 export default function TaskTable({
   characters,
@@ -48,6 +56,7 @@ export default function TaskTable({
   cellKeyboard,
   onRowAll,
   hideWhenEmpty = false,
+  raids,
 }: {
   characters: Character[];
   columns: Task[];
@@ -69,6 +78,8 @@ export default function TaskTable({
   onRowAll?: (character: Character) => void;
   /** Render nothing, rather than "Nothing to show", when there are no rows. */
   hideWhenEmpty?: boolean;
+  /** Every raid, to colour item levels by the best tier they reach. */
+  raids?: Task[];
 }) {
   const wide = useMediaQuery("(min-width: 768px)");
   // The cell that holds the card's one Tab stop (roving tabindex).
@@ -166,7 +177,12 @@ export default function TaskTable({
       </div>
       <div className="text-xs text-muted">
         {character.class_name} ·{" "}
-        <ItemLevelEdit value={character.item_level} characterName={character.name} onSave={(value) => onItemLevel(character, value)} />
+        <ItemLevelEdit
+          value={character.item_level}
+          characterName={character.name}
+          onSave={(value) => onItemLevel(character, value)}
+          {...(raids ? tierProps(character.item_level, raids) : {})}
+        />
       </div>
       {characterGoal?.(character)}
       {characterNote?.(character)}
@@ -205,9 +221,11 @@ export default function TaskTable({
   // Fixed column widths: what a cell shows after ticking (bonus box, run
   // counts, rest) can never resize a column and move the checkboxes.
   const buttonColumn = rowButton ? ROW_BUTTON_COLUMN : 0;
+  // A big roster scrolls inside the card, so the header row can stay in view.
+  const tall = characters.length > TALL_ROSTER;
   const minWidth = CHARACTER_COLUMN + buttonColumn + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
   return (
-    <div className="overflow-x-auto">
+    <div className={`overflow-x-auto ${tall ? "max-h-[75vh] overflow-y-auto" : ""}`}>
       <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: rem(minWidth) }}>
         <colgroup>
           <col style={{ width: rem(CHARACTER_COLUMN) }} />
@@ -220,7 +238,7 @@ export default function TaskTable({
           ))}
         </colgroup>
         <thead>
-          <tr className="border-b border-border text-xs text-muted">
+          <tr className={`border-b border-border text-xs text-muted ${tall ? "sticky top-0 z-20 bg-surface shadow-[0_1px_0_var(--border)]" : ""}`}>
             <th className="sticky left-0 z-10 bg-surface py-2 pl-4 pr-2 text-left font-medium">Character</th>
             {rowButton && <th aria-label="Mark all done" />}
             {columns.map((task) => (

@@ -52,6 +52,7 @@ export default function TodayCard({
           <TrackerCell character={character} task={task} data={data} editMode={editMode} compact={!view.isShown(RAID_PICKERS_KEY)} />
         )}
         onItemLevel={data.actions.updateItemLevel}
+        raids={data.tasks}
         cellKeyboard={(character, task) => cellKeyboard(character, task, data, editMode)}
         onRowAll={
           editMode

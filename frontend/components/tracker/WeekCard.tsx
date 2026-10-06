@@ -16,6 +16,7 @@ import BoundGoldNote from "@/components/tracker/BoundGoldNote";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { parseUtc } from "@/lib/api";
+import { goldRaidsLeft } from "@/lib/raids";
 import { cellKey, formatCountdown, SectionData } from "@/lib/trackerSections";
 import { appliesTo, CHARACTER_BOUND_KEY, FINISHED_ROWS_KEY, RAID_PICKERS_KEY, remainingFor } from "@/lib/trackerView";
 
@@ -32,6 +33,7 @@ export default function WeekCard({
   editMode: boolean;
 }) {
   const { tracker, now } = data;
+  const goldLeft = goldRaidsLeft(section.rows, data.tasks, data.runs).left;
   return (
     <TrackerCard
       icon={CalendarDays}
@@ -43,6 +45,7 @@ export default function WeekCard({
       }
       done={section.done}
       total={section.total}
+      extra={goldLeft > 0 ? <span className="font-medium text-accent">{goldLeft} gold raid{goldLeft === 1 ? "" : "s"} left</span> : undefined}
     >
       <TaskTable
         applies={editMode ? undefined : appliesTo}
@@ -54,6 +57,7 @@ export default function WeekCard({
         )}
         columnNote={eventNote}
         onItemLevel={data.actions.updateItemLevel}
+        raids={data.tasks}
         onGoldEarner={data.actions.setGoldEarner}
         cellKeyboard={(character, task) => cellKeyboard(character, task, data, editMode)}
         onRowAll={
