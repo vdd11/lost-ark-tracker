@@ -6,6 +6,7 @@ import { Character, Task } from "@/lib/api";
 import { GridPosition, isTypingTarget, moveFocus } from "@/lib/shortcuts";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import GameIcon from "@/components/GameIcon";
+import RaidHeader from "@/components/tracker/RaidHeader";
 import { classIconName, taskIconName } from "@/lib/data/icons";
 import { bestRaidTier, tierHint, tierTone } from "@/lib/itemLevelTier";
 
@@ -260,7 +261,7 @@ export default function TaskTable({
               <th key={task.id} className="px-2 py-2 text-center align-bottom font-medium">
                 <div className="flex flex-col items-center gap-1 text-sm leading-tight text-foreground">
                   {taskIconName(task) && <GameIcon name={taskIconName(task)!} size={24} alt="" />}
-                  {task.name}
+                  {task.category === "raid" && task.difficulties.length > 0 ? <RaidHeader task={task} /> : task.name}
                 </div>
                 {columnNote?.(task)}
               </th>
