@@ -20,7 +20,9 @@ import ssl
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 from typing import Callable
 
@@ -37,6 +39,36 @@ RELEASES_API = os.environ.get(
 CHECKSUMS = "SHA256SUMS"
 TIMEOUT_SECONDS = 60
 _ssl = ssl.create_default_context(cafile=certifi.where())
+
+# Where release files may come from (over HTTPS): the release's download URLs
+# are on github.com, which redirects to GitHub's file hosts.
+API_HOSTS = frozenset({"api.github.com"})
+DOWNLOAD_HOSTS = frozenset({"github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"})
+# The app is ~30 MB; anything far bigger isn't ours.
+MAX_DOWNLOAD_BYTES = 200 * 1024 * 1024
+# Only when pointed at a test server (LOST_ARK_TRACKER_RELEASES_API): plain http on this computer.
+TESTING = "LOST_ARK_TRACKER_RELEASES_API" in os.environ
+LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
+
+
+def is_allowed_url(url: str, hosts: frozenset[str] = DOWNLOAD_HOSTS) -> bool:
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    if TESTING and parts.scheme == "http" and host in LOOPBACK:
+        return True
+    return parts.scheme == "https" and host in hosts
+
+
+class _GitHubRedirectsOnly(urllib.request.HTTPRedirectHandler):
+    """Follow a redirect only to GitHub's own hosts, over HTTPS."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not is_allowed_url(newurl, DOWNLOAD_HOSTS | API_HOSTS):
+            raise urllib.error.URLError(f"refused a redirect to {urlsplit(newurl).hostname}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_GitHubRedirectsOnly, urllib.request.HTTPSHandler(context=_ssl))
 
 
 class UpdateError(Exception):
@@ -92,7 +124,7 @@ def sha256_of(path: Path) -> str:
 
 def _open(url: str, accept: str = "*/*"):
     request = urllib.request.Request(url, headers={"User-Agent": "LostArkTracker-updater", "Accept": accept})
-    return urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS, context=_ssl)
+    return _opener.open(request, timeout=TIMEOUT_SECONDS)
 
 
 def fetch_text(url: str) -> str:
@@ -100,10 +132,22 @@ def fetch_text(url: str) -> str:
         return response.read().decode("utf-8")
 
 
+def copy_capped(source, file, limit: int = MAX_DOWNLOAD_BYTES):
+    """Copy a download into a file, stopping if it's bigger than any release of ours."""
+    total = 0
+    while chunk := source.read(1 << 20):
+        total += len(chunk)
+        if total > limit:
+            raise UpdateError("The download was far bigger than the app, so it wasn't installed.")
+        file.write(chunk)
+
+
 def download(url: str, target: Path):
     with _open(url) as response, target.open("wb") as file:
-        while chunk := response.read(1 << 20):
-            file.write(chunk)
+        length = response.headers.get("Content-Length")
+        if length and length.isdigit() and int(length) > MAX_DOWNLOAD_BYTES:
+            raise UpdateError("The download was far bigger than the app, so it wasn't installed.")
+        copy_capped(response, file)
 
 
 def swap_in(exe: Path, new_file: Path):
@@ -130,6 +174,8 @@ def install_update(
     platform: str = sys.platform,
 ) -> str:
     """Download, check and swap in the latest release. Returns its version."""
+    if not is_allowed_url(RELEASES_API, API_HOSTS):
+        raise UpdateError("The update source isn't GitHub, so nothing was downloaded.")
     try:
         release = json.loads(fetch(RELEASES_API))
     except (OSError, ValueError) as error:
@@ -144,6 +190,8 @@ def install_update(
         raise UpdateError(f"Version {version} has no download for this system.")
     if CHECKSUMS not in assets:
         raise UpdateError(f"Version {version} has no checksums to verify the download, so it can't be installed here.")
+    if not all(is_allowed_url(str(assets[key])) for key in (name, CHECKSUMS)):
+        raise UpdateError(f"Version {version}'s files aren't on GitHub, so nothing was downloaded.")
 
     try:
         expected = parse_checksums(fetch(assets[CHECKSUMS])).get(name)

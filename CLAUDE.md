@@ -12,7 +12,11 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
 - The server has no login, so `hosts.py` refuses any request whose `Host`
   isn't `127.0.0.1`, `localhost` or `[::1]` (any port): DNS rebinding
   protection. Tests use `TestClient(main.app, base_url="http://127.0.0.1")`;
-  the default `testserver` host gets 400.
+  the default `testserver` host gets 400. `SameOriginWritesMiddleware` (same
+  file) refuses POST/PUT/PATCH/DELETE whose `Origin` (or, without one,
+  `Sec-Fetch-Site`) is another site; the app's own port and dev ports
+  3000/8000 pass, and so do clients that send neither (curl, tests). See
+  `docs/security.md`.
 - Backend: `main.py` sets up the app; endpoints live in `routes/<area>.py`
   (one router each, all under `/api`). Domain logic stays out of routes:
   `raids.py` (catalog), `rest.py`, `gems.py`, `resets.py`.
@@ -76,7 +80,11 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   `updater.asset_name`), renames the running file to `*.old*`, swaps the new
   one in and starts it with `--after-update` (waits for the port; env
   `PYINSTALLER_RESET_ENVIRONMENT=1` so it doesn't reuse this copy's unpacked
-  files). `LOST_ARK_TRACKER_RELEASES_API` points it at a test server.
+  files). It only takes HTTPS URLs on GitHub's hosts (redirects too) and
+  caps downloads at 200 MB; `SHA256SUMS` comes from the same release, so it
+  guards against corruption, not a compromised release (`docs/security.md`).
+  `LOST_ARK_TRACKER_RELEASES_API` points it at a test server (then loopback
+  http is allowed).
 - Guides page links are data (`frontend/lib/data/guides.json`, with a
   `checked` date). Check new ones with `python scripts/check_links.py`; a
   weekly workflow (`links.yml`) runs it and opens an issue for dead links or

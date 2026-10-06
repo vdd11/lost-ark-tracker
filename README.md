@@ -266,6 +266,14 @@ tab, `--data-dir PATH` to keep the database somewhere else.
 
 ## Privacy and network
 
+**Security.** The tracker only answers requests addressed to this computer,
+and refuses changes sent by other websites you visit (a page can't, say, start
+an update or restore a backup behind your back). **Update now** only downloads
+from GitHub over HTTPS, caps the download's size, and installs it only if it
+matches the release's checksums; those catch a damaged or altered download,
+not a compromised release (that would need code signing). Details in
+`docs/security.md`.
+
 Your roster, clears, gold and check-ins are stored only in the database on
 your computer and are never uploaded. The app makes exactly these internet
 requests, and only these:

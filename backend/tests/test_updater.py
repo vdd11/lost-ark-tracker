@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 
@@ -13,7 +14,7 @@ OLD = b"old app bytes"
 def release(version="99.0.0", assets=("LostArkTracker-windows.exe", "SHA256SUMS")):
     return {
         "tag_name": f"v{version}",
-        "assets": [{"name": name, "browser_download_url": f"https://example.test/{name}"} for name in assets],
+        "assets": [{"name": name, "browser_download_url": f"https://github.com/vdd11/lost-ark-tracker/releases/download/v99.0.0/{name}"} for name in assets],
     }
 
 
@@ -21,14 +22,14 @@ def fake_remote(release_data, checksum=None, payload=NEW):
     checksum = checksum or hashlib.sha256(payload).hexdigest()
     texts = {
         updater.RELEASES_API: json.dumps(release_data),
-        "https://example.test/SHA256SUMS": f"{checksum}  LostArkTracker-windows.exe\n{'0' * 64}  LostArkTracker-linux\n",
+        "https://github.com/vdd11/lost-ark-tracker/releases/download/v99.0.0/SHA256SUMS": f"{checksum}  LostArkTracker-windows.exe\n{'0' * 64}  LostArkTracker-linux\n",
     }
 
     def fetch(url):
         return texts[url]
 
     def fetch_file(url, target):
-        assert url == "https://example.test/LostArkTracker-windows.exe"
+        assert url == "https://github.com/vdd11/lost-ark-tracker/releases/download/v99.0.0/LostArkTracker-windows.exe"
         target.write_bytes(payload)
 
     return fetch, fetch_file
@@ -141,3 +142,44 @@ def test_the_new_copy_starts_fresh_and_waits_for_this_one(exe, monkeypatch):
     args, kwargs = calls[0]
     assert args == [str(exe), "--port", "8777", "--no-tray", "--after-update"]
     assert kwargs["env"]["PYINSTALLER_RESET_ENVIRONMENT"] == "1"
+
+
+def test_only_github_files_over_https(exe):
+    for url in ("https://evil.example/LostArkTracker-windows.exe", "http://github.com/LostArkTracker-windows.exe"):
+        data = release()
+        data["assets"][0]["browser_download_url"] = url
+        fetch, fetch_file = fake_remote(data)
+        with pytest.raises(updater.UpdateError, match="aren't on GitHub"):
+            updater.install_update(exe, fetch, fetch_file, platform="win32")
+        assert exe.read_bytes() == OLD
+
+
+def test_the_release_list_must_come_from_github(exe, monkeypatch):
+    monkeypatch.setattr(updater, "RELEASES_API", "https://evil.example/releases/latest")
+    with pytest.raises(updater.UpdateError, match="isn't GitHub"):
+        updater.install_update(exe, lambda url: "{}", lambda url, target: None, platform="win32")
+
+
+def test_url_rules():
+    assert updater.is_allowed_url("https://github.com/vdd11/lost-ark-tracker/releases/download/v1/x")
+    assert updater.is_allowed_url("https://objects.githubusercontent.com/x")
+    assert not updater.is_allowed_url("https://github.com.evil.example/x")
+    assert not updater.is_allowed_url("http://127.0.0.1:8899/x")  # only with the test-server override
+    assert not updater.is_allowed_url("https://api.github.com/x")  # files never come from the API host
+    assert updater.is_allowed_url("https://api.github.com/repos/x/releases/latest", updater.API_HOSTS)
+
+
+def test_redirects_stay_on_github():
+    handler = updater._GitHubRedirectsOnly()
+    request = updater.urllib.request.Request("https://github.com/x")
+    with pytest.raises(updater.urllib.error.URLError, match="evil.example"):
+        handler.redirect_request(request, None, 302, "Found", {}, "https://evil.example/x")
+    assert handler.redirect_request(request, None, 302, "Found", {}, "https://release-assets.githubusercontent.com/x") is not None
+
+
+def test_downloads_are_capped():
+    out = io.BytesIO()
+    updater.copy_capped(io.BytesIO(b"x" * 10), out, limit=10)
+    assert out.getvalue() == b"x" * 10
+    with pytest.raises(updater.UpdateError, match="far bigger"):
+        updater.copy_capped(io.BytesIO(b"x" * 11), io.BytesIO(), limit=10)
