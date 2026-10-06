@@ -7,7 +7,24 @@ from models import Character, CharacterTask, Task
 DEFAULT_TASKS = [
     ("Chaos Dungeon", "daily"),
     ("Guardian Raid", "daily"),
+    # Character-bound materials bought with Clear Medals; tick it once the
+    # character has bought the shop out for the week.
+    ("Growth Boost Shop", "weekly"),
 ]
+
+
+def add_default_task(db: Session, name: str, category: str):
+    """A default task added in a later version: create it (unless the user
+    already has one by that name) and give it to every character."""
+    if db.query(Task).filter_by(name=name).first() is not None:
+        return
+    position = (max((t.position for t in db.query(Task)), default=-1)) + 1
+    task = Task(name=name, category=category, gold=0, position=position)
+    db.add(task)
+    db.flush()
+    for character in db.query(Character):
+        db.add(CharacterTask(character_id=character.id, task_id=task.id))
+    db.commit()
 
 
 # Rest bonus rules: (max, gained per skipped day, spent per rested run).

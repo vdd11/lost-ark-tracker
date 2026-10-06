@@ -32,8 +32,9 @@ The screenshots use made-up characters.
 - **First run**: three short steps: how much to track, add your characters
   (paste a roster or one at a time, with class icons), and who earns gold.
 - **Tracker**: three cards, by how often things reset.
-  - **This week**: raids and Haal's Hourglass (1730+), reset Wednesday 10:00
-    UTC. Each raid shows a checkbox, a difficulty dropdown, and once cleared a
+  - **This week**: raids, Haal's Hourglass (1730+) and the **Growth Boost
+    Shop** (tick it once a character has bought out its Clear Medal shop),
+    reset Wednesday 10:00 UTC. Each raid shows a checkbox, a difficulty dropdown, and once cleared a
     "Bonus box" button. Raids a character can enter but doesn't usually run
     show faded, so an extra clear can be ticked. **GOLD** beside a name
     toggles whether the character earns raid gold (6 per account; the count

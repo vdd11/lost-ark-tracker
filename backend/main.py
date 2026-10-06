@@ -18,7 +18,7 @@ from raids import (
     retire_old_tasks,
     sync_catalog,
 )
-from seed import apply_default_rest_rules, seed_default_tasks
+from seed import add_default_task, apply_default_rest_rules, seed_default_tasks
 from version import APP_NAME, APP_VERSION
 from routes import (
     accounts,
@@ -62,6 +62,7 @@ async def lifespan(app: FastAPI):
         run_once(db, "retire-guild-weekly", lambda db: retire_old_tasks(db, ["Guild Weekly"]))
         # v1.18: raid values are the app's; edits from the old Raids page go back to the catalog.
         run_once(db, "catalog-wins", reset_edited_values)
+        run_once(db, "add-growth-boost-shop", lambda db: add_default_task(db, "Growth Boost Shop", "weekly"))
         if ("completions", "bound_gold") in added_columns:
             backfill_bound_gold(db)
         if ("completions", "character_bound_gold") in added_columns:

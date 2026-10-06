@@ -31,7 +31,11 @@ const CHARACTER_COLUMN = 10.5;
 /** More characters than this and the table scrolls inside the card with its header row pinned. */
 const TALL_ROSTER = 8;
 const TASK_COLUMN = 7.5;
-const EXTRA_COLUMN = 7;
+/** A plain checkbox (a weekly like the Growth Boost Shop) needs no room for a picker. */
+const CHECKBOX_COLUMN = 5.5;
+const columnWidth = (task: Task) =>
+  task.category !== "raid" && task.difficulties.length === 0 && !task.counted && task.rest_max === 0 ? CHECKBOX_COLUMN : TASK_COLUMN;
+const EXTRA_COLUMN = 6;
 const rem = (n: number) => `${n}rem`;
 
 function tierProps(itemLevel: number, raids: Task[]) {
@@ -222,14 +226,14 @@ export default function TaskTable({
   // counts, rest) can never resize a column and move the checkboxes.
   // A big roster scrolls inside the card, so the header row can stay in view.
   const tall = characters.length > TALL_ROSTER;
-  const minWidth = CHARACTER_COLUMN + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
+  const minWidth = CHARACTER_COLUMN + columns.reduce((sum, task) => sum + columnWidth(task), 0) + extraColumns.length * EXTRA_COLUMN;
   return (
     <div className={`overflow-x-auto ${tall ? "max-h-[75vh] overflow-y-auto" : ""}`}>
       <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: rem(minWidth) }}>
         <colgroup>
           <col style={{ width: rem(CHARACTER_COLUMN) }} />
           {columns.map((task) => (
-            <col key={task.id} style={{ width: rem(TASK_COLUMN) }} />
+            <col key={task.id} style={{ width: rem(columnWidth(task)) }} />
           ))}
           {extraColumns.map((column) => (
             <col key={column.key} style={{ width: rem(EXTRA_COLUMN) }} />

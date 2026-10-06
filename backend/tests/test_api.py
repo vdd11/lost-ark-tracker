@@ -172,3 +172,31 @@ def test_weekly_history_goes_back_ten_years(client):
     assert len(client.get("/api/gold/weekly?weeks=520").json()) == 520
     assert len(client.get("/api/gems/weekly?weeks=520").json()) == 520
     assert client.get("/api/gold/weekly?weeks=521").status_code == 422
+
+
+def test_growth_boost_shop_is_a_weekly_checkbox_for_everyone(client, set_now):
+    set_now(datetime(2026, 10, 2, 12))
+    shop = task_named(client, "Growth Boost Shop")
+    assert shop["category"] == "weekly"
+    main = client.post("/api/characters", json={"name": "Main", "class_name": "Bard", "item_level": 1700}).json()
+    assert shop["id"] in main["task_ids"]
+    assert client.put(f"/api/characters/{main['id']}/tasks/{shop['id']}/completion", json={}).status_code == 204
+    assert [main["id"], shop["id"]] in client.get("/api/tracker").json()["completed"]
+
+
+def test_older_databases_get_the_growth_boost_shop_once(client):
+    from database import SessionLocal
+    from models import CharacterTask, Task
+    from seed import add_default_task
+
+    main = client.post("/api/characters", json={"name": "Main", "class_name": "Bard"}).json()
+    with SessionLocal() as db:
+        shop = db.query(Task).filter_by(name="Growth Boost Shop").one()
+        db.query(CharacterTask).filter_by(task_id=shop.id).delete()
+        db.delete(shop)
+        db.commit()
+        add_default_task(db, "Growth Boost Shop", "weekly")
+        add_default_task(db, "Growth Boost Shop", "weekly")  # a second run changes nothing
+        shops = db.query(Task).filter_by(name="Growth Boost Shop").all()
+        assert len(shops) == 1
+        assert db.query(CharacterTask).filter_by(task_id=shops[0].id, character_id=main["id"]).count() == 1
