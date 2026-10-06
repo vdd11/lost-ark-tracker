@@ -29,6 +29,8 @@ import { buildSection } from "@/lib/trackerSections";
 import { SECTION_KEYS } from "@/lib/trackerView";
 import { usePreference } from "@/lib/usePreference";
 import FirstRun from "@/components/tracker/FirstRun";
+import HomeStrip from "@/components/tracker/HomeStrip";
+import { FIELD_EVENTS_PREFERENCE } from "@/lib/fieldEvents";
 import { FIRST_RUN_PREFERENCE, FIRST_RUN_STATES, FirstRunState, showFirstRun } from "@/lib/firstRun";
 import GameIcon from "@/components/GameIcon";
 
@@ -52,6 +54,7 @@ export default function TrackerPage() {
   const [, setWidgetOrderRaw] = usePreference<string>(WIDGET_ORDER_PREFERENCE, "");
   const [firstRun, setFirstRun] = usePreference<FirstRunState>(FIRST_RUN_PREFERENCE, "", FIRST_RUN_STATES);
   const firstRunShown = showFirstRun(data.loaded, data.allCharacters.length, firstRun);
+  const [fieldEventsOn] = usePreference<boolean>(FIELD_EVENTS_PREFERENCE, false);
   // The full grid, or only what's left (remembered in this browser).
   const [mode, setMode] = usePreference<(typeof MODES)[number]>("tracker-mode", "grid", MODES);
   const showLeft = mode === "left" && !editMode;
@@ -205,6 +208,8 @@ export default function TrackerPage() {
           </p>
         )
       ) : (
+        <>
+        {view.isShown(SECTION_KEYS.homeStrip) && <HomeStrip data={data} fieldEvents={fieldEventsOn} />}
         <ArrangeableList
           className="space-y-4"
           arranging={arranging}
@@ -213,6 +218,7 @@ export default function TrackerPage() {
             .map((key) => ({ key, id: PAGE_BLOCKS.indexOf(key as (typeof PAGE_BLOCKS)[number]), label: BLOCK_LABELS[key], node: blocks[key] }))
             .filter((block) => block.node)}
         />
+        </>
       )}
     </div>
   );

@@ -24,6 +24,8 @@ export const SECTION_KEYS = {
   today: "section:today",
   anytime: "section:anytime",
   recap: "section:recap",
+  /** The slim "today at a glance" line at the top of the tracker. */
+  homeStrip: "section:home-strip",
 } as const;
 export const CHARACTER_BOUND_KEY = "column:character-bound";
 /** Hiding this hides characters who've finished everything in a card. */

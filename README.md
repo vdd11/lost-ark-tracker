@@ -31,6 +31,11 @@ The screenshots use made-up characters.
 
 - **First run**: three short steps: how much to track, add your characters
   (paste a roster or one at a time, with class icons), and who earns gold.
+- **Today at a glance**: a slim line on top of the tracker with the next
+  daily and weekly reset, gold raids left, and reminders: full rest gauges,
+  Haal's Hourglass runs left, and Field Boss / Chaos Gate days (when their
+  logging is on). Hover a raid's column name for each difficulty's item
+  level, gold, bound split and bonus box cost.
 - **Tracker**: three cards, by how often things reset.
   - **This week**: raids, Haal's Hourglass (1730+) and the **Growth Boost
     Shop** (tick it once a character has bought out its Clear Medal shop),

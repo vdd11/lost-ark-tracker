@@ -140,6 +140,7 @@ export default function CustomizePanel({
     {
       title: "Also",
       items: [
+        { key: SECTION_KEYS.homeStrip, label: "Today at a glance (resets and reminders)" },
         { key: SECTION_KEYS.recap, label: "New-week recap" },
         { key: FINISHED_ROWS_KEY, label: "Characters who are all done" },
         { key: PAGE_KEYS.gold, label: "Gold page in the menu" },
