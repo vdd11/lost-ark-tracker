@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ReactNode } from "react";
 
 import { describeError } from "@/components/ErrorBanner";
@@ -6,22 +5,25 @@ import QuickGold from "@/components/QuickGold";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { TrackerView } from "@/components/tracker/useTrackerView";
 import { formatGold } from "@/lib/api";
-import { goldThisWeek, goldThisWeekParts, raidGoldSplit } from "@/lib/goldEarners";
-import { goldRaidsLeft, possibleRaidGold } from "@/lib/raids";
+import { dailiesToday } from "@/lib/dailies";
+import { goldThisWeek } from "@/lib/goldEarners";
+import { goldRaidsLeft, possibleSharedGold } from "@/lib/raids";
+import { buildSection, cellKey } from "@/lib/trackerSections";
 import { STAT_KEYS } from "@/lib/trackerView";
 import GameIcon from "@/components/GameIcon";
 
 // Static class names so Tailwind generates them: the row fits however many boxes are shown.
-const STAT_COLUMNS = ["", "sm:grid-cols-1", "sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"];
+const STAT_COLUMNS = ["", "sm:grid-cols-1", "sm:grid-cols-2", "sm:grid-cols-3"];
 
 /** The boxes along the top of the tracker, each of which can be hidden in Customize. */
 export default function StatRow({ data, view }: { data: TrackerData; view: TrackerView }) {
   const { thisWeek, characters, tasks, runs } = data;
   if (!thisWeek) return null;
-  const possibleGold = possibleRaidGold(characters, tasks, runs);
+  const possibleGold = possibleSharedGold(characters, tasks, runs);
   const raidsLeft = goldRaidsLeft(characters, tasks, runs);
-  const split = raidGoldSplit(thisWeek);
   const gold = goldThisWeek(thisWeek);
+  const today = buildSection("today", { tasks, roster: data.roster, completed: data.completed, hidden: view.hidden, editMode: false });
+  const dailies = dailiesToday(today.columns, data.roster, (c, t) => data.completed.has(cellKey(c.id, t.id)));
 
   const stats = [
     {
@@ -48,33 +50,34 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
           icon={<GameIcon name="gold" size={24} framed alt="" />}
           label="Gold this week"
           action={
-            <span className="flex items-center gap-2">
-              <QuickGold
-                accountId={data.accountId || null}
-                onLogged={data.loadWeeklyGold}
-                onError={(e) => data.setError(describeError(e))}
-              />
-              <Link href="/gold" className="underline">Gold page</Link>
-            </span>
+            <QuickGold
+              accountId={data.accountId || null}
+              onLogged={data.loadWeeklyGold}
+              onError={(e) => data.setError(describeError(e))}
+            />
           }
           value={formatGold(gold.total)}
           accent
-          sub={
-            <>
-              <span className="block">{goldThisWeekParts(gold, formatGold) || "nothing yet"}</span>
-              {split.characterBound > 0 && (
-                <span className="block">
-                  + {formatGold(split.characterBound)} bound to {split.spreadOver} character{split.spreadOver === 1 ? "" : "s"}
-                </span>
-              )}
-              <span className="block">of {formatGold(possibleGold)} raid gold possible</span>
-            </>
-          }
-          title="Tradeable + roster-bound gold this week: raids and other gold, after the bonus boxes those paid for. Character-bound gold, which only its own character can spend, is listed beneath."
+          sub={`raids ${formatGold(gold.raids)} of ${formatGold(possibleGold)} · other ${formatGold(gold.other)}`}
+          title="Tradeable + roster-bound gold this week, after the bonus boxes it paid for (boxes use a character's own bound gold first). Raids: out of what the roster's gold raids can still pay, not counting character-bound gold. Other: gold you logged."
         />
       ),
     },
-  ].filter((stat) => view.isShown(stat.key));
+    {
+      key: STAT_KEYS.dailies,
+      node:
+        dailies.total > 0 ? (
+          <Stat
+            icon={<GameIcon name="today" size={24} framed alt="" />}
+            label="Dailies today"
+            value={`${dailies.done}/${dailies.total}`}
+            accent={dailies.done < dailies.total}
+            sub={dailies.perTask.map((d) => `${d.task.name} ${d.done}/${d.total}`).join(" · ")}
+            title="Daily tasks done today by the characters who do them (resets at 10:00 UTC)"
+          />
+        ) : null,
+    },
+  ].filter((stat) => stat.node && view.isShown(stat.key));
 
   if (stats.length === 0) return null;
   return (
@@ -113,8 +116,8 @@ function Stat({
         {action && <span className="ml-auto">{action}</span>}
       </div>
       <div className={`text-xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{value}</div>
-      {/* Three lines are always reserved, so a line appearing after a tick doesn't grow the row and move the cards. */}
-      <div className="line-clamp-3 min-h-12 text-xs leading-4 text-muted">{sub}</div>
+      {/* Two lines are always reserved, so a line appearing after a tick doesn't grow the row and move the cards. */}
+      <div className="line-clamp-2 min-h-8 text-xs leading-4 text-muted">{sub}</div>
     </div>
   );
 }

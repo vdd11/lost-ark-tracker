@@ -11,6 +11,7 @@ import {
   isActiveRaid,
   paidRaids,
   possibleRaidGold,
+  possibleSharedGold,
   settingsRaidLists,
   shortDifficulty,
   topGoldRaids,
@@ -116,6 +117,17 @@ describe("possibleRaidGold", () => {
     const a = character(1760, [[extreme, "Hard"]], { is_gold_earner: false });
     const b = character(1725, [[extreme, "Normal"]], { is_gold_earner: false });
     expect(possibleRaidGold([a, b], raids)).toBe(45000);
+  });
+
+  it("can leave out character-bound gold (the Gold this week box)", () => {
+    const bound = raid("Bound", [["Normal", 1700, 40000]]);
+    bound.difficulties[0] = { ...bound.difficulties[0], bound_percent: 25, bound_kind: "character" };
+    const roster = raid("RosterBound", [["Normal", 1700, 30000]]);
+    roster.difficulties[0] = { ...roster.difficulties[0], bound_percent: 50, bound_kind: "roster" };
+    const main = character(1700, [[bound, "Normal"], [roster, "Normal"]]);
+    expect(possibleRaidGold([main], [bound, roster])).toBe(70000);
+    // A quarter of Bound's 40,000 is character-bound; roster-bound gold still counts.
+    expect(possibleSharedGold([main], [bound, roster])).toBe(30000 + 30000);
   });
 
   it("treats unknown gold as zero", () => {

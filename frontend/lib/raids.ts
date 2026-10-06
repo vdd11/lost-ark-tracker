@@ -84,14 +84,27 @@ export function paidRaids(character: Character, tasks: Task[]) {
   return tasks.filter((t) => isActiveRaid(t) && !t.gold_for_everyone && character.task_ids.includes(t.id));
 }
 
-/** Gold a clear this week pays at the difficulty it was run on. */
-function runGold(task: Task, run: Run) {
-  if (!task.difficulties.length) return task.gold;
-  return task.difficulties.find((d) => d.id === run.difficulty_id)?.gold ?? 0;
+
+/** A raid's gold and the part of it that isn't character-bound (tradeable + roster-bound). */
+type Pay = { gold: number; shared: number };
+
+function pay(gold: number, difficulty?: Difficulty): Pay {
+  const characterBound = difficulty && difficulty.bound_kind === "character" ? difficulty.bound_percent : 0;
+  return { gold, shared: Math.round((gold * (100 - characterBound)) / 100) };
 }
 
-const sumTop = (golds: number[], n: number) =>
-  [...golds].sort((a, b) => b - a).slice(0, Math.max(0, n)).reduce((sum, g) => sum + g, 0);
+function runPay(task: Task, run: Run): Pay {
+  if (!task.difficulties.length) return pay(task.gold);
+  const difficulty = task.difficulties.find((d) => d.id === run.difficulty_id);
+  return pay(difficulty?.gold ?? 0, difficulty);
+}
+
+/** The best n paydays by gold, summed both ways. */
+const sumTop = (pays: Pay[], n: number) =>
+  [...pays]
+    .sort((a, b) => b.gold - a.gold)
+    .slice(0, Math.max(0, n))
+    .reduce((sum, p) => ({ gold: sum.gold + p.gold, shared: sum.shared + p.shared }), { gold: 0, shared: 0 });
 
 export type GoldRaidWeek = {
   /** Raids that will pay this week: up to 3, from clears plus usual raids. */
@@ -100,6 +113,8 @@ export type GoldRaidWeek = {
   cleared: number;
   left: number;
   possible: number;
+  /** The part of `possible` that isn't character-bound. */
+  possibleShared: number;
 };
 
 /**
@@ -108,10 +123,10 @@ export type GoldRaidWeek = {
  * raids they can enter, so the gold earned can never pass what's possible.
  */
 export function goldRaidWeek(character: Character, tasks: Task[], runs: Run[] = []): GoldRaidWeek {
-  if (!character.is_gold_earner) return { slots: 0, cleared: 0, left: 0, possible: 0 };
+  if (!character.is_gold_earner) return { slots: 0, cleared: 0, left: 0, possible: 0, possibleShared: 0 };
   const mine = new Map(runs.filter((r) => r.character_id === character.id).map((r) => [r.task_id, r]));
   const raids = tasks.filter((t) => isActiveRaid(t) && !t.gold_for_everyone);
-  const clearedGold = raids.filter((t) => mine.has(t.id)).map((t) => runGold(t, mine.get(t.id)!));
+  const clearedGold = raids.filter((t) => mine.has(t.id)).map((t) => runPay(t, mine.get(t.id)!));
   const usual = paidRaids(character, tasks).filter((t) => !mine.has(t.id));
   const others = topGoldRaids(
     raids.filter((t) => !mine.has(t.id) && !usual.includes(t)),
@@ -119,17 +134,19 @@ export function goldRaidWeek(character: Character, tasks: Task[], runs: Run[] = 
     GOLD_RAIDS_PER_WEEK - clearedGold.length - usual.length,
   );
   const plannedGold = [
-    ...usual.map((t) => raidGold(character, t) ?? 0),
-    ...others.map(({ difficulty }) => difficulty.gold ?? 0),
+    ...usual.map((t) => pay(raidGold(character, t) ?? 0, difficultyOf(character, t))),
+    ...others.map(({ difficulty }) => pay(difficulty.gold ?? 0, difficulty)),
   ];
   const cleared = Math.min(clearedGold.length, GOLD_RAIDS_PER_WEEK);
   const slots = Math.min(GOLD_RAIDS_PER_WEEK, clearedGold.length + plannedGold.length);
   const left = slots - cleared;
+  const [done, planned] = [sumTop(clearedGold, GOLD_RAIDS_PER_WEEK), sumTop(plannedGold, left)];
   return {
     slots,
     cleared,
     left,
-    possible: sumTop(clearedGold, GOLD_RAIDS_PER_WEEK) + sumTop(plannedGold, left),
+    possible: done.gold + planned.gold,
+    possibleShared: done.shared + planned.shared,
   };
 }
 
@@ -149,17 +166,21 @@ function eventWeeks(characters: Character[], tasks: Task[], runs: Run[]) {
     .flatMap((task) => {
       const goldOf = (c: Character) => {
         const run = runs.find((r) => r.task_id === task.id && r.character_id === c.id);
-        if (run) return { cleared: true, gold: runGold(task, run) };
-        return { cleared: false, gold: c.task_ids.includes(task.id) ? (raidGold(c, task) ?? 0) : 0 };
+        if (run) return { cleared: true, ...runPay(task, run) };
+        const planned = c.task_ids.includes(task.id) ? pay(raidGold(c, task) ?? 0, difficultyOf(c, task)) : pay(0);
+        return { cleared: false, ...planned };
       };
       if (!task.roster_limited) {
-        return [{ possible: characters.reduce((sum, c) => sum + goldOf(c).gold, 0), left: 0 }];
+        const all = characters.map(goldOf);
+        return [{ possible: all.reduce((sum, r) => sum + r.gold, 0), possibleShared: all.reduce((sum, r) => sum + r.shared, 0), left: 0 }];
       }
       return byAccount(characters).map((roster) => {
         const results = roster.map(goldOf);
         const cleared = results.filter((r) => r.cleared);
+        const best = sumTop(cleared.length ? cleared : results, 1);
         return {
-          possible: Math.max(0, ...(cleared.length ? cleared : results).map((r) => r.gold)),
+          possible: best.gold,
+          possibleShared: best.shared,
           left: cleared.length === 0 && roster.some((c) => canRun(c, task)) ? 1 : 0,
         };
       });
@@ -170,6 +191,12 @@ function eventWeeks(characters: Character[], tasks: Task[], runs: Run[]) {
 export function possibleRaidGold(characters: Character[], tasks: Task[], runs: Run[] = []) {
   const raids = characters.reduce((sum, c) => sum + goldRaidWeek(c, tasks, runs).possible, 0);
   return raids + eventWeeks(characters, tasks, runs).reduce((sum, e) => sum + e.possible, 0);
+}
+
+/** The same, counting only gold that isn't character-bound (tradeable + roster-bound). */
+export function possibleSharedGold(characters: Character[], tasks: Task[], runs: Run[] = []) {
+  const raids = characters.reduce((sum, c) => sum + goldRaidWeek(c, tasks, runs).possibleShared, 0);
+  return raids + eventWeeks(characters, tasks, runs).reduce((sum, e) => sum + e.possibleShared, 0);
 }
 
 /** Gold-paying raids still to run this week, across the roster. */

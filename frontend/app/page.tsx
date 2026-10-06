@@ -214,9 +214,9 @@ export default function TrackerPage() {
 
       {!data.loaded ? (
         <div className="space-y-4" role="status" aria-label="Loading the tracker">
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Skeleton key={i} className="h-24" />
+          <div className="grid gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }, (_, i) => (
+              <Skeleton key={i} className="h-[7.3rem]" />
             ))}
           </div>
           <Skeleton className="h-72" />

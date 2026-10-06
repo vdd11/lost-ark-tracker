@@ -102,6 +102,7 @@ export default function CustomizePanel({
       items: [
         { key: STAT_KEYS.raidsLeft, label: "Gold raids left" },
         { key: STAT_KEYS.raidGold, label: "Gold this week (+ quick log)" },
+        { key: STAT_KEYS.dailies, label: "Dailies today" },
       ],
     },
     {

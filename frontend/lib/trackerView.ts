@@ -38,6 +38,7 @@ export const STAT_KEYS = {
   raidsLeft: "stat:raids-left",
   /** "Gold this week" (the key from when it was "Raid gold", so hiding it carries over). */
   raidGold: "stat:raid-gold",
+  dailies: "stat:dailies",
 } as const;
 
 /** Insight widgets under the tracker. */
@@ -82,6 +83,7 @@ export function styleHidden(style: Style, tasks: Task[]): Set<string> {
   return new Set([
     ...DEFAULT_HIDDEN,
     SECTION_KEYS.today,
+    STAT_KEYS.dailies,
     SECTION_KEYS.anytime,
     CHARACTER_BOUND_KEY,
     PAGE_KEYS.gems,
