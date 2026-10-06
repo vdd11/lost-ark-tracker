@@ -63,7 +63,7 @@ export default function TodayCard({
               }
         }
         hideWhenEmpty={section.finished.length > 0}
-        rowButton={
+        characterAction={
           editMode
             ? undefined
             : (character) => <MarkAllButton character={character} columns={section.columns} what="dailies" data={data} />

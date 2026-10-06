@@ -6,15 +6,9 @@ import { Character, formatGold, Task, WeeklyGold } from "@/lib/api";
 import { formatGap, nextUnlock } from "@/lib/itemLevelGoals";
 import { formatItemLevel, GOLD_RAIDS_PER_WEEK, goldRaidWeek, paidRaids } from "@/lib/raids";
 import { cellKey } from "@/lib/trackerSections";
-import { isFinished, remainingFor } from "@/lib/trackerView";
-import GameIcon from "@/components/GameIcon";
-import { classIconName } from "@/lib/data/icons";
+import { remainingFor } from "@/lib/trackerView";
 
-/**
- * The character's class icon, as a button that marks everything they have
- * left in the card done (fading to a check on hover). Once they're done it
- * stays as a plain icon, so nothing moves.
- */
+/** The "All" button beside a character's name, while they have something left in the card. */
 export function MarkAllButton({
   character,
   columns,
@@ -26,30 +20,17 @@ export function MarkAllButton({
   what: string;
   data: TrackerData;
 }) {
-  const isDone = (t: Task) => data.completed.has(cellKey(character.id, t.id));
-  const todo = remainingFor(character, columns, isDone);
-  const icon = classIconName(character.class_name);
-  if (todo.length === 0) {
-    // Nothing to count in this card: keep the space, show nothing.
-    if (!isFinished(character, columns, isDone)) return <span className="inline-block h-8 w-8" />;
-    return (
-      <span title={`${character.name} is done`} className="inline-flex h-8 w-8 items-center justify-center text-done opacity-70">
-        <GameIcon name={icon} size={24} fallback={Check} alt={character.class_name} />
-      </span>
-    );
-  }
+  const todo = remainingFor(character, columns, (t) => data.completed.has(cellKey(character.id, t.id)));
+  if (todo.length === 0) return null;
   const names = todo.map((t) => t.name).join(", ");
   return (
     <button
       onClick={() => data.actions.completeAll(character, todo)}
-      title={`Mark all done: ${names}`}
+      title={`Mark ${character.name}'s remaining ${what} done: ${names}`}
       aria-label={`Mark ${character.name}'s remaining ${what} done`}
-      className="group relative inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted hover:border-done/60 hover:text-done focus-visible:border-done/60 focus-visible:text-done"
+      className="ml-auto flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-xs text-muted hover:border-done/60 hover:text-done"
     >
-      <span className="transition-opacity group-hover:opacity-0 group-focus-visible:opacity-0">
-        <GameIcon name={icon} size={24} fallback={CheckCheck} alt="" />
-      </span>
-      <Check size={20} className="absolute opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
+      <CheckCheck size={12} /> All
     </button>
   );
 }

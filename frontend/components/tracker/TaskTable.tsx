@@ -6,7 +6,7 @@ import { Character, Task } from "@/lib/api";
 import { GridPosition, isTypingTarget, moveFocus } from "@/lib/shortcuts";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import GameIcon from "@/components/GameIcon";
-import { taskIconName } from "@/lib/data/icons";
+import { classIconName, taskIconName } from "@/lib/data/icons";
 import { bestRaidTier, tierHint, tierTone } from "@/lib/itemLevelTier";
 
 export type ExtraColumn = {
@@ -27,11 +27,9 @@ export type ExtraColumn = {
  * Keys only act on the box itself, so the controls inside keep working as usual.
  */
 /** Column widths in rem for the desktop table (see the colgroup below), so they scale with the text size. */
-const CHARACTER_COLUMN = 8.5;
+const CHARACTER_COLUMN = 10.5;
 /** More characters than this and the table scrolls inside the card with its header row pinned. */
 const TALL_ROSTER = 8;
-/** The class icon that marks a character's row done (`rowButton`). */
-const ROW_BUTTON_COLUMN = 2.5;
 const TASK_COLUMN = 7.5;
 const EXTRA_COLUMN = 7;
 const rem = (n: number) => `${n}rem`;
@@ -50,7 +48,7 @@ export default function TaskTable({
   onItemLevel,
   onGoldEarner,
   characterNote,
-  rowButton,
+  characterAction,
   characterGoal,
   applies,
   cellKeyboard,
@@ -67,8 +65,8 @@ export default function TaskTable({
   /** Shown as a GOLD toggle beside the name when given. */
   onGoldEarner?: (character: Character, isGoldEarner: boolean) => void;
   characterNote?: (character: Character) => ReactNode;
-  /** A small button in its own column after the name (beside it when stacked), e.g. "mark all done". */
-  rowButton?: (character: Character) => ReactNode;
+  /** A small button beside the name, e.g. "mark all done". */
+  characterAction?: (character: Character) => ReactNode;
   /** Under the item level, e.g. the next unlock. */
   characterGoal?: (character: Character) => ReactNode;
   /** In the stacked layout, tasks that don't apply to a character are left out. */
@@ -149,6 +147,8 @@ export default function TaskTable({
   const who = (character: Character) => (
     <>
       <div className="flex items-center gap-1.5">
+        {/* Decorative: the class is written on the line below. */}
+        <GameIcon name={classIconName(character.class_name)} size={22} alt="" />
         <span className="font-medium">{character.name}</span>
         {onGoldEarner ? (
           <button
@@ -173,7 +173,7 @@ export default function TaskTable({
             </span>
           )
         )}
-        {!wide && rowButton && <span className="ml-auto">{rowButton(character)}</span>}
+        {characterAction?.(character)}
       </div>
       <div className="text-xs text-muted">
         {character.class_name} ·{" "}
@@ -220,16 +220,14 @@ export default function TaskTable({
 
   // Fixed column widths: what a cell shows after ticking (bonus box, run
   // counts, rest) can never resize a column and move the checkboxes.
-  const buttonColumn = rowButton ? ROW_BUTTON_COLUMN : 0;
   // A big roster scrolls inside the card, so the header row can stay in view.
   const tall = characters.length > TALL_ROSTER;
-  const minWidth = CHARACTER_COLUMN + buttonColumn + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
+  const minWidth = CHARACTER_COLUMN + columns.length * TASK_COLUMN + extraColumns.length * EXTRA_COLUMN;
   return (
     <div className={`overflow-x-auto ${tall ? "max-h-[75vh] overflow-y-auto" : ""}`}>
       <table className="w-full table-fixed border-collapse text-sm" style={{ minWidth: rem(minWidth) }}>
         <colgroup>
           <col style={{ width: rem(CHARACTER_COLUMN) }} />
-          {rowButton && <col style={{ width: rem(ROW_BUTTON_COLUMN) }} />}
           {columns.map((task) => (
             <col key={task.id} style={{ width: rem(TASK_COLUMN) }} />
           ))}
@@ -240,7 +238,6 @@ export default function TaskTable({
         <thead>
           <tr className={`border-b border-border text-xs text-muted ${tall ? "sticky top-0 z-20 bg-surface shadow-[0_1px_0_var(--border)]" : ""}`}>
             <th className="sticky left-0 z-10 bg-surface py-2 pl-4 pr-2 text-left font-medium">Character</th>
-            {rowButton && <th aria-label="Mark all done" />}
             {columns.map((task) => (
               <th key={task.id} className="px-2 py-2 text-center align-bottom font-medium">
                 <div className="flex flex-col items-center gap-1 text-sm leading-tight text-foreground">
@@ -261,7 +258,6 @@ export default function TaskTable({
           {characters.map((character, row) => (
             <tr key={character.id} className="border-b border-border last:border-b-0">
               <td className="sticky left-0 z-10 bg-surface py-2 pl-4 pr-2">{who(character)}</td>
-              {rowButton && <td className="px-0.5 text-center align-middle">{rowButton(character)}</td>}
               {columns.map((task, col) => (
                 <td key={task.id} className="p-0 text-center align-middle">
                   {cell(character, task, row, col)}

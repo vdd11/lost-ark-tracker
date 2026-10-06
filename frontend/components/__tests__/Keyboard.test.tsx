@@ -62,6 +62,13 @@ async function tabIntoGrid(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("tracker grid keyboard", () => {
+  it("shows each character's class icon beside the name", () => {
+    renderGrid();
+    const icons = [...document.querySelectorAll("tbody img")].map((img) => img.getAttribute("src") ?? "");
+    expect(icons.length).toBe(2);
+    expect(icons.every((src) => /\/game-icons\/class-[a-z]+\.webp$/.test(src))).toBe(true);
+  });
+
   it("is one Tab stop, and arrows, Home and End move between cells", async () => {
     const user = userEvent.setup();
     renderGrid();

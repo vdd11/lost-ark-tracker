@@ -43,7 +43,7 @@ describe("GameIcon", () => {
   });
 });
 
-describe("the class icon button", () => {
+describe("the All button", () => {
   const serca = task({ id: 1, name: "Serca" });
   const act4 = task({ id: 2, name: "Act 4" });
   const bard = character({ task_ids: [1, 2] });
@@ -56,22 +56,13 @@ describe("the class icon button", () => {
     const tracker = data([]);
     render(<MarkAllButton character={bard} columns={[serca, act4]} what="raids and weeklies" data={tracker} />);
     const button = screen.getByRole("button", { name: "Mark Bardy's remaining raids and weeklies done" });
-    expect(button.getAttribute("title")).toBe("Mark all done: Serca, Act 4");
+    expect(button.getAttribute("title")).toBe("Mark Bardy's remaining raids and weeklies done: Serca, Act 4");
     fireEvent.click(button);
     expect(tracker.actions.completeAll).toHaveBeenCalledWith(bard, [serca, act4]);
   });
 
-  it("stays as a plain icon once they're done", () => {
-    render(<MarkAllButton character={bard} columns={[serca, act4]} what="raids and weeklies" data={data(["7:1", "7:2"])} />);
-    expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByTitle("Bardy is done")).toBeTruthy();
-    expect(screen.getByRole("img", { name: "Bard" })).toBeTruthy();
-  });
-
-  it("shows nothing for a character with nothing to count in the card", () => {
-    const alt = character({ task_ids: [] });
-    const { container } = render(<MarkAllButton character={alt} columns={[serca]} what="raids and weeklies" data={data([])} />);
-    expect(screen.queryByRole("button")).toBeNull();
-    expect(container.querySelector("[title]")).toBeNull();
+  it("goes away once they're done", () => {
+    const { container } = render(<MarkAllButton character={bard} columns={[serca, act4]} what="raids and weeklies" data={data(["7:1", "7:2"])} />);
+    expect(container.innerHTML).toBe("");
   });
 });
