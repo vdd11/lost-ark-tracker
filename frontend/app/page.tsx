@@ -1,6 +1,6 @@
 "use client";
 
-import { Move, Pencil } from "lucide-react";
+import { Move, Pencil, Search, X } from "lucide-react";
 import Link from "next/link";
 import { ReactNode, useState } from "react";
 
@@ -22,6 +22,7 @@ import { useTrackerView } from "@/components/tracker/useTrackerView";
 import WeekCard from "@/components/tracker/WeekCard";
 import WhatsLeft from "@/components/tracker/WhatsLeft";
 import WidgetGrid from "@/components/tracker/WidgetGrid";
+import { FILTER_FROM, matchesFilter } from "@/lib/characterFilter";
 import { isActiveRaid } from "@/lib/raids";
 import { LOA_KEYS } from "@/lib/loaLogs";
 import { mergeOrder } from "@/lib/order";
@@ -60,9 +61,13 @@ export default function TrackerPage() {
   const showLeft = mode === "left" && !editMode;
   const [loaEnabled] = usePreference<boolean>(LOA_KEYS.enabled, false);
   const [importing, setImporting] = useState(false);
+  // Narrows a big roster by name or class; not saved, like a search box.
+  const [filter, setFilter] = useState("");
+  const filtering = data.characters.length > FILTER_FROM;
+  const roster = filtering && filter ? data.roster.filter((c) => matchesFilter(c, filter)) : data.roster;
 
   const [blockOrder, setBlockOrder] = useSavedOrder(PAGE_ORDER_PREFERENCE, [...PAGE_BLOCKS]);
-  const sectionInput = { tasks: data.tasks, roster: data.roster, completed: data.completed, hidden: view.hidden, editMode };
+  const sectionInput = { tasks: data.tasks, roster, completed: data.completed, hidden: view.hidden, editMode };
   const week = buildSection("week", sectionInput);
   const today = buildSection("today", sectionInput);
   const anytime = buildSection("anytime", sectionInput);
@@ -75,7 +80,7 @@ export default function TrackerPage() {
     stats: <StatRow data={data} view={view} />,
     recap: <TrackerBanners data={data} view={view} />,
     week: showLeft ? (
-      <WhatsLeft data={data} columns={[...week.columns, ...(showToday ? today.columns : [])]} />
+      <WhatsLeft data={{ ...data, roster }} columns={[...week.columns, ...(showToday ? today.columns : [])]} />
     ) : (
       <WeekCard section={week} {...cardProps} />
     ),
@@ -101,6 +106,26 @@ export default function TrackerPage() {
         </div>
         {/* Nothing to show, customize or edit until there's a roster. */}
         <div className={`flex flex-wrap items-center gap-2 ${data.loaded && data.allCharacters.length === 0 ? "hidden" : ""}`}>
+          {filtering && (
+            <label className="relative flex items-center">
+              <Search size={14} className="pointer-events-none absolute left-2.5 text-muted" />
+              <input
+                type="search"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                onKeyDown={(e) => e.key === "Escape" && setFilter("")}
+                placeholder="Filter characters"
+                aria-label="Filter characters"
+                title="Show only characters whose name or class contains this"
+                className="h-9 w-44 rounded-md border border-border bg-surface pl-8 pr-7 text-sm placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
+              />
+              {filter && (
+                <button onClick={() => setFilter("")} className="absolute right-1.5 rounded p-0.5 text-muted hover:text-foreground" aria-label="Clear filter">
+                  <X size={14} />
+                </button>
+              )}
+            </label>
+          )}
           <button
             onClick={openShortcuts}
             className="hidden text-xs text-muted underline-offset-2 hover:text-foreground hover:underline md:inline"
@@ -210,6 +235,12 @@ export default function TrackerPage() {
       ) : (
         <>
         {view.isShown(SECTION_KEYS.homeStrip) && <HomeStrip data={data} fieldEvents={fieldEventsOn} />}
+        {roster.length === 0 && (
+          <p className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-muted">
+            No characters match &ldquo;{filter}&rdquo;.{" "}
+            <button onClick={() => setFilter("")} className="underline">Show everyone</button>
+          </p>
+        )}
         <ArrangeableList
           className="space-y-4"
           arranging={arranging}
