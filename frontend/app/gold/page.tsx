@@ -20,6 +20,7 @@ import { goldEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
 import GameIcon from "@/components/GameIcon";
 import { sourceIconName } from "@/lib/data/icons";
+import CharacterName from "@/components/CharacterName";
 
 const OTHER = "__other__";
 const RANGES = [8, 12, 26, 52];
@@ -233,7 +234,9 @@ export default function GoldPage() {
           <tbody className="tabular-nums">
             {characterRows.map((row) => (
               <tr key={row.name} className="border-b border-border last:border-b-0">
-                <td className="py-1.5">{row.name}</td>
+                <td className="py-1.5">
+                  <CharacterName name={row.name} className={characters.find((c) => c.name === row.name)?.class_name} />
+                </td>
                 <td className="py-1.5 text-right">{formatGold(row.thisWeek)}</td>
                 <td className="py-1.5 text-right">{formatGold(row.average)}</td>
               </tr>

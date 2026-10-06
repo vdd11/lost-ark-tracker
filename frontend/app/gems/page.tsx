@@ -29,6 +29,7 @@ import {
 import { formatItemLevel } from "@/lib/raids";
 import { gemEntryBody } from "@/lib/undo";
 import { usePreference } from "@/lib/usePreference";
+import CharacterName from "@/components/CharacterName";
 
 // Fixed order and colors; anything else folds into "Other". Ebony Cube and
 // Haal's Hourglass are filled in from the tracker, the rest are logged here.
@@ -230,7 +231,9 @@ export default function GemsPage() {
           <tbody className="tabular-nums">
             {characterRows.map((row) => (
               <tr key={row.name} className="border-b border-border last:border-b-0">
-                <td className="py-1.5">{row.name}</td>
+                <td className="py-1.5">
+                  <CharacterName name={row.name} className={characters.find((c) => c.name === row.name)?.class_name} />
+                </td>
                 <td className="py-1.5 text-right">{formatCombinedGems(row.thisWeek)}</td>
                 <td className="py-1.5 text-right">{formatCombinedGems(row.average)}</td>
               </tr>

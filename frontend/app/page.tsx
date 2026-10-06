@@ -93,7 +93,8 @@ export default function TrackerPage() {
           <AccountTabs accounts={data.accounts} value={data.accountId} onChange={data.setAccountId} />
           <GoldEarnerCount data={data} />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Nothing to show, customize or edit until there's a roster. */}
+        <div className={`flex flex-wrap items-center gap-2 ${data.loaded && data.allCharacters.length === 0 ? "hidden" : ""}`}>
           <button
             onClick={openShortcuts}
             className="hidden text-xs text-muted underline-offset-2 hover:text-foreground hover:underline md:inline"
