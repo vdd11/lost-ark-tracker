@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, ClipboardCopy } from "lucide-react";
+import { Check, ClipboardCopy, Image as ImageIcon } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { cellKeyboard } from "@/components/tracker/cellKeys";
 import TrackerCard from "@/components/tracker/TrackerCard";
+import { whatsLeftPng } from "@/components/tracker/whatsLeftImage";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { formatGold, Task } from "@/lib/api";
 import { cellKey } from "@/lib/trackerSections";
@@ -30,6 +31,28 @@ export default function WhatsLeft({ data, columns }: { data: TrackerData; column
   const count = groups.reduce((sum, g) => sum + g.items.length, 0);
   const gold = groups.reduce((sum, g) => sum + g.gold, 0);
   const text = whatsLeftText(groups);
+  const subtitle = count ? `${count} task${count === 1 ? "" : "s"} · ${formatGold(gold)} gold still to earn` : "All caught up";
+  const [imageDone, setImageDone] = useState<"" | "Copied" | "Saved">("");
+
+  // Copies a picture of the list; where the browser won't put images on the
+  // clipboard, saves it as a file instead. Drawn locally, nothing uploaded.
+  async function copyImage() {
+    const png = whatsLeftPng(groups, subtitle);
+    let done: "Copied" | "Saved" = "Copied";
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    } catch {
+      const url = URL.createObjectURL(await png);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "whats-left.png";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      done = "Saved";
+    }
+    setImageDone(done);
+    setTimeout(() => setImageDone(""), 2000);
+  }
 
   async function copy() {
     try {
@@ -47,17 +70,27 @@ export default function WhatsLeft({ data, columns }: { data: TrackerData; column
     <TrackerCard
       icon="whats-left"
       title="What's left"
-      subtitle={count ? `${count} task${count === 1 ? "" : "s"} · ${formatGold(gold)} gold still to earn` : "All caught up"}
+      subtitle={subtitle}
       extra={
         count > 0 ? (
-          <button
-            onClick={copy}
-            className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-surface-2"
-            title="Copy a summary for Discord"
-          >
-            {copied ? <Check size={14} className="text-done" /> : <ClipboardCopy size={14} />}
-            {copied ? "Copied" : "Copy as text"}
-          </button>
+          <span className="flex gap-1.5">
+            <button
+              onClick={copyImage}
+              className="flex w-[7.75rem] items-center justify-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-surface-2"
+              title="Copy a picture of this list (made on this computer; nothing is uploaded)"
+            >
+              {imageDone ? <Check size={14} className="text-done" /> : <ImageIcon size={14} />}
+              {imageDone || "Copy as image"}
+            </button>
+            <button
+              onClick={copy}
+              className="flex w-[7rem] items-center justify-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-surface-2"
+              title="Copy a summary for Discord"
+            >
+              {copied ? <Check size={14} className="text-done" /> : <ClipboardCopy size={14} />}
+              {copied ? "Copied" : "Copy as text"}
+            </button>
+          </span>
         ) : undefined
       }
     >
