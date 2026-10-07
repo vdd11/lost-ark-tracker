@@ -171,7 +171,11 @@ export type WeeklyGold = {
 
 type Fetched = { ok: boolean; status: number; text: string };
 
-/** GETs in flight by path: asking again before one answers waits for the same request. */
+/**
+ * GETs in flight by path: asking again before one answers waits for the same
+ * request. Any change (POST, PUT, ...) forgets them, so a read made after a
+ * change never gets an answer from before it.
+ */
 const inFlight = new Map<string, Promise<Fetched>>();
 
 async function fetchText(path: string, init?: RequestInit): Promise<Fetched> {
@@ -187,11 +191,15 @@ export async function api<T = void>(path: string, init?: RequestInit): Promise<T
   if (!init || (init.method ?? "GET") === "GET") {
     let pending = inFlight.get(path);
     if (!pending) {
-      pending = fetchText(path, init).finally(() => inFlight.delete(path));
-      inFlight.set(path, pending);
+      const request = fetchText(path, init).finally(() => {
+        if (inFlight.get(path) === request) inFlight.delete(path);
+      });
+      pending = request;
+      inFlight.set(path, request);
     }
     fetched = await pending;
   } else {
+    inFlight.clear();
     fetched = await fetchText(path, init);
   }
 

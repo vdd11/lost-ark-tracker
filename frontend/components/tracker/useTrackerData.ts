@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAccountChoice } from "@/components/AccountTabs";
 import { RunChanges } from "@/components/ContentCell";
@@ -97,9 +97,13 @@ export function useTrackerData() {
   }, [accountQuery]);
 
   // Rest, runs and roster limits depend on check-offs, so re-read after changes.
+  // Refreshes can answer out of order (a quick tick and untick): only the newest one counts.
+  const latestRefresh = useRef(0);
   const refreshTracker = useCallback(() => {
+    const request = ++latestRefresh.current;
     api<TrackerState>("/tracker")
       .then((trackerData) => {
+        if (request !== latestRefresh.current) return;
         setTracker(trackerData);
         setCompleted(new Set(trackerData.completed.map(([c, t]) => cellKey(c, t))));
       })

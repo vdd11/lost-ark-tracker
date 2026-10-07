@@ -75,6 +75,12 @@ describe("api", () => {
       // Writes are never shared.
       await Promise.all([api("/x", { method: "POST" }), api("/x", { method: "POST" })]);
       expect(fetchMock).toHaveBeenCalledTimes(4);
+      // A read started after a change doesn't reuse one from before it.
+      const before = api("/tracker");
+      await api("/x", { method: "PUT" });
+      const after = api("/tracker");
+      await Promise.all([before, after]);
+      expect(fetchMock).toHaveBeenCalledTimes(7);
     } finally {
       vi.unstubAllGlobals();
     }

@@ -10,10 +10,12 @@ test.beforeAll(async ({ request }) => {
   const tasks: Task[] = await (await request.get("/api/tasks")).json();
   const serca = tasks.find((t) => t.name === "Serca");
   expect(serca, "Serca is in the raid catalog").toBeTruthy();
+  // A retry runs this again on the same database: add only who isn't there.
+  const existing = new Set(((await (await request.get("/api/characters")).json()) as { name: string }[]).map((c) => c.name));
   for (const character of [
     { name: "Alpha", class_name: "Bard", item_level: 1735, raids: [{ task_id: serca!.id }] },
     { name: "Bravo", class_name: "Sorceress", item_level: 1705 },
-  ]) {
+  ].filter((c) => !existing.has(c.name))) {
     const response = await request.post("/api/characters", { data: character });
     expect(response.status()).toBe(201);
   }
