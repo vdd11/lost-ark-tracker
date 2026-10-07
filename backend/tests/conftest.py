@@ -26,9 +26,15 @@ def client():
 @pytest.fixture
 def set_now(monkeypatch):
     """Freeze the API's clock at a given naive-UTC datetime."""
+    backend = str(Path(__file__).resolve().parent.parent)
+
     def _set(moment):
-        # Route modules import utc_now by name, so patch it everywhere it's used.
+        # Modules import utc_now by name, so patch it in every app module that
+        # has it (routes, and domain modules like history.py), never the real
+        # clock in resets.py itself or in libraries.
         for name, module in list(sys.modules.items()):
-            if (name == "main" or name.startswith("routes.")) and hasattr(module, "utc_now"):
+            path = getattr(module, "__file__", None) or ""
+            in_app = path.startswith(backend) and ".venv" not in path
+            if name != "resets" and in_app and hasattr(module, "utc_now"):
                 monkeypatch.setattr(module, "utc_now", lambda: moment)
     return _set

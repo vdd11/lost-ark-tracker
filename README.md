@@ -153,8 +153,10 @@ The screenshots use made-up characters.
   icons, with the current page's name.
 - **Paste a roster** (Settings): add many characters at once from pasted
   lines of name, class and item level, in any order (typed, or copied from a
-  spreadsheet or a roster page). It previews what it read, skips duplicates,
-  and makes the highest item levels gold earners. Nothing is looked up online.
+  spreadsheet), or a whole roster page selected and copied (lostark.bible, say:
+  the other text on the page is skipped). It previews what it read, skips
+  duplicates, and makes the highest item levels gold earners. Nothing is
+  looked up online.
 - **Accounts**: play more than one account? Add accounts in Settings and put
   each character on one. Each account is its own roster (up to 6 gold earners,
   its own event clears, its own gold and check-ins). The tracker, Gold and
@@ -219,7 +221,9 @@ The screenshots use made-up characters.
   level), tick each character's paid blessings with the last day they're on
   (Azena's: blessed embers from Chaos Dungeon and Guardian Raid; Inanna's: a
   second Chaos Dungeon run a day; pick a later day when you renew),
-  edit daily/weekly columns, and download/restore backups.
+  edit daily/weekly columns, download/restore backups, and **Reset
+  everything** to start over from scratch (type RESET to confirm; Undo puts it
+  back).
 
 ## Using it
 
