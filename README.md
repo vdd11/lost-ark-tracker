@@ -206,7 +206,8 @@ The screenshots use made-up characters.
   with updates, and you can fill in any that aren't known yet, like most
   lucky rooms). A ticked Guardian Raid adds the average Level 1 gems of the
   best Guardian the character can run (Argeos 3, Skolakia 4.5, Drextalas 6,
-  Krathios 6.5, Shade Level 1 10.5, Shade Level 2 11.5; none below 1640).
+  Krathios 6.5, Shade Level 1 10.5, Shade Level 2 11.5; none below 1640;
+  double on a rested run).
   Log Field Boss and Chaos Gate drops by hand. Weekly chart and per-character totals in
   terms of what your gems combine into (3 of a level make the next, so 15 Lv1
   gems are a Lv3 + 2× Lv2).

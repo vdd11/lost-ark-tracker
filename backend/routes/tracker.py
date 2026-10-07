@@ -83,6 +83,21 @@ def rules_for(task: Task) -> RestRules:
     return RestRules(max=task.rest_max, gain=task.rest_gain, cost=task.rest_cost)
 
 
+def rest_at_start_of_today(db: Session, character_id: int, task: Task, today) -> int | None:
+    """One character's rest gauge for a task at the start of the day (None without a gauge)."""
+    assignment = db.get(CharacterTask, (character_id, task.id))
+    rules = rules_for(task)
+    if assignment is None or not rules.enabled:
+        return None
+    if assignment.rest_period is None:
+        return 0
+    days = {
+        period
+        for (period,) in db.query(Completion.period).filter(Completion.character_id == character_id, Completion.task_id == task.id)
+    }
+    return min(rest_at_start_of(today, assignment.rest_value, assignment.rest_period, days, rules), rules.max)
+
+
 def current_rest(db: Session, today) -> list[RestState]:
     tasks = {task.id: task for task in db.query(Task).filter(Task.rest_max > 0)}
     if not tasks:
@@ -393,7 +408,12 @@ def run_difficulty(db: Session, task: Task, character: Character, requested: int
 def completion_gems(db: Session, task: Task, completion: Completion):
     if task.category == "daily" and task.name == GUARDIAN_RAID:
         character = db.get(Character, completion.character_id) if completion.character_id else None
-        return guardian_gems(character.item_level) if character else None
+        if character is None:
+            return None
+        # A rested run gives double the rewards (per the user, 2026-10-07).
+        start = rest_at_start_of_today(db, character.id, task, completion.period)
+        rested = start is not None and run_is_rested(start, rules_for(task))
+        return guardian_gems(character.item_level, times=2 if rested else 1)
     difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
     tiers = {d.id: d for d in db.query(RaidDifficulty).filter_by(task_id=task.id)} if task.counted else None
     return run_gems(task, difficulty, completion, tiers)

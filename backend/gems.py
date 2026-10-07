@@ -10,7 +10,8 @@ Gems = dict[str, float]
 # as Lv. 1 Gem Chests of one gem each). Ranges are averaged ("4-5" -> 4.5).
 # Source: the user's screenshots of the Guardian Raid reward tables
 # (Argeos 3, Skolakia 4-5, Drextalas 6, Krathios 6-7, Shade Lv1 10-11,
-# Shade Lv2 11-12), 2026-10-07. Luminous Gem Shards aren't counted.
+# Shade Lv2 11-12), 2026-10-07. Luminous Gem Shards are for something else
+# and aren't counted. A rested run gives double (the user, 2026-10-07).
 GUARDIAN_RAID = "Guardian Raid"
 GUARDIAN_GEMS: list[tuple[float, str, float]] = [
     (1750, "Shade Level 2", 11.5),
@@ -22,11 +23,12 @@ GUARDIAN_GEMS: list[tuple[float, str, float]] = [
 ]
 
 
-def guardian_gems(item_level: float) -> Gems | None:
-    """Expected gems from a day's Guardian Raid at this item level (None below the T4 Guardians)."""
+def guardian_gems(item_level: float, times: int = 1) -> Gems | None:
+    """Expected gems from a day's Guardian Raid at this item level (None below
+    the T4 Guardians); times=2 for a rested run, which gives double."""
     for minimum, _guardian, lv1 in GUARDIAN_GEMS:
         if item_level >= minimum:
-            return {"1": lv1}
+            return {"1": lv1 * times}
     return None
 
 

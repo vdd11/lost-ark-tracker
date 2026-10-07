@@ -182,3 +182,19 @@ def test_a_guardian_raid_adds_the_gems_for_the_characters_item_level(client, set
     assert week["by_source"] == {"Guardian Raid": 21.0}
     assert week["by_level"] == {"1": 21.0}
     assert week["by_character"] == {"Shady": 11.5, "Krath": 6.5, "Argy": 3.0}
+
+
+def test_a_rested_guardian_raid_counts_double(client, set_now):
+    from datetime import datetime
+
+    set_now(datetime(2026, 10, 8, 12))
+    guardian = next(t for t in client.get("/api/tasks").json() if t["name"] == "Guardian Raid")
+    rested = client.post("/api/characters", json={"name": "Rested", "class_name": "Bard", "item_level": 1725}).json()
+    plain = client.post("/api/characters", json={"name": "Plain", "class_name": "Bard", "item_level": 1725}).json()
+    # Enough rest for a rested run (Guardian Raid spends 20).
+    assert client.put(f"/api/characters/{rested['id']}/tasks/{guardian['id']}/rest", json={"value": 40}).status_code == 204
+    for character in (rested, plain):
+        client.put(f"/api/characters/{character['id']}/tasks/{guardian['id']}/completion")
+
+    by_character = client.get("/api/gems/weekly?weeks=1").json()[0]["by_character"]
+    assert by_character == {"Rested": 13.0, "Plain": 6.5}
