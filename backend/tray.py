@@ -42,9 +42,14 @@ def message_box(text: str, title: str = APP_NAME, error: bool = False):
 
 
 def icon_image():
-    """A small gold "LA" badge, drawn rather than shipped as a file."""
+    """The app icon (assets/icon.png, from scripts/make_icon.py), or a plain gold badge without it."""
     from PIL import Image, ImageDraw
 
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    try:
+        return Image.open(base / "assets" / "icon.png")
+    except OSError:
+        pass
     size = 64
     image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)

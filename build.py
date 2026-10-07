@@ -43,7 +43,10 @@ def build_executable():
 
     # Windows runs from the system tray (backend/tray.py), so no console window.
     # pystray picks its backend at runtime, so name the Windows one.
-    windows = ["--noconsole", "--hidden-import", "pystray._win32"] if sys.platform == "win32" else []
+    # The exe's icon (scripts/make_icon.py draws it); other systems don't use one.
+    windows = [
+        "--noconsole", "--hidden-import", "pystray._win32", "--icon", str(BACKEND / "assets" / "icon.ico"),
+    ] if sys.platform == "win32" else []
     run([
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
@@ -53,6 +56,7 @@ def build_executable():
         "--name", NAME,
         "--paths", str(BACKEND),
         "--add-data", f"{out}{os.pathsep}frontend",
+        "--add-data", f"{BACKEND / 'assets' / 'icon.png'}{os.pathsep}assets",
         "--distpath", str(ROOT / "dist"),
         "--workpath", str(ROOT / "build"),
         "--specpath", str(ROOT / "build"),

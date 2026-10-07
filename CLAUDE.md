@@ -87,6 +87,8 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   in a gold inventory-slot tile. Lucide is only for interface chrome (close,
   chevrons, edit, delete, ...). Never hotlink; add a file only with its line
   in `public/game-icons/SOURCES.md` (a test checks both).
+- The app's own icon (exe, tray, favicon) is drawn by `scripts/make_icon.py`;
+  change the design there and rerun it, never edit the generated files.
 - In-place updates (`updater.py`, `routes/update.py`): only the packaged app
   (`sys.frozen`), only when the user presses Update now. It downloads this
   system's release file, checks it against the release's `SHA256SUMS`

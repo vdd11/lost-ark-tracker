@@ -37,4 +37,4 @@ def test_icon_is_drawn(monkeypatch):
     if not tray.tray_supported():
         return  # Pillow is only installed for the Windows build
     image = tray.icon_image()
-    assert image.size == (64, 64) and image.getpixel((32, 4))[3] == 255
+    assert image.size == (256, 256) and image.getpixel((128, 12))[3] == 255  # the shipped icon

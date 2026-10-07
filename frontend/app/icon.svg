@@ -1,15 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <radialGradient id="tile" cx="50%" cy="40%" r="70%">
-      <stop offset="0" stop-color="#2a2f3a"/>
-      <stop offset="1" stop-color="#14171d"/>
-    </radialGradient>
-    <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f6dc95"/>
-      <stop offset="1" stop-color="#c9952f"/>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b3242"/>
+      <stop offset="1" stop-color="#11141b"/>
     </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#f2c96b" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#f2c96b" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="12" fill="url(#tile)" stroke="#8a7444" stroke-width="3"/>
-  <path d="M32 12 50 32 32 52 14 32z" fill="url(#gem)" stroke="#5c4a24" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M32 12 50 32H32z" fill="#fff" opacity=".25"/>
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#tile)"/>
+  <circle cx="32" cy="32" r="26" fill="url(#glow)"/>
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="none" stroke="#c9a14e" stroke-width="2.5"/>
+  <rect x="5.5" y="5.5" width="53" height="53" rx="10" fill="none" stroke="#5a4826" stroke-width=".8"/>
+  <polygon points="9,32 32,9 32,21 21,32" fill="#fbe7a8"/>
+  <polygon points="32,9 55,32 43,32 32,21" fill="#e9bd5a"/>
+  <polygon points="55,32 32,55 32,43 43,32" fill="#9c6b1e"/>
+  <polygon points="32,55 9,32 21,32 32,43" fill="#c48f33"/>
+  <polygon points="21,32 32,21 32,32" fill="#fff3cf"/>
+  <polygon points="32,21 43,32 32,32" fill="#f6d98a"/>
+  <polygon points="43,32 32,43 32,32" fill="#d9a645"/>
+  <polygon points="32,43 21,32 32,32" fill="#ecc46b"/>
+  <polygon points="32,9 55,32 32,55 9,32" fill="none" stroke="#4a3814" stroke-width="1.6" stroke-linejoin="round"/>
 </svg>
