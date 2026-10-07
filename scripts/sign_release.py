@@ -40,8 +40,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
-import update_signing  # noqa: E402
-import updater  # noqa: E402
+import update_signing
+import updater
 
 REPO = "vdd11/lost-ark-tracker"
 API = f"https://api.github.com/repos/{REPO}"
@@ -135,7 +135,8 @@ def publish(tag: str):
     upload = release["upload_url"].split("{")[0] + f"?name={update_signing.SIGNATURE_ASSET}"
     github("POST", upload, sign(key, checksums).encode(), content_type="text/plain")
     github("PATCH", f"{API}/releases/{release['id']}", json.dumps({"draft": False, "make_latest": "true"}).encode())
-    print(f"Signed and published {tag}: {release['html_url'].replace('/untagged-', '/tag/')}")
+    # A draft's html_url is a temporary "untagged-..." link, so build the real one.
+    print(f"Signed and published {tag}: https://github.com/{REPO}/releases/tag/{tag}")
 
 
 def main(argv: list[str]):
