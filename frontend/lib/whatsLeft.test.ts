@@ -78,3 +78,14 @@ describe("whatsLeft", () => {
     expect(whatsLeftText(groups)).toBe("Alpha: Serca Hard, Chaos Dungeon");
   });
 });
+
+describe("What's left with gates", () => {
+  it("lists only the gates left of a partly cleared raid, with their gold", () => {
+    const gated = raid("Gated", 44000, { gate_count: 2 });
+    gated.difficulties[0] = { ...gated.difficulties[0], gate_gold: [17500, 26500] };
+    const main = who("Main", [gated]);
+    const run = { character_id: main.id, task_id: gated.id, difficulty_id: gated.difficulties[0].id, count: 1, gates: { "1": gated.difficulties[0].id } };
+    const [group] = whatsLeft({ roster: [main], columns: [gated], tasks: [gated], completed: new Set(), runs: [run as never] });
+    expect(group.items.map((i) => [i.tierName, i.gold])).toEqual([["Hard G2", 26500]]);
+  });
+});

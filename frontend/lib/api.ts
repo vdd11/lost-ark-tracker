@@ -52,6 +52,9 @@ export type Difficulty = {
   catalog_bound_kind: BoundKind | null;
   /** Gold to open every gate's bonus ("View More") chest; null = unknown. */
   bonus_cost: number | null;
+  /** Gold and bonus chest cost per gate, in gate order; null = unknown. */
+  gate_gold: number[] | null;
+  gate_bonus: number[] | null;
   catalog_bonus_cost: number | null;
   /** Expected gems {level: count} per run / lucky room / mega lucky room; null = unknown. */
   reward_gems: GemTable | null;
@@ -83,6 +86,8 @@ export type Task = {
   counted: boolean;
   /** Rewards scale with Sands of Trial spent (Haal's Hourglass). */
   sand_scaled: boolean;
+  /** Raids cleared gate by gate have this many gates; 0 = no gates. */
+  gate_count: number;
   difficulties: Difficulty[];
 };
 
@@ -101,6 +106,9 @@ export type Run = {
   bonus_spent: number;
   /** Counted tasks: runs per tier, {difficulty_id: runs}. */
   tier_counts: Record<string, number> | null;
+  /** Raids with gates: {gate: difficulty_id} when only some are cleared (or at
+   * different difficulties); null = every gate, at difficulty_id. */
+  gates: Record<string, number> | null;
   /** Expected gems from this run. */
   gems: GemTable | null;
 };
@@ -357,6 +365,8 @@ export type LoaClear = {
   task_name: string;
   difficulty_id: number | null;
   already_done: boolean;
+  /** Gates cleared, {gate: difficulty_id}; null = the whole raid. */
+  gates: Record<string, number | null> | null;
 };
 
 export type LoaPreview = {

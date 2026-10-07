@@ -93,10 +93,71 @@ function pay(gold: number, difficulty?: Difficulty): Pay {
   return { gold, shared: Math.round((gold * (100 - characterBound)) / 100) };
 }
 
+/** The gates a clear covers, {gate: difficulty_id}: all of them for a whole clear; empty without one. */
+export function clearedGates(task: Task, run: Run | undefined): Record<number, number | null> {
+  if (!run) return {};
+  if (run.gates) return Object.fromEntries(Object.entries(run.gates).map(([gate, id]) => [Number(gate), id]));
+  return Object.fromEntries(Array.from({ length: task.gate_count ?? 0 }, (_, i) => [i + 1, run.difficulty_id]));
+}
+
+/** A completion body that sets every gate exactly as a clear had them (0 = not cleared), for Undo. */
+export function gatesBody(task: Task, run: Run | undefined): Record<number, number> {
+  const done = clearedGates(task, run);
+  return Object.fromEntries(Array.from({ length: task.gate_count }, (_, i) => [i + 1, done[i + 1] ?? 0]));
+}
+
+/** Whether a raid's clear covers every gate (raids without gates: whether there's a clear). */
+export function isWholeClear(task: Task, run: Run | undefined) {
+  if (!run) return false;
+  return !task.gate_count || !run.gates || Object.keys(run.gates).length >= task.gate_count;
+}
+
+/** One gate's gold at a difficulty, or null when that split isn't known. */
+export function gateGold(task: Task, difficultyId: number | null | undefined, gate: number): number | null {
+  const difficulty = task.difficulties.find((d) => d.id === difficultyId);
+  return difficulty?.gate_gold?.[gate - 1] ?? null;
+}
+
+/** Gold for some gates, each at its own difficulty (an unknown split pays nothing yet). */
+function gatesPay(task: Task, gates: Record<number, number | null>): Pay {
+  return Object.entries(gates).reduce(
+    (sum, [gate, id]) => {
+      const p = pay(gateGold(task, id, Number(gate)) ?? 0, task.difficulties.find((d) => d.id === id));
+      return { gold: sum.gold + p.gold, shared: sum.shared + p.shared };
+    },
+    { gold: 0, shared: 0 },
+  );
+}
+
 function runPay(task: Task, run: Run): Pay {
   if (!task.difficulties.length) return pay(task.gold);
+  if (run.gates) return gatesPay(task, clearedGates(task, run));
   const difficulty = task.difficulties.find((d) => d.id === run.difficulty_id);
   return pay(difficulty?.gold ?? 0, difficulty);
+}
+
+/** The gates still to clear after a partial clear, at the clear's difficulty (or the usual one). */
+export function remainingGates(task: Task, run: Run | undefined, difficultyId: number | null | undefined): Record<number, number | null> {
+  if (!run || isWholeClear(task, run)) return {};
+  const done = clearedGates(task, run);
+  const at = difficultyId ?? run.difficulty_id;
+  return Object.fromEntries(
+    Array.from({ length: task.gate_count }, (_, i) => i + 1)
+      .filter((gate) => !(gate in done))
+      .map((gate) => [gate, at]),
+  );
+}
+
+/** Gold a partly cleared raid can still pay. */
+export function remainingGateGold(task: Task, run: Run | undefined, difficultyId: number | null | undefined) {
+  return gatesPay(task, remainingGates(task, run, difficultyId)).gold;
+}
+
+/** What a clear can pay in all: its gates so far, plus the rest at its difficulty. */
+function runPotential(task: Task, run: Run): Pay {
+  const done = runPay(task, run);
+  const rest = gatesPay(task, remainingGates(task, run, undefined));
+  return { gold: done.gold + rest.gold, shared: done.shared + rest.shared };
 }
 
 /** The best n paydays by gold, summed both ways. */
@@ -109,7 +170,8 @@ const sumTop = (pays: Pay[], n: number) =>
 export type GoldRaidWeek = {
   /** Raids that will pay this week: up to 3, from clears plus usual raids. */
   slots: number;
-  /** Paying clears so far (extra clears past the limit don't count). */
+  /** Paying raids cleared so far (extra clears past the limit don't count); a
+   * raid with only some gates cleared holds its slot but is still left. */
   cleared: number;
   left: number;
   possible: number;
@@ -126,7 +188,10 @@ export function goldRaidWeek(character: Character, tasks: Task[], runs: Run[] = 
   if (!character.is_gold_earner) return { slots: 0, cleared: 0, left: 0, possible: 0, possibleShared: 0 };
   const mine = new Map(runs.filter((r) => r.character_id === character.id).map((r) => [r.task_id, r]));
   const raids = tasks.filter((t) => isActiveRaid(t) && !t.gold_for_everyone);
-  const clearedGold = raids.filter((t) => mine.has(t.id)).map((t) => runPay(t, mine.get(t.id)!));
+  const ran = raids.filter((t) => mine.has(t.id));
+  // A partly cleared raid counts what all its gates can pay.
+  const clearedGold = ran.map((t) => runPotential(t, mine.get(t.id)!));
+  const whole = ran.filter((t) => isWholeClear(t, mine.get(t.id))).length;
   const usual = paidRaids(character, tasks).filter((t) => !mine.has(t.id));
   const others = topGoldRaids(
     raids.filter((t) => !mine.has(t.id) && !usual.includes(t)),
@@ -137,10 +202,11 @@ export function goldRaidWeek(character: Character, tasks: Task[], runs: Run[] = 
     ...usual.map((t) => pay(raidGold(character, t) ?? 0, difficultyOf(character, t))),
     ...others.map(({ difficulty }) => pay(difficulty.gold ?? 0, difficulty)),
   ];
-  const cleared = Math.min(clearedGold.length, GOLD_RAIDS_PER_WEEK);
+  const cleared = Math.min(whole, GOLD_RAIDS_PER_WEEK);
   const slots = Math.min(GOLD_RAIDS_PER_WEEK, clearedGold.length + plannedGold.length);
   const left = slots - cleared;
-  const [done, planned] = [sumTop(clearedGold, GOLD_RAIDS_PER_WEEK), sumTop(plannedGold, left)];
+  const open = slots - Math.min(clearedGold.length, GOLD_RAIDS_PER_WEEK);
+  const [done, planned] = [sumTop(clearedGold, GOLD_RAIDS_PER_WEEK), sumTop(plannedGold, open)];
   return {
     slots,
     cleared,

@@ -3,6 +3,11 @@ import { describe, expect, it } from "vitest";
 import { Character, Difficulty, Run, Task } from "./api";
 import {
   bestDifficulty,
+  clearedGates,
+  gatesBody,
+  isWholeClear,
+  remainingGateGold,
+  remainingGates,
   boundLabel,
   canRun,
   formatShortGold,
@@ -36,6 +41,8 @@ function raid(name: string, tiers: [string, number, number | null][], extra: Par
     catalog_bound_kind: "roster",
     bonus_cost: null,
     catalog_bonus_cost: null,
+    gate_gold: null,
+    gate_bonus: null,
     reward_gems: null,
     lucky_gems: null,
     mega_gems: null,
@@ -45,7 +52,7 @@ function raid(name: string, tiers: [string, number, number | null][], extra: Par
     id, name, category: "raid", gold: 0, position: id,
     rest_max: 0, rest_gain: 0, rest_cost: 0,
     catalog_key: null, archived: false, ends_on: null, roster_limited: false,
-    gold_for_everyone: false, note: null, counted: false, sand_scaled: false,
+    gold_for_everyone: false, note: null, counted: false, sand_scaled: false, gate_count: 0,
     difficulties, ...extra,
   };
 }
@@ -140,7 +147,7 @@ function clear(who: Character, task: Task, tier: string): Run {
   return {
     character_id: who.id, task_id: task.id, difficulty_id: task.difficulties.find((d) => d.name === tier)!.id,
     count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0, fate_embers: 0, blessed_embers: 0, bought_bonus: false, bonus_spent: 0,
-    tier_counts: null, gems: null,
+    tier_counts: null, gates: null, gems: null,
   };
 }
 
@@ -230,5 +237,34 @@ describe("settingsRaidLists", () => {
   it("labels bound gold", () => {
     expect(boundLabel(0, "roster")).toBe("");
     expect(boundLabel(50, "roster")).toBe("50% roster");
+  });
+});
+
+describe("raids cleared gate by gate", () => {
+  const gated = raid("Gated", [["Normal", 1710, 32000], ["Hard", 1730, 44000]], { gate_count: 2 });
+  gated.difficulties[0] = { ...gated.difficulties[0], gate_gold: [13000, 19000], bound_percent: 50 };
+  gated.difficulties[1] = { ...gated.difficulties[1], gate_gold: [17500, 26500] };
+  const [normal, hard] = gated.difficulties.map((d) => d.id);
+  const partial = (who: Character, gates: Record<string, number>): Run => ({ ...clear(who, gated, "Normal"), gates });
+
+  it("knows which gates are cleared, and what's left", () => {
+    const main = character(1740, [[gated, "Hard"]]);
+    expect(clearedGates(gated, clear(main, gated, "Hard"))).toEqual({ 1: hard, 2: hard });
+    const run = partial(main, { "1": normal });
+    expect(isWholeClear(gated, run)).toBe(false);
+    expect(remainingGates(gated, run, hard)).toEqual({ 2: hard });
+    expect(remainingGateGold(gated, run, hard)).toBe(26500);
+    expect(gatesBody(gated, run)).toEqual({ 1: normal, 2: 0 });
+  });
+
+  it("a partly cleared raid holds its paid slot but is still left, and counts what all its gates can pay", () => {
+    const main = character(1740, [[gated, "Hard"]]);
+    const week = goldRaidWeek(main, [gated], [partial(main, { "1": normal })]);
+    expect(week.cleared).toBe(0);
+    expect(week.left).toBe(1);
+    // Gate 1 cleared on Normal, gate 2 still to do at the clear's difficulty.
+    expect(week.possible).toBe(13000 + 19000);
+    // Normal is half roster-bound: none of it is character-bound.
+    expect(week.possibleShared).toBe(32000);
   });
 });

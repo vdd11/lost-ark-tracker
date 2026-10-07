@@ -64,6 +64,8 @@ class Task(Base):
     counted: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     # Rewards scale with Sands of Trial spent (Haal's Hourglass).
     sand_scaled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    # Raids cleared gate by gate have this many gates (catalog raids: 2); 0 = no gates.
+    gate_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class RaidDifficulty(Base):
@@ -85,6 +87,9 @@ class RaidDifficulty(Base):
     bound_kind: Mapped[str] = mapped_column(String(20), default="roster", server_default="roster")
     # Gold to open the bonus ("View More") chests of every gate; None = unknown.
     bonus_cost: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # The same two split per gate, in gate order ([gate 1, gate 2]); None = unknown.
+    gate_gold: Mapped[list | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    gate_bonus: Mapped[list | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     # What the catalog last set, to tell user edits apart from catalog values.
     catalog_item_level: Mapped[float | None] = mapped_column(Float, nullable=True)
     catalog_gold: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -156,6 +161,9 @@ class Completion(Base):
     # player since they're random. Blessed embers need Azena's blessing.
     fate_embers: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     blessed_embers: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Raids cleared gate by gate: {gate number: difficulty_id} for the gates
+    # done. None means every gate, at difficulty_id (all clears before gates).
+    gates: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
     # Expected gems from this run, snapshotted like gold so later edits to
     # the reward tables don't rewrite past weeks.
     gems: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)

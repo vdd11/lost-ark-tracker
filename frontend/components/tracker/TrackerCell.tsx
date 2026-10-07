@@ -83,6 +83,7 @@ export default function TrackerCell({
         run={run}
         clearedBy={otherClear ? data.allCharacters.find((c) => c.id === otherClear.character_id)?.name : undefined}
         onToggle={(done, difficultyId) => actions.toggleRaid(character, task, done, difficultyId)}
+        onGate={(gate, difficultyId) => actions.toggleGate(character, task, gate, difficultyId)}
         onDifficulty={(difficultyId, done) => actions.chooseRaidDifficulty(character, task, difficultyId, done)}
         onBonus={(bought) => actions.setBonus(character, task, bought)}
         compact={compact}

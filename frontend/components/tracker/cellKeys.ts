@@ -1,7 +1,7 @@
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, Task } from "@/lib/api";
 import { dailyRunsNeeded } from "@/lib/blessings";
-import { bestDifficulty, difficultyOf } from "@/lib/raids";
+import { bestDifficulty, clearedGates, difficultyOf, isWholeClear } from "@/lib/raids";
 import { cellLabel } from "@/lib/shortcuts";
 import { cellKey, isTiered } from "@/lib/trackerSections";
 import { appliesTo } from "@/lib/trackerView";
@@ -47,6 +47,11 @@ export function cellKeyboard(character: Character, task: Task, data: TrackerData
         return { label: label(undefined, `cleared by ${by} this week`) };
       }
       const shown = task.difficulties.find((d) => d.id === run?.difficulty_id) ?? usual ?? bestDifficulty(task, character.item_level);
+      // A partly cleared raid: Space clears the gates left.
+      if (run && !isWholeClear(task, run)) {
+        const gates = Object.keys(clearedGates(task, run)).length;
+        return { label: label(shown?.name, `${gates} of ${task.gate_count} gates`), toggle: () => actions.toggleRaid(character, task, true, shown?.id) };
+      }
       return run
         ? { label: label(shown?.name, "done"), toggle: () => actions.toggleRaid(character, task, false, undefined) }
         : { label: label(shown?.name, "not done"), toggle: () => actions.toggleRaid(character, task, true, shown?.id) };

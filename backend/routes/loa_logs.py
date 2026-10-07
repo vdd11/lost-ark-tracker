@@ -54,8 +54,9 @@ def preview(request: LoaPreviewRequest, db: Session = Depends(get_db)):
     suggested = loa_logs.suggest_mapping(raid_map, task_names(db))
     # The user's own choices win; 0 means "not a raid clear, ignore it".
     mapping = {**suggested, **(request.mapping or {})}
-    # Earlier gates of a known raid are progress, not a clear: skip them quietly.
-    gate_bosses = loa_logs.earlier_gate_bosses(raid_map)
+    # Which gate each boss is; an earlier gate's boss belongs to the raid its last gate maps to.
+    gates_of = loa_logs.boss_gates(raid_map)
+    raid_tasks = {gates_of[boss][0]: task_id for boss, task_id in mapping.items() if boss in gates_of and gates_of[boss][2]}
 
     tasks = {task.id: task for task in db.query(Task).filter(Task.category == "raid")}
     difficulties: dict[int, list[RaidDifficulty]] = {}
@@ -69,12 +70,18 @@ def preview(request: LoaPreviewRequest, db: Session = Depends(get_db)):
     }
 
     clears: dict[tuple, LoaClear] = {}
+    # Per character and raid: {gate: difficulty_id}, and whether its last gate was cleared.
+    gates_cleared: dict[tuple, dict[int, int | None]] = {}
+    finished: set[tuple] = set()
     unknown_bosses: set[str] = set()
     unknown_players: set[str] = set()
     for encounter in encounters:
+        raid, gate, last = gates_of.get(encounter.boss, (None, None, False))
         task_id = mapping.get(encounter.boss)
+        if task_id is None and raid is not None and not last:
+            task_id = raid_tasks.get(raid)
         if task_id is None:
-            if encounter.boss not in gate_bosses:
+            if raid is None:
                 unknown_bosses.add(encounter.boss)
             continue
         if task_id == 0 or task_id not in tasks:
@@ -93,8 +100,16 @@ def preview(request: LoaPreviewRequest, db: Session = Depends(get_db)):
             ),
             None,
         )
+        key = (character.id, task.id)
+        if gate is not None:
+            # Once the raid is done, a later fight of an earlier gate changes nothing.
+            if key in finished and not last:
+                continue
+            gates_cleared.setdefault(key, {})[gate] = difficulty.id if difficulty else None
+            if last:
+                finished.add(key)
         # Several clears of one raid in a week: the latest wins (they all pay at most once).
-        clears[(character.id, task.id)] = LoaClear(
+        clears[key] = LoaClear(
             fight_start=encounter.fight_start,
             boss=encounter.boss,
             difficulty=encounter.difficulty,
@@ -105,6 +120,19 @@ def preview(request: LoaPreviewRequest, db: Session = Depends(get_db)):
             difficulty_id=difficulty.id if difficulty else None,
             already_done=(character.id, task.id) in done,
         )
+
+    for key, clear in clears.items():
+        task = tasks[clear.task_id]
+        gates = gates_cleared.get(key)
+        if not gates or not task.gate_count:
+            continue  # no gate data: the whole raid, as before
+        if key in finished:
+            # The last gate means the whole raid: gates not logged ran at the last gate's difficulty.
+            last_difficulty = gates[max(gates)]
+            gates = {g: gates.get(g, last_difficulty) for g in range(1, task.gate_count + 1)}
+            if len(set(gates.values())) == 1:
+                continue  # all at one difficulty: a plain whole clear
+        clear.gates = gates
 
     return LoaPreview(
         path=str(path),

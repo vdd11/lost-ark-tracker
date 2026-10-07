@@ -20,7 +20,7 @@ const finalDay = task({
 const bardy = character({ task_ids: [1], difficulty_ids: { "1": 11 } });
 
 function setup(props: Partial<Parameters<typeof RaidCell>[0]> = {}) {
-  const handlers = { onToggle: vi.fn(), onDifficulty: vi.fn(), onBonus: vi.fn() };
+  const handlers = { onToggle: vi.fn(), onGate: vi.fn(), onDifficulty: vi.fn(), onBonus: vi.fn() };
   render(<RaidCell task={finalDay} character={bardy} isAssigned run={undefined} clearedBy={undefined} {...handlers} {...props} />);
   return handlers;
 }
@@ -87,5 +87,51 @@ describe("RaidCell", () => {
     setup({ run: run({ difficulty_id: 11, bought_bonus: true, bonus_spent: 15360 }) });
     expect(screen.getAllByRole("option").some((o) => o.textContent?.includes("48k"))).toBe(true);
     expect(screen.getByRole("button", { name: /bonus box/i }).textContent).toContain("15.4k");
+  });
+});
+
+describe("RaidCell gates", () => {
+  const gated = task({
+    name: "Serca",
+    gate_count: 2,
+    difficulties: [
+      difficulty(10, "Normal", 1710, 32000, { gate_gold: [13000, 19000] }),
+      difficulty(11, "Hard", 1730, 44000, { gate_gold: [17500, 26500] }),
+    ],
+  });
+
+  function gatedSetup(props: Partial<Parameters<typeof RaidCell>[0]> = {}) {
+    const handlers = { onToggle: vi.fn(), onGate: vi.fn(), onDifficulty: vi.fn(), onBonus: vi.fn() };
+    render(<RaidCell task={gated} character={bardy} isAssigned run={undefined} clearedBy={undefined} {...handlers} {...props} />);
+    return handlers;
+  }
+
+  it("clears one gate at the shown difficulty, with that gate's gold in its tooltip", async () => {
+    const { onGate } = gatedSetup();
+    const gate1 = screen.getByRole("button", { name: "Serca gate 1 cleared by Bardy" });
+    expect(gate1.getAttribute("aria-pressed")).toBe("false");
+    expect(gate1.getAttribute("title")).toBe("Gate 1 (Hard): 17,500 gold");
+    await userEvent.click(gate1);
+    expect(onGate).toHaveBeenCalledWith(1, 11);
+  });
+
+  it("shows a partial clear as 1/2, un-clears a gate, and the checkbox finishes the rest", async () => {
+    const { onGate, onToggle } = gatedSetup({ run: run({ difficulty_id: 10, gates: { "1": 10 } }) });
+    const box = screen.getByRole("checkbox", { name: "Serca cleared by Bardy (1 of 2 gates)" }) as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    expect(box.indeterminate).toBe(true);
+    expect(screen.getByText("1/2")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Serca gate 1 cleared by Bardy" }).getAttribute("title")).toBe("Gate 1 (Normal): 13,000 gold");
+
+    await userEvent.click(screen.getByRole("button", { name: "Serca gate 1 cleared by Bardy" }));
+    expect(onGate).toHaveBeenCalledWith(1, null);
+    await userEvent.click(box);
+    expect(onToggle).toHaveBeenCalledWith(true, 10);
+  });
+
+  it("says when a gate's gold isn't known", () => {
+    const unknown = task({ name: "Serca", gate_count: 2, difficulties: [difficulty(11, "Hard", 1730, 44000)] });
+    render(<RaidCell task={unknown} character={bardy} isAssigned run={undefined} clearedBy={undefined} onToggle={vi.fn()} onGate={vi.fn()} onDifficulty={vi.fn()} onBonus={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Serca gate 2 cleared by Bardy" }).getAttribute("title")).toBe("Gate 2 (Hard): gold per gate unknown");
   });
 });

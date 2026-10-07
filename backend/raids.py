@@ -1,8 +1,13 @@
 """Built-in catalog of raids (and other tiered content), synced into every
 database on startup.
 
-Gold is the total for all gates. `None` means we don't have a confirmed
-number: the app shows "?" (a value a user entered before then is kept).
+Gold is the total for all gates; `gate_gold` and `gate_bonus` split it (and
+the bonus chest cost) per gate, so a raid can be cleared gate by gate. `None`
+means we don't have a confirmed number: the app shows "?" (a value a user
+entered before then is kept). Per-gate gold and the per-gate rules (a raid
+with one gate's gold claimed uses one of the 3 paid raids; a later gate can be
+run at another difficulty; partly bound gold is bound the same share on each
+gate) are from the user, 2026-10-06.
 Sources: official NA release notes on playlostark.com ("Dimensions Unbound",
 2026-09-16, for Act 4, Final Day and Serca Normal), guides for Horizon
 Cathedral (2026-07-22), the user for Serca Hard/Nightmare, and the Ebony Cube
@@ -57,6 +62,9 @@ class Difficulty:
     bound_kind: str = "roster"
     # Gold to open every gate's bonus ("View More") chest; None = unknown.
     bonus_cost: int | None = None
+    # Gold and bonus chest cost per gate, in gate order; None = unknown.
+    gate_gold: tuple[int, ...] | None = None
+    gate_bonus: tuple[int, ...] | None = None
 
     def rewards(self) -> dict:
         return {"reward_gems": self.reward_gems, "lucky_gems": self.lucky_gems, "mega_gems": self.mega_gems}
@@ -70,6 +78,8 @@ class CatalogTask:
     category: str = "raid"
     counted: bool = False
     sand_scaled: bool = False
+    # Raids cleared gate by gate; 0 for content without gates.
+    gates: int = 0
     note: str | None = None
     # Earlier names, so existing columns are adopted (and renamed) instead of duplicated.
     legacy_names: list[str] = field(default_factory=list)
@@ -81,10 +91,11 @@ CATALOG = [
         name="Serca",
         # Bonus chest costs per gate (from the user, 2026-10-04): Normal 4,480 + 6,720,
         # Hard 5,600 + 8,480, Nightmare 6,720 + 10,560.
+        gates=2,
         difficulties=[
-            Difficulty("Normal", 1710, 32000, bonus_cost=11200, bound_percent=50),
-            Difficulty("Hard", 1730, 44000, bonus_cost=14080),
-            Difficulty("Nightmare", 1740, 54000, bonus_cost=17280),
+            Difficulty("Normal", 1710, 32000, bonus_cost=11200, bound_percent=50, gate_gold=(13000, 19000), gate_bonus=(4480, 6720)),
+            Difficulty("Hard", 1730, 44000, bonus_cost=14080, gate_gold=(17500, 26500), gate_bonus=(5600, 8480)),
+            Difficulty("Nightmare", 1740, 54000, bonus_cost=17280, gate_gold=(21000, 33000), gate_bonus=(6720, 10560)),
         ],
         note="Shadow Raid, 4 players. Normal pays half its gold as roster-bound gold.",
         legacy_names=["Shadow Raid: Serca"],
@@ -94,10 +105,11 @@ CATALOG = [
         name="Horizon Cathedral",
         # Bonus chest costs per gate (from the user, 2026-10-04): Lv1 4,320 + 5,280,
         # Lv2 5,120 + 7,680, Lv3 6,400 + 9,600.
+        gates=2,
         difficulties=[
-            Difficulty("Lv1", 1700, 30000, bonus_cost=9600, bound_percent=100, bound_kind="character"),
-            Difficulty("Lv2", 1720, 40000, bonus_cost=12800, bound_percent=100, bound_kind="character"),
-            Difficulty("Lv3", 1750, 50000, bonus_cost=16000, bound_percent=100, bound_kind="character"),
+            Difficulty("Lv1", 1700, 30000, bonus_cost=9600, bound_percent=100, bound_kind="character", gate_gold=(13500, 16500), gate_bonus=(4320, 5280)),
+            Difficulty("Lv2", 1720, 40000, bonus_cost=12800, bound_percent=100, bound_kind="character", gate_gold=(16000, 24000), gate_bonus=(5120, 7680)),
+            Difficulty("Lv3", 1750, 50000, bonus_cost=16000, bound_percent=100, bound_kind="character", gate_gold=(20000, 30000), gate_bonus=(6400, 9600)),
         ],
         note="Abyssal Dungeon, 4 players. Gold is character-bound.",
     ),
@@ -105,10 +117,11 @@ CATALOG = [
         key="kazeros-denouement",
         name="The Final Day",
         # Bonus chest costs are per gate (3,520 + 6,720 and 5,120 + 10,240).
+        gates=2,
         difficulties=[
             # Normal pays half its gold as roster-bound gold (per the user).
-            Difficulty("Normal", 1710, 32000, bonus_cost=10240, bound_percent=50),
-            Difficulty("Hard", 1730, 48000, bonus_cost=15360),
+            Difficulty("Normal", 1710, 32000, bonus_cost=10240, bound_percent=50, gate_gold=(11000, 21000), gate_bonus=(3520, 6720)),
+            Difficulty("Hard", 1730, 48000, bonus_cost=15360, gate_gold=(16000, 32000), gate_bonus=(5120, 10240)),
         ],
         legacy_names=["Final Act: Kazeros", "Denouement: The Final Day"],
     ),
@@ -116,9 +129,10 @@ CATALOG = [
         key="kazeros-act-4",
         name="Act 4",
         # Bonus chest costs are per gate (3,200 + 5,440 and 4,320 + 7,840).
+        gates=2,
         difficulties=[
-            Difficulty("Normal", 1700, 27000, bonus_cost=8640),
-            Difficulty("Hard", 1720, 38000, bonus_cost=12160),
+            Difficulty("Normal", 1700, 27000, bonus_cost=8640, gate_gold=(10000, 17000), gate_bonus=(3200, 5440)),
+            Difficulty("Hard", 1720, 38000, bonus_cost=12160, gate_gold=(13500, 24500), gate_bonus=(4320, 7840)),
         ],
         note="Fortress of Destruction.",
         legacy_names=["Act 4: Armoche", "Act 4: Fortress of Destruction"],
@@ -220,6 +234,7 @@ def sync_catalog(db: Session):
         task.category = item.category
         task.counted = item.counted
         task.sand_scaled = item.sand_scaled
+        task.gate_count = item.gates
         task.note = item.note
 
         sync_difficulties(db, task, item.difficulties)
@@ -258,6 +273,8 @@ def sync_difficulties(db: Session, task: Task, specs: list[Difficulty]):
                 catalog_bound_kind=spec.bound_kind,
                 bonus_cost=spec.bonus_cost,
                 catalog_bonus_cost=spec.bonus_cost,
+                gate_gold=list(spec.gate_gold) if spec.gate_gold else None,
+                gate_bonus=list(spec.gate_bonus) if spec.gate_bonus else None,
                 **spec.rewards(),
                 catalog_rewards=spec.rewards(),
             ))
@@ -293,6 +310,11 @@ def apply_catalog_values(difficulty: RaidDifficulty, spec: Difficulty):
         if column in ("gold", "bonus_cost") and getattr(difficulty, column) is None:
             filled_in = True
         setattr(difficulty, column, value)
+    # Per-gate values follow the catalog too (None keeps what's there).
+    for column in ("gate_gold", "gate_bonus"):
+        value = getattr(spec, column)
+        if value is not None:
+            setattr(difficulty, column, list(value))
     difficulty.catalog_item_level = spec.item_level
     difficulty.catalog_gold = spec.gold
     difficulty.catalog_bound_percent = spec.bound_percent

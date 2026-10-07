@@ -60,7 +60,11 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   and `sync_catalog` overwrites them, except that a `None` keeps what's
   there (users can fill in unknown gem tables on the Gems page). Only add
   numbers from official NA patch notes or the user (cite any other source).
-  Use `None` for unknown gold. Keep `legacy_names` when renaming so
+  Use `None` for unknown gold. Raids have gates (`gates=2`; per-gate
+  `gate_gold` / `gate_bonus` from the user, adding up to the totals): a
+  completion's `gates` JSON is {gate: difficulty_id} for a partial or mixed
+  clear, null for a whole clear (so old data is whole clears); a raid with
+  any gate's gold uses one of the 3 paid raids. Keep `legacy_names` when renaming so
   existing columns are adopted. After a patch, follow
   `docs/patch-checklist.md` and bump `CATALOG_REVIEWED`.
 - Tools live under `app/tools/<tool>/` with their maths in `lib/<tool>.ts`

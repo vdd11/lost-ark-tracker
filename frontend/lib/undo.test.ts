@@ -5,7 +5,7 @@ import { checkInBody, goldEntryBody, restoreRunBody } from "./undo";
 
 const run = (extra: Partial<Run>): Run => ({
   character_id: 1, task_id: 2, difficulty_id: 30, count: 1, lucky_rooms: 0, mega_rooms: 0, sands: 0, fate_embers: 0, blessed_embers: 0,
-  bought_bonus: false, bonus_spent: 0, tier_counts: null, gems: null, ...extra,
+  bought_bonus: false, bonus_spent: 0, tier_counts: null, gates: null, gems: null, ...extra,
 });
 
 describe("restoreRunBody", () => {

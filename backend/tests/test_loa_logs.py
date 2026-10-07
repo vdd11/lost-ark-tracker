@@ -109,7 +109,7 @@ def test_preview_matches_clears_to_characters_and_raids(client, set_now, tmp_pat
         (WEEK_START + timedelta(hours=1), "Corvus Tul Rak", "Hard", "bardy", 1),
         (WEEK_START + timedelta(hours=2), "Armoche, Sentinel of the Abyss", "Normal", "Bardy", 1),
         (WEEK_START + timedelta(hours=3), "Some Field Boss", "Normal", "Slayer", 1),
-        (WEEK_START + timedelta(hours=3), "Witch of Agony, Serca", "Hard", "Bardy", 1),  # gate 1: not a clear
+        (WEEK_START + timedelta(hours=3), "Witch of Agony, Serca", "Hard", "Bardy", 1),  # gate 1 after the raid is done: no change
         (WEEK_START + timedelta(hours=4), "Corvus Tul Rak", "Hard", "Stranger", 1),
     ])
 
@@ -126,13 +126,16 @@ def test_preview_matches_clears_to_characters_and_raids(client, set_now, tmp_pat
 
     # The user maps the field boss away; a later "since" skips what was imported.
     again = client.post("/api/loa-logs/preview", json={
-        "path": str(path), "mapping": {"Some Field Boss": 0}, "since": (WEEK_START + timedelta(hours=3)).isoformat(),
+        "path": str(path), "mapping": {"Some Field Boss": 0}, "since": (WEEK_START + timedelta(hours=3, minutes=1)).isoformat(),
     }).json()
     assert again["clears"] == [] and again["unknown_bosses"] == []
 
     # The browser's last-import time comes with a timezone ("...Z").
     aware = client.post("/api/loa-logs/preview", json={"path": str(path), "since": "2026-09-30T11:30:00.000Z"})
-    assert aware.status_code == 200 and [c["task_name"] for c in aware.json()["clears"]] == ["Act 4"]
+    # From then on there's Act 4, and Serca's gate 1 on its own (the gate 2 clear came before).
+    later = aware.json()["clears"]
+    assert aware.status_code == 200 and [c["task_name"] for c in later] == ["Act 4", "Serca"]
+    assert later[1]["gates"] == {"1": serca_hard}
 
     bad = client.post("/api/loa-logs/preview", json={"path": str(tmp_path / "nope.db")})
     assert bad.status_code == 400 and "No LOA Logs database" in bad.json()["detail"]
@@ -177,3 +180,26 @@ def test_preview_explains_a_bad_path(client, tmp_path):
     response = client.post("/api/loa-logs/preview", json={"path": str(tmp_path)})
     assert response.status_code == 400
     assert "is a folder" in response.json()["detail"]
+
+
+def test_gates_are_imported_gate_by_gate(client, set_now, tmp_path):
+    set_now(NOW)
+    serca = task_named(client, "Serca")
+    add_character(client, 1745, [{"task_id": serca["id"]}], name="Bardy")
+    add_character(client, 1745, name="Slayer")
+    add_character(client, 1745, name="Gunner")
+    ids = {d["name"]: d["id"] for d in serca["difficulties"]}
+    write_raid_map(tmp_path)
+    path = make_db(tmp_path / "encounters.db", [
+        # Gate 1 only.
+        (WEEK_START + timedelta(hours=1), "Witch of Agony, Serca", "Hard", "Bardy", 1),
+        # Gate 1 on Normal, gate 2 on Hard.
+        (WEEK_START + timedelta(hours=1), "Witch of Agony, Serca", "Normal", "Slayer", 1),
+        (WEEK_START + timedelta(hours=2), "Corvus Tul Rak", "Hard", "Slayer", 1),
+        # Just the last gate: the whole raid, as before.
+        (WEEK_START + timedelta(hours=2), "Corvus Tul Rak", "Hard", "Gunner", 1),
+    ])
+    clears = {c["character_name"]: c for c in client.post("/api/loa-logs/preview", json={"path": str(path)}).json()["clears"]}
+    assert clears["Bardy"]["gates"] == {"1": ids["Hard"]}
+    assert clears["Slayer"]["gates"] == {"1": ids["Normal"], "2": ids["Hard"]}
+    assert clears["Gunner"]["gates"] is None

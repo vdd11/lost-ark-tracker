@@ -1,5 +1,5 @@
 import { Character, Run, Task } from "./api";
-import { difficultyOf, goldRaidWeek, raidGold, topGoldRaids } from "./raids";
+import { difficultyOf, goldRaidWeek, raidGold, remainingGateGold, remainingGates, topGoldRaids } from "./raids";
 import { cellKey } from "./trackerSections";
 import { remainingFor } from "./trackerView";
 
@@ -48,14 +48,24 @@ export function whatsLeft({
 
     const raids = todo
       .filter((t) => t.category === "raid")
-      .map((task) => ({ task, value: raidGold(character, task) }))
+      .map((task) => {
+        // A raid partly cleared: just the gates left, at the difficulty it was started on.
+        const run = runs.find((r) => r.character_id === character.id && r.task_id === task.id);
+        const left = Object.keys(remainingGates(task, run, undefined)).map(Number);
+        if (run && left.length) {
+          const at = task.difficulties.find((d) => d.id === run.difficulty_id);
+          const value = left.every((gate) => at?.gate_gold?.[gate - 1] != null) ? remainingGateGold(task, run, undefined) : null;
+          return { task, value, tierName: `${at?.name ?? ""} ${left.map((g) => `G${g}`).join("+")}`.trim() };
+        }
+        return { task, value: raidGold(character, task), tierName: difficultyOf(character, task)?.name };
+      })
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
-      .map(({ task, value }): LeftItem => {
+      .map(({ task, value, tierName }): LeftItem => {
         const paying = task.gold_for_everyone || (character.is_gold_earner && paidSlots > 0);
         if (paying && !task.gold_for_everyone) paidSlots -= 1;
         return {
           task,
-          tierName: difficultyOf(character, task)?.name,
+          tierName,
           gold: paying ? (value ?? 0) : 0,
           paying,
           unknownGold: paying && value === null,

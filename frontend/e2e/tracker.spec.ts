@@ -114,3 +114,24 @@ test("Ebony Cube runs and unlock tickets count up and down", async ({ page }) =>
   await cell.getByRole("button", { name: "One fewer Ebony Cube for Alpha run" }).click();
   await expect(cell).toHaveAccessibleName(/– 0 runs$/);
 });
+
+test("a raid can be cleared gate by gate", async ({ page }) => {
+  const gate = (n: number) => page.getByRole("button", { name: `Serca gate ${n} cleared by Alpha` });
+  const box = page.getByRole("checkbox", { name: /^Serca cleared by Alpha/ });
+  await gate(1).click();
+  await expect(gate(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(box).toHaveAccessibleName("Serca cleared by Alpha (1 of 2 gates)");
+  await expect(box).not.toBeChecked();
+
+  await page.reload();
+  await expect(gate(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(gate(2)).toHaveAttribute("aria-pressed", "false");
+
+  // The checkbox finishes the gates left; ticking it again clears the raid.
+  await box.click();
+  await expect(box).toBeChecked();
+  await expect(gate(2)).toHaveAttribute("aria-pressed", "true");
+  await box.click();
+  await expect(box).not.toBeChecked();
+  await expect(gate(1)).toHaveAttribute("aria-pressed", "false");
+});

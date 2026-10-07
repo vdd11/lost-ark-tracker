@@ -39,8 +39,12 @@ The screenshots use made-up characters.
 - **Tracker**: three cards, by how often things reset.
   - **This week**: raids, Haal's Hourglass (1730+) and the **Growth Boost
     Shop** (tick it once a character has bought out its Clear Medal shop),
-    reset Wednesday 10:00 UTC. Each raid shows a checkbox, a difficulty dropdown, and once cleared a
-    "Bonus box" button. Raids a character can enter but doesn't usually run
+    reset Wednesday 10:00 UTC. Each raid shows a checkbox, its gates (**G1**,
+    **G2**: tick one gate at a time, or the checkbox for the whole raid; a
+    partial clear shows "1/2"), a difficulty dropdown, and once cleared a
+    "Bonus box" button. Each gate pays its own gold and bonus box cost, a
+    raid with one gate's gold claimed uses one of the 3 paid raids, and a
+    later gate can be run at another difficulty. Raids a character can enter but doesn't usually run
     show faded, so an extra clear can be ticked. **GOLD** beside a name
     toggles whether the character earns raid gold (6 per account; the count
     shows next to the account tabs). Item levels are coloured by the best raid
@@ -116,8 +120,8 @@ The screenshots use made-up characters.
     full. They come as browser notifications (or a banner) while the app is open.
 - **Import clears from LOA Logs** (opt-in, Settings): if you run the LOA Logs
   DPS meter (Windows/Linux), the tracker reads the raids it saw you clear this
-  week, read-only, matches bosses to raids and names to characters, and ticks
-  the ones you keep after you review them (with Undo).
+  week, read-only, matches bosses to raids (and gates) and names to
+  characters, and ticks the ones you keep after you review them (with Undo).
 - **Suggest my gold setup** (Settings) picks, per account, the 6 gold earners
   and each one's 3 best-paying raids and difficulties, shows the gain against
   your current setup, and applies it in one click (with Undo). Bound gold can

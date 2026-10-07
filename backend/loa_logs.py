@@ -10,8 +10,9 @@ What LOA Logs keeps (as of its 2026 source):
   `local_player` (the character who logged it) and `cleared`. Very old
   versions only had the clear flag in the `misc` JSON (`raidClear`).
 - `meter-data/encounters.json` next to the exe: raid -> gate -> boss names,
-  e.g. {"Serca": {"Serca G1": [...], "Serca G2": ["Corvus Tul Rak"]}}. A raid
-  counts as cleared when a boss of its last gate is.
+  e.g. {"Serca": {"Serca G1": [...], "Serca G2": ["Corvus Tul Rak"]}}. Each
+  gate's boss clears that gate; a boss of the last gate clears the whole raid
+  (earlier gates at the difficulty logged for them, else the last gate's).
 
 Anything that doesn't match is reported, never guessed: the caller shows
 unknown bosses and players and lets the user map them.
@@ -195,6 +196,17 @@ def final_gate_bosses(raid_map: dict[str, dict[str, list[str]]]) -> dict[str, st
         for boss in gates[last_gate]:
             bosses[boss] = raid
     return bosses
+
+
+def boss_gates(raid_map: dict[str, dict[str, list[str]]] | None) -> dict[str, tuple[str, int, bool]]:
+    """boss -> (LOA Logs raid name, gate number from 1, whether it's the last gate)."""
+    found = {}
+    for raid, gates in (raid_map or {}).items():
+        ordered = sorted(gates)  # "Serca G1" < "Serca G2"
+        for number, gate in enumerate(ordered, start=1):
+            for boss in gates[gate]:
+                found[boss] = (raid, number, number == len(ordered))
+    return found
 
 
 def earlier_gate_bosses(raid_map: dict[str, dict[str, list[str]]] | None) -> set[str]:

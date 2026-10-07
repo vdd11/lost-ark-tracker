@@ -64,7 +64,9 @@ export default function LoaImportDialog({ data, onClose }: { data: TrackerData; 
     const done: typeof toTick = [];
     try {
       for (const clear of toTick) {
-        await send("PUT", `/characters/${clear.character_id}/tasks/${clear.task_id}/completion`, { difficulty_id: clear.difficulty_id });
+        // Some gates only (or at different difficulties): clear just those.
+        const body = clear.gates ? { gates: clear.gates } : { difficulty_id: clear.difficulty_id };
+        await send("PUT", `/characters/${clear.character_id}/tasks/${clear.task_id}/completion`, body);
         done.push(clear);
       }
       const previousImport = lastImport;
@@ -142,6 +144,7 @@ export default function LoaImportDialog({ data, onClose }: { data: TrackerData; 
                         <span>
                           <span className="font-medium">{clear.character_name}</span> — {clear.task_name}{" "}
                           {clear.difficulty ?? ""}
+                          {clear.gates && ` · ${Object.keys(clear.gates).map((g) => `G${g}`).join(" + ")}`}
                           {clear.difficulty && !clear.difficulty_id && (
                             <span className="text-xs text-accent"> (no such difficulty here; uses their usual one)</span>
                           )}
@@ -160,7 +163,7 @@ export default function LoaImportDialog({ data, onClose }: { data: TrackerData; 
                 <p className="mb-1 font-medium">Bosses to match</p>
                 <p className="mb-2 text-xs text-muted">
                   {preview.raid_map_found
-                    ? "These cleared bosses aren't the last gate of a raid the tracker knows."
+                    ? "These cleared bosses aren't a gate of a raid the tracker knows."
                     : "LOA Logs' raid list wasn't found next to its database, so match the last boss of each raid yourself."}{" "}
                   Pick the raid it finishes, or &quot;Not a raid clear&quot;.
                 </p>

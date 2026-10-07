@@ -24,7 +24,7 @@ import {
 } from "@/lib/api";
 import { dailyRunsNeeded, fullyDone } from "@/lib/blessings";
 import { OnHand } from "@/lib/goldGoal";
-import { difficultyOf } from "@/lib/raids";
+import { difficultyOf, gatesBody, remainingGates } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
 import { restoreRunBody } from "@/lib/undo";
 
@@ -239,10 +239,31 @@ export function useTrackerData() {
     const before = runByCell.get(cellKey(character.id, task.id));
     try {
       const path = completionPath(character, task);
-      await (done ? send("PUT", path, { difficulty_id: difficultyId ?? null }) : send("DELETE", path));
+      // Finishing a partly cleared raid clears the gates left, keeping those done.
+      const rest = done ? remainingGates(task, before, difficultyId) : {};
+      const partial = Object.keys(rest).length > 0;
+      if (!done) await send("DELETE", path);
+      else await send("PUT", path, partial ? { gates: rest } : { difficulty_id: difficultyId ?? null });
       loadWeeklyGold();
       refreshTracker();
-      if (offer) offerToggleUndo(character, task, done, before);
+      if (offer && partial) undoable(`${task.name} cleared on ${character.name}`, () => send("PUT", path, { gates: gatesBody(task, before) }));
+      else if (offer) offerToggleUndo(character, task, done, before);
+    } catch (e) {
+      setError(describeError(e));
+    }
+  }
+
+  /** Clear (a difficulty id) or un-clear (null) one gate of a raid. */
+  async function toggleGate(character: Character, task: Task, gate: number, difficultyId: number | null) {
+    const before = runByCell.get(cellKey(character.id, task.id));
+    const path = completionPath(character, task);
+    try {
+      await send("PUT", path, { gates: { [gate]: difficultyId ?? 0 } });
+      loadWeeklyGold();
+      refreshTracker();
+      undoable(`${task.name} gate ${gate} ${difficultyId ? "cleared" : "unticked"} on ${character.name}`, () =>
+        before ? send("PUT", path, { gates: gatesBody(task, before) }) : send("DELETE", path),
+      );
     } catch (e) {
       setError(describeError(e));
     }
@@ -422,6 +443,7 @@ export function useTrackerData() {
     actions: {
       toggleCompletion,
       toggleRaid,
+      toggleGate,
       setRaidDifficulty,
       chooseRaidDifficulty,
       updateRun,

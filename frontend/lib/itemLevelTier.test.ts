@@ -13,7 +13,7 @@ function raid(name: string, tiers: [string, number, number | null][], extra: Par
   return {
     id, name, category: "raid", gold: 0, position: id, rest_max: 0, rest_gain: 0, rest_cost: 0,
     catalog_key: name, archived: false, ends_on: null, roster_limited: false, gold_for_everyone: false,
-    note: null, counted: false, sand_scaled: false, difficulties, ...extra,
+    note: null, counted: false, sand_scaled: false, gate_count: 0, difficulties, ...extra,
   };
 }
 

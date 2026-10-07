@@ -5,7 +5,7 @@ import { useId, useRef, useState } from "react";
 import { Task } from "@/lib/api";
 import { raidInfoRows } from "@/lib/raidInfo";
 
-const PANEL_WIDTH = 340;
+const PANEL_WIDTH = 420;
 
 /**
  * A raid column's name; hover or focus it for each difficulty's item level,
@@ -17,6 +17,7 @@ export default function RaidHeader({ task }: { task: Task }) {
   const ref = useRef<HTMLSpanElement>(null);
   const id = useId();
   const rows = raidInfoRows(task);
+  const gated = task.gate_count > 0;
 
   function show() {
     const rect = ref.current!.getBoundingClientRect();
@@ -44,10 +45,11 @@ export default function RaidHeader({ task }: { task: Task }) {
           className="fixed z-40 block rounded-md border border-border bg-surface p-2.5 text-left text-xs font-normal text-foreground shadow-lg"
         >
           <span className="mb-1.5 block font-semibold">{task.name}</span>
-          <span className="grid grid-cols-[auto_auto_auto_1fr_auto] gap-x-2.5 gap-y-1 whitespace-nowrap tabular-nums">
+          <span className={`grid gap-x-2.5 gap-y-1 whitespace-nowrap tabular-nums ${gated ? "grid-cols-[auto_auto_auto_auto_1fr_auto]" : "grid-cols-[auto_auto_auto_1fr_auto]"}`}>
             <span className="text-muted">Difficulty</span>
             <span className="text-muted">iLvl</span>
             <span className="text-right text-muted">Gold</span>
+            {gated && <span className="text-muted">G1 + G2</span>}
             <span className="text-muted">Bound</span>
             <span className="text-right text-muted">Bonus boxes</span>
             {rows.map((row) => (
@@ -55,6 +57,7 @@ export default function RaidHeader({ task }: { task: Task }) {
                 <span>{row.difficulty}</span>
                 <span>{row.itemLevel}</span>
                 <span className="text-right">{row.gold}</span>
+                {gated && <span className="text-muted">{row.gates}</span>}
                 <span className="text-muted">{row.bound}</span>
                 <span className="text-right">{row.bonus}</span>
               </span>

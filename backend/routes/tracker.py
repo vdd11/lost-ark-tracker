@@ -54,6 +54,7 @@ def get_tracker(db: Session = Depends(get_db)):
             bought_bonus=c.bought_bonus,
             bonus_spent=c.bonus_spent,
             tier_counts={int(k): v for k, v in c.tier_counts.items()} if c.tier_counts else None,
+            gates={int(k): v for k, v in c.gates.items()} if c.gates else None,
             gems=c.gems,
         )
         for c in current
@@ -172,8 +173,10 @@ def complete_task(
     )
 
     tiers = counted_tiers(db, task, character, existing, body) if task.counted else None
-    # With tiers, the week's entry goes only when every tier is back to zero.
-    if (sum(tiers.values()) == 0) if tiers is not None else body.count == 0:
+    gates = cleared_gates_after(db, task, character, existing, body)
+    # With tiers, the week's entry goes only when every tier is back to zero;
+    # with gates, when every gate is un-cleared.
+    if (sum(tiers.values()) == 0) if tiers is not None else (body.count == 0 or gates == {}):
         if existing is not None:
             db.delete(existing)
             db.commit()
@@ -210,6 +213,8 @@ def complete_task(
         )
         if tiers is not None:
             existing.tier_counts, existing.count = tier_json(tiers), sum(tiers.values())
+        if gates is not None:
+            store_gates(existing, task, gates)
         db.add(existing)
         db.flush()
         price_completion(db, character, task, existing)
@@ -228,9 +233,16 @@ def complete_task(
             existing.bonus_spent = bonus_spent(db, existing)
             db.flush()
             reprice_bonuses(db, character, existing.period)
-        # Only a different difficulty re-prices a clear; history stays as recorded.
-        if body.difficulty_id is not None and body.difficulty_id != existing.difficulty_id:
+        # Only a different difficulty, or a gate cleared or un-cleared, re-prices
+        # a clear; history stays as recorded.
+        if gates is not None:
+            store_gates(existing, task, gates)
+            price_completion(db, character, task, existing)
+            changed = True
+        elif body.difficulty_id is not None and (body.difficulty_id != existing.difficulty_id or existing.gates):
+            # A difficulty for the whole raid clears every gate at it.
             existing.difficulty_id = run_difficulty(db, task, character, body.difficulty_id)
+            existing.gates = None
             price_completion(db, character, task, existing)
             changed = True
         if changed:
@@ -267,6 +279,43 @@ def counted_tiers(
     return {tier: runs for tier, runs in tiers.items() if runs > 0}
 
 
+def cleared_gates(task: Task, completion: Completion | None) -> dict[int, int | None]:
+    """{gate: difficulty_id} for the gates a clear covers (all of them for a whole clear)."""
+    if completion is None:
+        return {}
+    if completion.gates:
+        return {int(gate): difficulty for gate, difficulty in completion.gates.items()}
+    return {gate: completion.difficulty_id for gate in range(1, task.gate_count + 1)}
+
+
+def cleared_gates_after(
+    db: Session, task: Task, character: Character, existing: Completion | None, body: CompletionUpdate
+) -> dict[int, int | None] | None:
+    """The gates cleared after this update, or None when it doesn't touch gates."""
+    if not task.gate_count or body.gates is None:
+        return None
+    if not set(body.gates) <= set(range(1, task.gate_count + 1)):
+        raise HTTPException(status_code=400, detail=f"{task.name} has {task.gate_count} gates")
+    gates = cleared_gates(task, existing)
+    for gate, difficulty_id in body.gates.items():
+        if difficulty_id == 0:
+            gates.pop(gate, None)
+        else:
+            gates[gate] = run_difficulty(db, task, character, difficulty_id)
+    return gates
+
+
+def store_gates(completion: Completion, task: Task, gates: dict[int, int | None]):
+    """Every gate at one difficulty is a whole clear (gates None); anything else is kept per gate."""
+    first = gates[min(gates)]
+    if len(gates) == task.gate_count and all(d == first for d in gates.values()):
+        completion.gates = None
+        completion.difficulty_id = first
+    else:
+        completion.gates = {str(gate): difficulty for gate, difficulty in sorted(gates.items())}
+        completion.difficulty_id = first
+
+
 def tier_json(tiers: dict[int, int]) -> dict[str, int]:
     return {str(tier): runs for tier, runs in sorted(tiers.items())}
 
@@ -283,8 +332,24 @@ def bonus_spent(db: Session, completion: Completion) -> int:
         before = [c for c in earlier if purchase_order(c) < purchase_order(completion)]
         if len(before) < FREE_BONUS_RAIDS_PER_WEEK:
             return 0
+    if completion.gates:
+        # Bonus chests come with the gates cleared, each at its difficulty's price.
+        task = db.get(Task, completion.task_id)
+        return sum(gate_share(db, gate, difficulty_id, "gate_bonus") for gate, difficulty_id in cleared_gates(task, completion).items())
     difficulty = db.get(RaidDifficulty, completion.difficulty_id)
     return (difficulty.bonus_cost or 0) if difficulty else 0
+
+
+def gate_share(db: Session, gate: int, difficulty_id: int | None, per_gate: str) -> int:
+    """One gate's gold (or bonus cost) at a difficulty: from the per-gate table,
+    else 0 when only the total is known (an unknown split pays nothing yet)."""
+    difficulty = db.get(RaidDifficulty, difficulty_id) if difficulty_id else None
+    if difficulty is None:
+        return 0
+    values = getattr(difficulty, per_gate)
+    if values and len(values) >= gate:
+        return values[gate - 1] or 0
+    return 0
 
 
 def bonus_purchases(db: Session, character_id: int, period) -> list[Completion]:
@@ -335,18 +400,33 @@ def price_completion(db: Session, character: Character, task: Task, completion: 
     """Snapshot a clear's gold, how much of it is bound (and to what), and the
     cost of any bonus chests bought."""
     completion.gold = completion_gold(db, character, task, completion)
-    difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
-    percent = difficulty.bound_percent if difficulty else 0
-    completion.bound_gold = round(completion.gold * percent / 100)
-    character_bound = difficulty is not None and difficulty.bound_kind == "character"
-    completion.character_bound_gold = completion.bound_gold if character_bound else 0
+    if completion.gates and completion.gold:
+        # Each gate is bound like its own difficulty (partly bound raids: the same share on every gate).
+        completion.bound_gold = completion.character_bound_gold = 0
+        for gate, difficulty_id in cleared_gates(task, completion).items():
+            difficulty = db.get(RaidDifficulty, difficulty_id) if difficulty_id else None
+            if difficulty is None:
+                continue
+            bound = round(gate_share(db, gate, difficulty_id, "gate_gold") * difficulty.bound_percent / 100)
+            completion.bound_gold += bound
+            if difficulty.bound_kind == "character":
+                completion.character_bound_gold += bound
+    else:
+        difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
+        percent = difficulty.bound_percent if difficulty else 0
+        completion.bound_gold = round(completion.gold * percent / 100)
+        character_bound = difficulty is not None and difficulty.bound_kind == "character"
+        completion.character_bound_gold = completion.bound_gold if character_bound else 0
     completion.bonus_spent = bonus_spent(db, completion)
 
 
 def completion_gold(db: Session, character: Character, task: Task, completion: Completion) -> int:
     """Gold a clear pays right now, snapshotted onto the completion."""
     gold = task.gold
-    if completion.difficulty_id is not None:
+    if completion.gates:
+        # Some gates, or gates at different difficulties: each gate's own gold.
+        gold = sum(gate_share(db, gate, d, "gate_gold") for gate, d in cleared_gates(task, completion).items())
+    elif completion.difficulty_id is not None:
         difficulty = db.get(RaidDifficulty, completion.difficulty_id)
         gold = (difficulty.gold or 0) if difficulty else 0
 

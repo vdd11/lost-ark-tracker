@@ -1,4 +1,5 @@
 import { Character, Run, Task } from "./api";
+import { isWholeClear } from "./raids";
 import { cellKey } from "./trackerSections";
 
 export type Blessing = "azena" | "inanna";
@@ -35,7 +36,8 @@ export function dailyRunsNeeded(character: Character, task: Task, day: string | 
 
 /**
  * The cells that count as done: every completion, except a daily that still
- * has a run to go (the first of two Inanna's runs is only half done).
+ * has a run to go (the first of two Inanna's runs is only half done) and a
+ * raid with a gate still to clear.
  */
 export function fullyDone(completed: Set<string>, runs: Run[], characters: Character[], tasks: Task[], day: string | null | undefined) {
   const done = new Set(completed);
@@ -44,7 +46,8 @@ export function fullyDone(completed: Set<string>, runs: Run[], characters: Chara
   for (const run of runs) {
     const character = byId.get(run.character_id);
     const task = taskById.get(run.task_id);
-    if (character && task && run.count < dailyRunsNeeded(character, task, day)) done.delete(cellKey(run.character_id, run.task_id));
+    if (!character || !task) continue;
+    if (run.count < dailyRunsNeeded(character, task, day) || !isWholeClear(task, run)) done.delete(cellKey(run.character_id, run.task_id));
   }
   return done;
 }

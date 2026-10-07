@@ -146,6 +146,9 @@ class DifficultyRead(BaseModel):
     catalog_bound_kind: BoundKind | None = None
     bonus_cost: int | None = None
     catalog_bonus_cost: int | None = None
+    # Gold and bonus chest cost per gate, in gate order; None = unknown.
+    gate_gold: list[int] | None = None
+    gate_bonus: list[int] | None = None
     reward_gems: GemTable | None = None
     lucky_gems: GemTable | None = None
     mega_gems: GemTable | None = None
@@ -171,6 +174,7 @@ class TaskRead(BaseModel):
     note: str | None
     counted: bool
     sand_scaled: bool
+    gate_count: int = 0
     difficulties: list[DifficultyRead] = []
 
 
@@ -222,6 +226,10 @@ class CompletionUpdate(BaseModel):
     # Counted tasks: runs per tier {difficulty_id: runs}. `count` sets the
     # runs at the character's own tier; this sets any tier.
     tier_counts: dict[int, int] | None = None
+    # Raids with gates: {gate: difficulty_id} clears those gates (null
+    # difficulty = the run's usual one), {gate: 0} un-clears one. Gates not
+    # named keep what they had. Clearing the last gate removes the clear.
+    gates: dict[int, int | None] | None = None
 
     @field_validator("tier_counts")
     @classmethod
@@ -244,6 +252,9 @@ class Run(BaseModel):
     bought_bonus: bool = False
     bonus_spent: int = 0
     tier_counts: dict[int, int] | None = None
+    # Raids with gates: {gate: difficulty_id} when only some are cleared (or at
+    # different difficulties); None = every gate, at difficulty_id.
+    gates: dict[int, int] | None = None
     # Expected gems from this run, {level: count}.
     gems: GemTable | None = None
 
@@ -635,6 +646,8 @@ class LoaClear(BaseModel):
     # None when LOA Logs' difficulty name isn't one of the raid's.
     difficulty_id: int | None
     already_done: bool
+    # Gates cleared, {gate: difficulty_id}; None = the whole raid (or no gate data).
+    gates: dict[int, int | None] | None = None
 
 
 class LoaPreview(BaseModel):

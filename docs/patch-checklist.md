@@ -12,9 +12,11 @@ you. Never fill a gap from memory or a guess: leave it `None` (the app shows
 - [ ] **New raid or difficulty**: add a `CatalogTask` / `Difficulty` with
       item level, gold (total for all gates), bound share
       (`bound_percent` + `bound_kind`) and bonus box cost (sum of every gate's
-      "View More" chest). Unknown values are `None`.
-- [ ] **Changed values**: item level, gold, bound split, bonus costs. Keep the
-      comment with the per-gate numbers and where they came from.
+      "View More" chest), plus `gates` on the raid and `gate_gold` /
+      `gate_bonus` per difficulty (they must add up to `gold` / `bonus_cost`;
+      a test checks). Unknown values are `None`.
+- [ ] **Changed values**: item level, gold, bound split, bonus costs, and the
+      per-gate splits. Note where they came from.
 - [ ] **Renamed raid**: change `name` and add the old one to `legacy_names`
       so existing columns are adopted.
 - [ ] **Removed difficulty**: drop it from the list; characters on it move to
