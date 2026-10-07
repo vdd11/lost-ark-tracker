@@ -153,3 +153,16 @@ def test_hourglass_level_two_gives_level_three_gems(client, set_now):
     complete(client, main["id"], hourglass["id"], sands=5, lucky_rooms=1)
     # 6 Lv3 x (1 + 5 sands) = 36 Lv3; the lucky monster's 1 Lv3 isn't multiplied.
     assert weekly_gems(client)["by_level"] == {"3": 37}
+
+
+def test_gem_total_matches_the_full_weekly_history(client, set_now):
+    from datetime import datetime
+
+    set_now(datetime(2026, 8, 5, 12))
+    client.post("/api/gem-entries", json={"source": "Field Boss", "gems": {"3": 1}})
+    set_now(datetime(2026, 10, 7, 12))
+    client.post("/api/gem-entries", json={"source": "Chaos Gate", "gems": {"1": 2}})
+    weekly = client.get("/api/gems/weekly?weeks=520").json()
+    total = client.get("/api/gems/total").json()["total"]
+    assert total == round(sum(w["total"] for w in weekly), 1) == 9 + 2
+    assert client.get("/api/gems/total?account_id=999").json()["total"] == 0

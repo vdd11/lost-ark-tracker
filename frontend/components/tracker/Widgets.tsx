@@ -232,19 +232,23 @@ export function GoldGoalWidget({
 /** Tracked gems (cube, hourglass, logged) projected toward the next high-level gems. */
 export function GemWidget({
   weeks,
+  allTime,
   daysIntoWeek,
   levels = [9, 10],
   period = "all",
   onPeriod,
 }: {
+  /** Recent weeks, oldest first (the pace and the Week / 4 wk totals). */
   weeks: WeeklyGems[];
+  /** Everything tracked so far; null while it loads (the recent weeks stand in). */
+  allTime: number | null;
   daysIntoWeek: number;
   levels?: number[];
   period?: Period;
   onPeriod?: (period: Period) => void;
 }) {
-  const total = weeks.reduce((sum, w) => sum + w.total, 0);
-  const gained = periodTotal(weeks, period, (w) => w.total);
+  const total = allTime ?? weeks.reduce((sum, w) => sum + w.total, 0);
+  const gained = period === "all" ? { total } : periodTotal(weeks, period, (w) => w.total);
   const perDay = dailyRate(weeks.map((w) => w.total), daysIntoWeek);
 
   return (

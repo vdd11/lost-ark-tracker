@@ -1,5 +1,7 @@
 # The workflows pin each action to a commit (a tag can be moved; a commit
-# can't). Dependabot proposes the updates, so the pins don't go stale.
+# can't), and Dependabot proposes the updates so the pins don't go stale.
+# It also proposes updates for the frontend's npm packages and the
+# backend's pip requirements. Each is one grouped pull request a month.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -8,4 +10,20 @@ updates:
       interval: monthly
     groups:
       actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: monthly
+    groups:
+      npm:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: monthly
+    groups:
+      pip:
         patterns: ["*"]

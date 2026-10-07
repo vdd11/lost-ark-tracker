@@ -578,6 +578,11 @@ class WeeklyGems(BaseModel):
     by_character: dict[str, float] = {}
 
 
+class GemTotal(BaseModel):
+    # Level-1 equivalents, like WeeklyGems.total.
+    total: float
+
+
 class ServerStatus(BaseModel):
     region: str
     name: str

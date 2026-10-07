@@ -92,7 +92,9 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   published by `scripts/sign_release.py publish vX.Y.Z`, run by the user
   (their key and GITHUB_TOKEN). See `docs/security.md`.
 - Workflows pin every action to a commit SHA (with the version in a
-  comment); Dependabot updates them. Keep new ones pinned.
+  comment). Dependabot proposes monthly grouped updates for the actions,
+  the frontend's npm packages and the backend's pip requirements. Keep new
+  actions pinned; `next` and `eslint-config-next` are pinned exactly.
   `LOST_ARK_TRACKER_RELEASES_API` points it at a test server (then loopback
   http is allowed).
 - Guides page links are data (`frontend/lib/data/guides.json`, with a

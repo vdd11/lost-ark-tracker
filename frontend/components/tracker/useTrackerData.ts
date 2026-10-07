@@ -33,6 +33,9 @@ import { restoreRunBody } from "@/lib/undo";
  * Mutations update the screen right away where they can and re-read what the
  * server computes (gold, rest, runs) afterwards.
  */
+/** Weeks of gem history the tracker loads: this one and four before it. */
+const GEM_WEEKS = 5;
+
 export function useTrackerData() {
   const [allCharacters, setCharacters] = useState<Character[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -72,8 +75,9 @@ export function useTrackerData() {
         setThisWeek(weeks[weeks.length - 1]);
       })
       .catch((e) => setError(describeError(e)));
-    // Everything tracked so far counts toward the next big gem.
-    api<WeeklyGems[]>(`/gems/weekly?weeks=520&${accountQuery}`)
+    // The recap needs last week; the Gem progress pace looks back four weeks
+    // and this one. Its all-time total comes from /gems/total (WidgetGrid).
+    api<WeeklyGems[]>(`/gems/weekly?weeks=${GEM_WEEKS}&${accountQuery}`)
       .then(setGemWeeks)
       .catch(() => {});
     api<WeekRecap>("/recap")

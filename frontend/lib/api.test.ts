@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 describe("usableGold", () => {
   it("leaves out character-bound gold", () => {
@@ -7,7 +7,7 @@ describe("usableGold", () => {
   });
 });
 
-import { combineGems, errorMessage, formatCombinedGems, gemsToLv1, parseUtc, usableGold, WeeklyGold } from "./api";
+import { api, combineGems, errorMessage, formatCombinedGems, gemsToLv1, parseUtc, usableGold, WeeklyGold } from "./api";
 import { isNewer } from "./version";
 
 describe("gemsToLv1", () => {
@@ -57,5 +57,35 @@ describe("combineGems", () => {
   it("matches the Lv1 equivalent it came from", () => {
     const total = combineGems(1000).reduce((sum, { level, count }) => sum + count * 3 ** (level - 1), 0);
     expect(total).toBe(1000);
+  });
+});
+
+describe("api", () => {
+  it("shares a GET that's already on its way, and parses a copy for each caller", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{ id: 1 }]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const [a, b] = await Promise.all([api<{ id: number }[]>("/characters"), api<{ id: number }[]>("/characters")]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(a).toEqual(b);
+      expect(a).not.toBe(b);
+      // Once answered, the next one asks again (nothing is cached).
+      await api("/characters");
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      // Writes are never shared.
+      await Promise.all([api("/x", { method: "POST" }), api("/x", { method: "POST" })]);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("reports the API's error message", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ detail: "Nope" }), { status: 400 })));
+    try {
+      await expect(api("/broken")).rejects.toThrow("Nope");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

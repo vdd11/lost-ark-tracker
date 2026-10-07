@@ -54,6 +54,17 @@ export default function WidgetGrid({ data, view, arranging = false }: { data: Tr
   const [order, setOrder] = useSavedOrder(WIDGET_ORDER_PREFERENCE, ALL_WIDGETS);
   const [goldPeriod, setGoldPeriod] = usePreference<string>("gold-widget-period", "month", PERIOD_KEYS);
   const [gemPeriod, setGemPeriod] = usePreference<string>("gem-widget-period", "all", PERIOD_KEYS);
+  // The gem goals count everything ever tracked: one number, loaded only while
+  // the widget is shown, and again whenever the tracker re-reads its gems.
+  const gemsShown = view.isShown(WIDGET_KEYS.gems);
+  const [gemTotal, setGemTotal] = useState<{ key: string; total: number } | null>(null);
+  const gemKey = `${data.accountId}`;
+  useEffect(() => {
+    if (!gemsShown) return;
+    api<{ total: number }>(`/gems/total${data.accountId ? `?account_id=${data.accountId}` : ""}`)
+      .then(({ total }) => setGemTotal({ key: gemKey, total }))
+      .catch(() => {});
+  }, [gemsShown, data.accountId, gemKey, data.gemWeeks]);
   // "All time" gold needs more than the tracker's 9 weeks; load it only when asked for.
   const [allGold, setAllGold] = useState<{ key: string; weeks: WeeklyGold[] } | null>(null);
   const goldKey = `${data.accountId}`;
@@ -91,7 +102,15 @@ export default function WidgetGrid({ data, view, arranging = false }: { data: Tr
       ),
     },
     { key: WIDGET_KEYS.auction, node: <AuctionWidget /> },
-    { key: WIDGET_KEYS.gems, node: <GemWidget weeks={gemWeeks} daysIntoWeek={weekDays} period={gemPeriod as Period} onPeriod={setGemPeriod} /> },
+    { key: WIDGET_KEYS.gems, node: (
+        <GemWidget
+          weeks={gemWeeks}
+          allTime={gemTotal?.key === gemKey ? gemTotal.total : null}
+          daysIntoWeek={weekDays}
+          period={gemPeriod as Period}
+          onPeriod={setGemPeriod}
+        />
+      ) },
     { key: NEWS_PREFERENCE, node: <NewsWidget /> },
     {
       key: COUNTERS_PREFERENCE,

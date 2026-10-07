@@ -161,18 +161,42 @@ export type WeeklyGold = {
   by_character: Record<string, number>;
 };
 
-export async function api<T = void>(path: string, init?: RequestInit): Promise<T> {
+type Fetched = { ok: boolean; status: number; text: string };
+
+/** GETs in flight by path: asking again before one answers waits for the same request. */
+const inFlight = new Map<string, Promise<Fetched>>();
+
+async function fetchText(path: string, init?: RequestInit): Promise<Fetched> {
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
   });
+  return { ok: response.ok, status: response.status, text: await response.text() };
+}
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new Error(errorMessage(body?.detail) ?? `Request failed: ${response.status}`);
+export async function api<T = void>(path: string, init?: RequestInit): Promise<T> {
+  let fetched: Fetched;
+  if (!init || (init.method ?? "GET") === "GET") {
+    let pending = inFlight.get(path);
+    if (!pending) {
+      pending = fetchText(path, init).finally(() => inFlight.delete(path));
+      inFlight.set(path, pending);
+    }
+    fetched = await pending;
+  } else {
+    fetched = await fetchText(path, init);
   }
 
-  return (response.status === 204 ? undefined : await response.json()) as T;
+  // Each caller parses its own copy, so nobody shares (and mutates) another's objects.
+  const body = (() => {
+    try {
+      return fetched.text ? JSON.parse(fetched.text) : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (!fetched.ok) throw new Error(errorMessage(body?.detail) ?? `Request failed: ${fetched.status}`);
+  return (fetched.status === 204 ? undefined : body) as T;
 }
 
 /** FastAPI errors: a string, or a list of validation problems with a `msg` each. */

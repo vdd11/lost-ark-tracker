@@ -13,6 +13,7 @@ from resets import utc_now, week_of, weekly_reset_before
 from schemas import (
     GemEntryCreate,
     GemEntryRead,
+    GemTotal,
     WeeklyGems,
 )
 from routes.common import get_or_404, to_naive_utc
@@ -90,18 +91,8 @@ def get_weekly_gems(
             bucket.by_character[who] = bucket.by_character.get(who, 0) + value
             bucket.by_level[int(level)] = bucket.by_level.get(int(level), 0) + count
 
-    for entry in db.query(GemEntry).filter(GemEntry.earned_at >= first_reset):
-        add(week_of(entry.earned_at), entry.source, entry.character_id, entry.gems)
-
-    tracked = (
-        db.query(Completion, Task.name)
-        .outerjoin(Task, Task.id == Completion.task_id)
-        .filter(Completion.completed_at >= first_reset, Completion.gems.is_not(None))
-    )
-    for completion, task_name in tracked:
-        if not completion.gems:  # older rows may hold a JSON null
-            continue
-        add(week_of(completion.completed_at), task_name or "Other", completion.character_id, completion.gems)
+    for when, source, character_id, gems in gem_rows(db, first_reset):
+        add(week_of(when), source, character_id, gems)
 
     for bucket in totals.values():
         bucket.total = round(bucket.total, 1)
@@ -109,3 +100,37 @@ def get_weekly_gems(
         bucket.by_character = {k: round(v, 1) for k, v in bucket.by_character.items()}
         bucket.by_level = {k: round(v, 2) for k, v in bucket.by_level.items()}
     return [totals[week] for week in week_starts]
+
+
+def gem_rows(db: Session, since=None):
+    """Every gem gain, logged or from a tracked run: (when, source, character_id, {level: count})."""
+    entries = db.query(GemEntry)
+    if since is not None:
+        entries = entries.filter(GemEntry.earned_at >= since)
+    for entry in entries:
+        yield entry.earned_at, entry.source, entry.character_id, entry.gems
+
+    tracked = (
+        db.query(Completion, Task.name)
+        .outerjoin(Task, Task.id == Completion.task_id)
+        .filter(Completion.gems.is_not(None))
+    )
+    if since is not None:
+        tracked = tracked.filter(Completion.completed_at >= since)
+    for completion, task_name in tracked:
+        if completion.gems:  # older rows may hold a JSON null
+            yield completion.completed_at, task_name or "Other", completion.character_id, completion.gems
+
+
+@router.get("/gems/total", response_model=GemTotal)
+def get_gem_total(account_id: int | None = Query(default=None), db: Session = Depends(get_db)):
+    """Every gem tracked so far, in level-1 equivalents (the Gem progress widget's goals), without
+    sending the whole weekly history."""
+    owner = account_owner(db)
+    total = sum(
+        lv1_equivalent(int(level), count)
+        for _, _, character_id, gems in gem_rows(db)
+        if account_id is None or owner(character_id) == account_id
+        for level, count in gems.items()
+    )
+    return GemTotal(total=round(total, 1))
