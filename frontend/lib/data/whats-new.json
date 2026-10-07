@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.21.1",
+    "date": "2026-10-07",
+    "highlights": [
+      {
+        "icon": "characters",
+        "text": "Pasting your roster from lostark.bible now works: it reads each name and item level."
+      },
+      {
+        "icon": "class-bard",
+        "text": "lostark.bible shows classes only as icons, so you pick each class from a list before adding."
+      },
+      {
+        "icon": "gold",
+        "text": "Combat power and the other page text are skipped, and the highest item levels still become gold earners."
+      }
+    ]
+  },
+  {
     "version": "1.21.0",
     "date": "2026-10-07",
     "highlights": [
