@@ -1,5 +1,31 @@
 [
   {
+    "version": "1.21.0",
+    "date": "2026-10-07",
+    "highlights": [
+      {
+        "icon": "characters",
+        "text": "Paste a whole roster page (lostark.bible, say) in Settings: the other text on the page is skipped."
+      },
+      {
+        "icon": "backup",
+        "text": "Reset everything (Settings → Backup & restore) starts over from scratch, with Undo."
+      },
+      {
+        "icon": "appearance",
+        "text": "Compact density is now clearly tighter, so more of the tracker fits on screen."
+      }
+    ],
+    "sections": [
+      {
+        "title": "Fixes",
+        "items": [
+          "After an update, the browser always shows the new version straight away."
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.20.0",
     "date": "2026-10-07",
     "highlights": [
