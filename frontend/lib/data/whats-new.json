@@ -1,5 +1,39 @@
 [
   {
+    "version": "1.20.0",
+    "date": "2026-10-07",
+    "highlights": [
+      {
+        "icon": "endgame-content",
+        "text": "Raids clear gate by gate: tick G1 and G2 on their own, each paying its own gold, or the checkbox for both."
+      },
+      {
+        "icon": "gold-raids",
+        "text": "A raid with one gate's gold claimed uses one of your 3 paid raids, and its next gate can be run at another difficulty."
+      },
+      {
+        "icon": "whats-new",
+        "text": "What's new: after an update, the new version's highlights show once. The version in the menu bar opens every release's notes."
+      },
+      {
+        "icon": "tracker",
+        "text": "On a phone, the first character's raids are on the first screen: a compact toolbar and top boxes."
+      },
+      {
+        "icon": "loa-logs",
+        "text": "LOA Logs import knows gates, so a gate 1 clear imports as gate 1."
+      }
+    ],
+    "sections": [
+      {
+        "title": "Fixes",
+        "items": [
+          "A security update for the app's web framework, and the tracker loads less data."
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.19.0",
     "date": "2026-10-06",
     "highlights": [
