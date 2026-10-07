@@ -88,8 +88,9 @@ export default function PasteRoster({
         </button>
       </div>
       <p className="mb-2 text-muted">
-        One character per line with a name, class and item level, in any order: typed, or copied from a spreadsheet or a
-        roster page you have open. Nothing is looked up online. The highest item levels become gold earners (up to{" "}
+        One character per line with a name, class and item level, in any order: typed, or copied from a spreadsheet. Or
+        select your whole roster on a page like lostark.bible and paste it: the other text on the page is skipped. Check
+        the list below before adding. Nothing is looked up online. The highest item levels become gold earners (up to{" "}
         {MAX_GOLD_EARNERS} per account) with their best-paying raids; you can change any of it afterwards.
       </p>
       <textarea
