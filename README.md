@@ -103,6 +103,8 @@ The screenshots use made-up characters.
     gold raids left unrun.
   - On a phone or narrow window, each character gets a stacked block instead
     of a wide table, and the menu is a bar along the bottom of the screen.
+    The toolbar shrinks to icons beside the heading and the top boxes to one
+    short row, so the first character's raids show without scrolling.
   - Mistakes can be undone from the toast that follows a tick, "All" or a
     delete. Press **?** for keyboard shortcuts: arrows, Home and End move
     between cells (also right after clicking a checkbox), Space ticks, + / −

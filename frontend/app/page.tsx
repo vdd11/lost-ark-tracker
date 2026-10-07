@@ -95,17 +95,18 @@ export default function TrackerPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-3 sm:space-y-4">
+      {/* On a phone the toolbar's icons sit beside the heading, so the tracker starts higher. */}
+      <div className="relative flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <h1 className="flex basis-full items-center gap-2 text-2xl font-bold sm:basis-auto">
           <GameIcon name="tracker" size={32} framed alt="" /> Roster
         </h1>
           <AccountTabs accounts={data.accounts} value={data.accountId} onChange={data.setAccountId} />
           <GoldEarnerCount data={data} />
         </div>
         {/* Nothing to show, customize or edit until there's a roster. */}
-        <div className={`flex flex-wrap items-center gap-2 ${data.loaded && data.allCharacters.length === 0 ? "hidden" : ""}`}>
+        <div className={data.loaded && data.allCharacters.length === 0 ? "hidden" : "contents sm:flex sm:flex-wrap sm:items-center sm:gap-2"}>
           {filtering && (
             <label className="relative flex items-center">
               <Search size={14} className="pointer-events-none absolute left-2.5 text-muted" />
@@ -133,24 +134,34 @@ export default function TrackerPage() {
           >
             Keyboard: press ?
           </button>
+          <div className="absolute right-0 top-0 flex gap-2 sm:static">
           {loaEnabled && (
-            <ToolbarButton active={importing} onClick={() => setImporting(true)} icon={<GameIcon name="loa-logs" size={16} inline alt="" />}>
-              Import clears
-            </ToolbarButton>
+            <ToolbarButton
+              active={importing}
+              onClick={() => setImporting(true)}
+              icon={<GameIcon name="loa-logs" size={16} inline alt="" />}
+              label="Import clears"
+            />
           )}
           <ToolbarButton
             active={mode === "left"}
             onClick={() => setMode(mode === "left" ? "grid" : "left")}
             icon={<GameIcon name="whats-left" size={16} inline alt="" />}
-          >
-            What&apos;s left
-          </ToolbarButton>
-          <ToolbarButton active={customizing} onClick={() => setCustomizing(true)} icon={<GameIcon name="settings" size={16} inline alt="" />}>
-            Customize
-          </ToolbarButton>
-          <ToolbarButton active={editMode} onClick={() => setEditMode((v) => !v)} icon={<Pencil size={16} />}>
-            {editMode ? "Done editing" : "Edit who does what"}
-          </ToolbarButton>
+            label="What's left"
+          />
+          <ToolbarButton
+            active={customizing}
+            onClick={() => setCustomizing(true)}
+            icon={<GameIcon name="settings" size={16} inline alt="" />}
+            label="Customize"
+          />
+          <ToolbarButton
+            active={editMode}
+            onClick={() => setEditMode((v) => !v)}
+            icon={<Pencil size={16} />}
+            label={editMode ? "Done editing" : "Edit who does what"}
+          />
+          </div>
         </div>
       </div>
 
@@ -242,7 +253,7 @@ export default function TrackerPage() {
           </p>
         )}
         <ArrangeableList
-          className="space-y-4"
+          className="space-y-3 sm:space-y-4"
           arranging={arranging}
           onReorder={(keys) => setBlockOrder(mergeOrder(keys, blockOrder))}
           items={blockOrder

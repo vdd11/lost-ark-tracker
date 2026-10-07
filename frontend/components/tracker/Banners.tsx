@@ -138,9 +138,13 @@ export function TrackerBanners({ data, view }: { data: TrackerData; view: Tracke
 
       {needsCheckIn && (
         <Notice onDismiss={() => setCheckInDismissed(tracker!.weekly_period)}>
-          {lastCheckIn === null
-            ? "Want to see gold you spend outside the tracker? Enter how much you have once a week."
-            : "New week: check in how much gold you have to see what you spent on untracked things."}{" "}
+          {/* A phone gets the short version, so the tracker's checkboxes stay on the first screen. */}
+          <span className="hidden sm:inline">
+            {lastCheckIn === null
+              ? "Want to see gold you spend outside the tracker? Enter how much you have once a week."
+              : "New week: check in how much gold you have to see what you spent on untracked things."}{" "}
+          </span>
+          <span className="sm:hidden">Weekly gold check-in: </span>
           <Link href="/gold/#check-in" className="font-medium underline">Check in</Link>
         </Notice>
       )}

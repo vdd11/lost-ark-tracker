@@ -10,8 +10,8 @@ import { formatCountdown } from "@/lib/trackerSections";
 /**
  * One slim line at the top of the tracker: the next resets, gold raids left,
  * and short reminders (full rest gauges, Hourglass runs left, Field Boss /
- * Chaos Gate days). Always one line high, so it never moves the page: on a
- * narrow screen it scrolls sideways instead of wrapping.
+ * Chaos Gate days). One line high from tablet width up, scrolling sideways
+ * if it must; on a phone it wraps, so nothing is cut off.
  */
 export default function HomeStrip({ data, fieldEvents }: { data: TrackerData; fieldEvents: boolean }) {
   const { tracker, now } = data;
@@ -31,7 +31,7 @@ export default function HomeStrip({ data, fieldEvents }: { data: TrackerData; fi
     <div
       role="status"
       aria-label="Today at a glance"
-      className="flex h-11 items-center gap-5 overflow-x-auto rounded-lg border border-border bg-surface px-3 text-sm [scrollbar-width:none]"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs sm:h-11 sm:flex-nowrap sm:gap-5 sm:overflow-x-auto sm:py-0 sm:text-sm [scrollbar-width:none]"
     >
       <span className={item} title="Next resets (10:00 UTC; weekly on Wednesday)">
         <GameIcon name="resets" size={22} alt="" />

@@ -18,12 +18,13 @@ export default function GoldEarnerCount({ data }: { data: TrackerData }) {
     .join("\n");
   return (
     <span
-      className="flex items-center gap-1 text-xs text-muted tabular-nums"
+      className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-muted tabular-nums"
       title={`Gold earners (paid for 3 raids a week; 6 per account). Click GOLD beside a name to change.\n${names}`}
     >
       <GameIcon name="gold" size={14} alt="" />
       {counts.map((c, i) => (
-        <span key={c.account.id} className={c.earners > c.max ? "text-danger" : ""}>
+        // Each account's count stays in one piece when the line wraps (many accounts on a phone).
+        <span key={c.account.id} className={`whitespace-nowrap ${c.earners > c.max ? "text-danger" : ""}`}>
           {i > 0 && " · "}
           {many ? `${c.account.name} ` : ""}
           {c.earners}/{c.max}

@@ -15,7 +15,8 @@ import { STAT_KEYS } from "@/lib/trackerView";
 import GameIcon from "@/components/GameIcon";
 
 // Static class names so Tailwind generates them: the row fits however many boxes are shown.
-const STAT_COLUMNS = ["", "sm:grid-cols-1", "sm:grid-cols-2", "sm:grid-cols-3"];
+// On a phone they stay side by side too (short labels, no detail line), so the grid starts higher.
+const STAT_COLUMNS = ["", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
 
 /** The boxes along the top of the tracker, each of which can be hidden in Customize. */
 export default function StatRow({ data, view }: { data: TrackerData; view: TrackerView }) {
@@ -36,6 +37,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
         <Stat
           icon={<GameIcon name="gold-raids" size={24} framed alt="" />}
           label="Gold raids left"
+          shortLabel="Raids left"
           value={String(raidsLeft.left)}
           sub={
             raidsLeft.slots === 0
@@ -53,6 +55,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
         <Stat
           icon={<GameIcon name="gold" size={24} framed alt="" />}
           label="Gold this week"
+          shortLabel="Gold"
           action={
             <QuickGold
               accountId={data.accountId || null}
@@ -74,6 +77,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
           <Stat
             icon={<GameIcon name="today" size={24} framed alt="" />}
             label="Dailies today"
+            shortLabel="Dailies"
             value={`${dailies.done}/${dailies.total}`}
             accent={dailies.done < dailies.total}
             sub={
@@ -94,7 +98,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
 
   if (stats.length === 0) return null;
   return (
-    <div className={`grid gap-3 ${STAT_COLUMNS[stats.length]}`}>
+    <div className={`grid gap-2 sm:gap-3 ${STAT_COLUMNS[stats.length]}`}>
       {stats.map((stat) => (
         <div key={stat.key}>{stat.node}</div>
       ))}
@@ -105,6 +109,7 @@ export default function StatRow({ data, view }: { data: TrackerData; view: Track
 function Stat({
   icon,
   label,
+  shortLabel,
   value,
   sub,
   accent,
@@ -113,6 +118,8 @@ function Stat({
 }: {
   icon: ReactNode;
   label: string;
+  /** What a phone shows instead of the label. */
+  shortLabel: string;
   /** Small controls at the right of the label, e.g. the quick log. */
   action?: ReactNode;
   value: string;
@@ -121,16 +128,20 @@ function Stat({
   title?: string;
 }) {
   return (
-    <div className="h-full rounded-lg border border-border bg-surface px-4 py-3" title={title}>
+    <div className="h-full min-w-0 rounded-lg border border-border bg-surface px-2.5 py-2 sm:px-4 sm:py-3" title={title}>
       {/* A fixed height, so a box with controls lines up with one without. */}
-      <div className="flex h-6 items-center gap-1.5 text-xs text-muted">
-        {icon}
-        {label}
-        {action && <span className="ml-auto">{action}</span>}
+      <div className="flex h-6 min-w-0 items-center gap-1.5 text-xs text-muted">
+        <span className="hidden shrink-0 sm:inline-flex">{icon}</span>
+        <span className="truncate">
+          <span className="sm:hidden">{shortLabel}</span>
+          <span className="hidden sm:inline">{label}</span>
+        </span>
+        {action && <span className="ml-auto shrink-0">{action}</span>}
       </div>
-      <div className={`text-xl font-semibold tabular-nums ${accent ? "text-accent" : ""}`}>{value}</div>
-      {/* Two lines are always reserved, so a line appearing after a tick doesn't grow the row and move the cards. */}
-      <div className="line-clamp-2 min-h-8 text-xs leading-4 text-muted">{sub}</div>
+      <div className={`truncate text-lg font-semibold tabular-nums sm:text-xl ${accent ? "text-accent" : ""}`}>{value}</div>
+      {/* Two lines are always reserved, so a line appearing after a tick doesn't grow the row and move the cards.
+          A phone leaves the detail to the box's tooltip and the cards below. */}
+      <div className="hidden min-h-8 text-xs leading-4 text-muted sm:line-clamp-2">{sub}</div>
     </div>
   );
 }
