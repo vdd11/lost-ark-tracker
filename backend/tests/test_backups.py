@@ -33,3 +33,20 @@ def test_backups_with_old_honing_plans_still_restore(client):
     assert client.post("/api/backup", json=backup).status_code == 204
     assert client.get("/api/backup").json()["honing_plans"][0]["notes"] == "weapon"
     assert client.get("/api/honing-plans").status_code == 404
+
+
+def test_reset_starts_over_like_a_new_install(client):
+    fresh = {t["name"] for t in client.get("/api/tasks").json()}
+    client.post("/api/characters", json={"name": "Gibberish", "class_name": "Bard", "item_level": 1700})
+    client.post("/api/tasks", json={"name": "asdf", "category": "daily"})
+    client.post("/api/accounts", json={"name": "test test"})
+    backup = client.get("/api/backup").json()
+
+    assert client.post("/api/reset").status_code == 204
+    assert client.get("/api/characters").json() == []
+    assert {t["name"] for t in client.get("/api/tasks").json()} == fresh
+    assert len(client.get("/api/accounts").json()) == 1
+
+    # The page's Undo restores what was there.
+    assert client.post("/api/backup", json=backup).status_code == 204
+    assert [c["name"] for c in client.get("/api/characters").json()] == ["Gibberish"]
