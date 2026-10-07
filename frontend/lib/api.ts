@@ -88,6 +88,8 @@ export type Task = {
   sand_scaled: boolean;
   /** Raids cleared gate by gate have this many gates; 0 = no gates. */
   gate_count: number;
+  /** Done a number of times a period (a counter like 0/5); 0 = a checkbox. */
+  run_limit: number;
   difficulties: Difficulty[];
 };
 

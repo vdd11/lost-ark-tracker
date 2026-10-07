@@ -69,7 +69,9 @@ The screenshots use made-up characters.
     (Customize → Today), it shows when Field Boss
     (Tuesday, Friday, Sunday) or Chaos Gate (Monday, Thursday, Saturday,
     Sunday) is up, with **Log drops** to record the gems you got and the gold
-    from selling the rest; their drops are random, so you enter them.
+    from selling the rest; their drops are random, so you enter them. A Chaos
+    Gate's character-bound gold (its reward since February 2026) goes to that
+    character's Bound total.
   - **Ebony Cube** (tickets, no reset): `− n +` for the character's own unlock
     (Kurzan Front / Chaos Rift tickets), and a ticket chip for each unlock they
     can enter (guild shop boxes give lower ones): click or `+` adds a ticket,
@@ -91,7 +93,8 @@ The screenshots use made-up characters.
     clock** (next daily and weekly reset in your time and UTC) and
     **counters** you keep by hand (collectibles, tokens, reputation: a name,
     a number, an optional target and +1 / −1, for a character, an account or
-    everyone), and **raid groups** for your statics (raid, time, members,
+    everyone; a counter can go back to 0 at each daily or weekly reset, for
+    roster-wide limits), and **raid groups** for your statics (raid, time, members,
     some of them other players): each shows which of your characters in it
     still need the raid this week. A **Lost Ark updates** widget shows live NA/EU server
     status and official announcements, with the official X accounts
@@ -219,7 +222,11 @@ The screenshots use made-up characters.
   level), tick each character's paid blessings with the last day they're on
   (Azena's: blessed embers from Chaos Dungeon and Guardian Raid; Inanna's: a
   second Chaos Dungeon run a day; pick a later day when you renew),
-  edit daily/weekly columns, and download/restore backups.
+  edit daily/weekly columns (a task can be done a number of times each reset,
+  shown as a counter like 0/5), add optional tasks from the **library**
+  (Elysian: at least 5 a week; Milestone Missions: up to 300 points a week;
+  each with its official source; entries not confirmed in official notes
+  stay hidden), and download/restore backups.
 
 ## Using it
 

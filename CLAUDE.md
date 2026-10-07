@@ -114,6 +114,13 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   `checked` date). Check new ones with `python scripts/check_links.py`; a
   weekly workflow (`links.yml`) runs it and opens an issue for dead links or
   links that now lead to another site. It's not part of the normal checks.
+- Limited tasks: `tasks.run_limit` > 0 makes a daily/weekly a counter (the
+  completion's `count`, capped by the API); counters can `resets` daily or
+  weekly for roster-wide limits. Optional tasks live in
+  `frontend/lib/data/taskLibrary.ts`, each with an official source and date;
+  `confirmed: false` entries stay hidden until the user or official NA notes
+  confirm them. Logged gold with `character_bound` goes to that character's
+  Bound total, not tradeable gold (Chaos Gate rewards since Feb 2026).
 - Event raids (Extreme) are user-created via `/api/event-raids`, not
   cataloged: they're tasks with `ends_on`, `roster_limited` and
   `gold_for_everyone`.

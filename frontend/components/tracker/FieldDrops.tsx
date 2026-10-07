@@ -79,12 +79,17 @@ function DropsForm({
   const [characterId, setCharacterId] = useState("");
   const [gems, setGems] = useState<Record<number, string>>({});
   const [gold, setGold] = useState("");
+  // Since Feb 2026 Chaos Gate rewards include character-bound gold (the
+  // Guardians' Rage notes give no amount): the player enters what they got.
+  const [bound, setBound] = useState("");
   const [saving, setSaving] = useState(false);
   const offerUndo = useUndo();
   const drops = dropsFrom(gems, gold);
+  const takesBound = event === "Chaos Gate";
+  const boundGold = takesBound && characterId ? Math.max(0, Math.round(Number(bound) || 0)) : 0;
 
   async function save() {
-    if (!drops.gems && !drops.gold) return;
+    if (!drops.gems && !drops.gold && !boundGold) return;
     setSaving(true);
     const character_id = characterId ? Number(characterId) : null;
     try {
@@ -97,10 +102,15 @@ function DropsForm({
         const entry = await send<{ id: number }>("POST", "/gold-entries", { source: event, amount: drops.gold, character_id });
         made.push(`/gold-entries/${entry.id}`);
       }
+      if (boundGold) {
+        const entry = await send<{ id: number }>("POST", "/gold-entries", { source: event, amount: boundGold, character_id, character_bound: true });
+        made.push(`/gold-entries/${entry.id}`);
+      }
       data.loadWeeklyGold();
       const parts = [
         ...Object.entries(drops.gems ?? {}).map(([level, count]) => `${count}× Lv${level}`),
         ...(drops.gold ? [`${formatGold(drops.gold)} gold`] : []),
+        ...(boundGold ? [`${formatGold(boundGold)} character-bound gold`] : []),
       ];
       const summary = parts.join(", ");
       onDone(summary);
@@ -142,9 +152,22 @@ function DropsForm({
         Gold from selling
         <NumberInput value={gold} onChange={setGold} placeholder="0" aria-label={`${event} gold from selling`} className="w-28 text-sm text-foreground" />
       </label>
+      {takesBound && (
+        <label className="flex flex-col gap-0.5 text-xs text-muted" title={characterId ? "Added to this character's Bound gold" : "Pick who got it: only they can spend it"}>
+          Character-bound gold
+          <NumberInput
+            value={bound}
+            onChange={setBound}
+            placeholder={characterId ? "0" : "pick who"}
+            disabled={!characterId}
+            aria-label={`${event} character-bound gold`}
+            className="w-28 text-sm text-foreground disabled:opacity-50"
+          />
+        </label>
+      )}
       <button
         onClick={save}
-        disabled={saving || (!drops.gems && !drops.gold)}
+        disabled={saving || (!drops.gems && !drops.gold && !boundGold)}
         className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-background disabled:opacity-40"
       >
         Save

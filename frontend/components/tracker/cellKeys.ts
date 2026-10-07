@@ -1,6 +1,6 @@
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, Task } from "@/lib/api";
-import { dailyRunsNeeded } from "@/lib/blessings";
+import { runsNeeded } from "@/lib/blessings";
 import { bestDifficulty, clearedGates, difficultyOf, isWholeClear } from "@/lib/raids";
 import { cellLabel } from "@/lib/shortcuts";
 import { cellKey, isTiered } from "@/lib/trackerSections";
@@ -76,7 +76,17 @@ export function cellKeyboard(character: Character, task: Task, data: TrackerData
 
   if (!isAssigned) return { label: label(undefined, "doesn't apply") };
   const done = data.completed.has(key);
-  const needed = dailyRunsNeeded(character, task, data.tracker?.daily_period);
+  if (task.run_limit) {
+    const count = run?.count ?? 0;
+    const set = (n: number) => actions.updateRun(character, task, n > 0 ? { count: Math.min(n, task.run_limit) } : null);
+    return {
+      label: label(undefined, `${count} of ${task.run_limit}`),
+      toggle: () => set(count >= task.run_limit ? 0 : task.run_limit),
+      increment: () => count < task.run_limit && set(count + 1),
+      decrement: () => count > 0 && set(count - 1),
+    };
+  }
+  const needed = runsNeeded(character, task, data.tracker?.daily_period);
   const status = done ? "done" : needed > 1 && run ? `${run.count} of ${needed} runs` : "not done";
   return { label: label(undefined, status), toggle: () => actions.toggleCompletion(character, task) };
 }

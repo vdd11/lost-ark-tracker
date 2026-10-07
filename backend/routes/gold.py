@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from accounts import account_owner
@@ -44,6 +44,8 @@ def create_gold_entry(entry_data: GoldEntryCreate, db: Session = Depends(get_db)
         get_or_404(db, Account, entry_data.account_id)
 
     earned_at = to_naive_utc(values.pop("earned_at"))
+    if values.get("character_bound") and values.get("character_id") is None:
+        raise HTTPException(status_code=400, detail="Character-bound gold needs a character")
     entry = GoldEntry(**values, earned_at=earned_at)
     db.add(entry)
     db.commit()
@@ -123,17 +125,23 @@ def get_weekly_gold(
             bucket.bonus_spent += completion.bonus_spent
             credit(bucket, completion.character_id, completion.gold - completion.bonus_spent)
 
+    spending: dict = {}  # week -> character_id -> [character-bound earned, bonus spent]
     entries = db.query(GoldEntry).filter(GoldEntry.earned_at >= first_reset).all()
     for entry in entries:
         if not in_account(entry.character_id, entry.account_id):
             continue
         bucket = totals.get(week_of(entry.earned_at))
-        if bucket is not None:
-            bucket.other_gold += entry.amount
-            bucket.by_source[entry.source] = bucket.by_source.get(entry.source, 0) + entry.amount
+        if bucket is None:
+            continue
+        if entry.character_bound and entry.character_id is not None:
+            # Only that character can spend it: it's on their Bound total, not in the shared gold.
+            spending.setdefault(week_of(entry.earned_at), {}).setdefault(entry.character_id, [0, 0])[0] += entry.amount
             credit(bucket, entry.character_id, entry.amount)
+            continue
+        bucket.other_gold += entry.amount
+        bucket.by_source[entry.source] = bucket.by_source.get(entry.source, 0) + entry.amount
+        credit(bucket, entry.character_id, entry.amount)
 
-    spending: dict = {}  # week -> character_id -> [character-bound earned, bonus spent]
     for completion in completions:
         week = week_of(completion.completed_at)
         if week in totals:

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Counter, counterProgress, countersFor } from "./counters";
 
 const counter = (extra: Partial<Counter>): Counter => ({
-  id: 1, name: "Seeds", value: 0, target: null, character_id: null, account_id: null, position: 0, ...extra,
+  id: 1, name: "Seeds", value: 0, target: null, character_id: null, account_id: null, position: 0, resets: "never", ...extra,
 });
 
 describe("countersFor", () => {

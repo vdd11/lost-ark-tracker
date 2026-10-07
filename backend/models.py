@@ -66,6 +66,9 @@ class Task(Base):
     sand_scaled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     # Raids cleared gate by gate have this many gates (catalog raids: 2); 0 = no gates.
     gate_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # A daily or weekly done a number of times (Elysian: 5 a week): the
+    # completion's count, up to this; 0 = a plain checkbox.
+    run_limit: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class RaidDifficulty(Base):
@@ -182,6 +185,9 @@ class GoldEntry(Base):
     account_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     note: Mapped[str | None] = mapped_column(String(200), nullable=True)
     earned_at: Mapped[datetime] = mapped_column(DateTime)
+    # Character-bound gold (Chaos Gate rewards since Feb 2026): it goes to the
+    # character's Bound total, not to tradeable gold.
+    character_bound: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
 
 class GemEntry(Base):
@@ -290,6 +296,10 @@ class Counter(Base):
     character_id: Mapped[int | None] = mapped_column(ForeignKey("characters.id"), nullable=True)
     account_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # "never", or back to 0 at each "daily" / "weekly" reset (a roster-wide
+    # limit, say); period is the reset the value belongs to.
+    resets: Mapped[str] = mapped_column(String(10), default="never", server_default="never")
+    period: Mapped[date | None] = mapped_column(Date, nullable=True)
 
 
 class RaidGroup(Base):

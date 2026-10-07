@@ -28,8 +28,12 @@ export function chaosRunsPerDay(character: Character, day: string) {
 /** The daily Inanna's doubles (by name: the built-in task). */
 export const CHAOS_DUNGEON = "Chaos Dungeon";
 
-/** Runs that make a daily done today for a character: 2 for Chaos Dungeon with Inanna's, else 1. */
-export function dailyRunsNeeded(character: Character, task: Task, day: string | null | undefined) {
+/**
+ * Runs that make a task done this period for a character: a limited task's
+ * limit (Elysian: 5 a week), 2 for Chaos Dungeon with Inanna's, else 1.
+ */
+export function runsNeeded(character: Character, task: Task, day: string | null | undefined) {
+  if (task.run_limit) return task.run_limit;
   if (!day || task.category !== "daily" || task.name !== CHAOS_DUNGEON) return 1;
   return chaosRunsPerDay(character, day);
 }
@@ -47,7 +51,7 @@ export function fullyDone(completed: Set<string>, runs: Run[], characters: Chara
     const character = byId.get(run.character_id);
     const task = taskById.get(run.task_id);
     if (!character || !task) continue;
-    if (run.count < dailyRunsNeeded(character, task, day) || !isWholeClear(task, run)) done.delete(cellKey(run.character_id, run.task_id));
+    if (run.count < runsNeeded(character, task, day) || !isWholeClear(task, run)) done.delete(cellKey(run.character_id, run.task_id));
   }
   return done;
 }

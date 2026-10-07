@@ -6,15 +6,29 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Account, Character, Counter
+from resets import period_for, utc_now
 from routes.common import get_or_404
 from schemas import CounterCreate, CounterRead, CounterUpdate
 
 router = APIRouter(prefix="/api")
 
 
+def roll_over(counter: Counter):
+    """A counter that resets starts again from 0 once its daily / weekly reset has passed."""
+    if counter.resets not in ("daily", "weekly"):
+        return
+    current = period_for(counter.resets, utc_now())
+    if counter.period != current:
+        counter.value, counter.period = 0, current
+
+
 @router.get("/counters", response_model=list[CounterRead])
 def get_counters(db: Session = Depends(get_db)):
-    return db.query(Counter).order_by(Counter.position, Counter.id).all()
+    counters = db.query(Counter).order_by(Counter.position, Counter.id).all()
+    for counter in counters:
+        roll_over(counter)
+    db.commit()
+    return counters
 
 
 @router.post("/counters", response_model=CounterRead, status_code=201)
@@ -28,6 +42,8 @@ def create_counter(data: CounterCreate, db: Session = Depends(get_db)):
         get_or_404(db, Account, data.account_id)
     last = db.query(func.max(Counter.position)).scalar()
     counter = Counter(**values, position=(last or 0) + 1)
+    if counter.resets != "never":
+        counter.period = period_for(counter.resets, utc_now())
     db.add(counter)
     db.commit()
     db.refresh(counter)
@@ -38,6 +54,10 @@ def create_counter(data: CounterCreate, db: Session = Depends(get_db)):
 def update_counter(counter_id: int, data: CounterUpdate, db: Session = Depends(get_db)):
     counter = get_or_404(db, Counter, counter_id)
     changes = data.model_dump(exclude_unset=True)
+    if changes.get("resets"):
+        counter.resets = changes["resets"]
+        counter.period = period_for(counter.resets, utc_now()) if counter.resets != "never" else None
+    roll_over(counter)
     if changes.get("name"):
         counter.name = changes["name"].strip()
     if "target" in changes:

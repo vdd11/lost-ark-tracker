@@ -55,7 +55,11 @@ def project(db: Session, start: Balances, since: datetime, until: datetime, acco
     )
 
     for entry in db.query(GoldEntry).filter(GoldEntry.earned_at > since, GoldEntry.earned_at <= until):
-        if mine(entry.character_id, entry.account_id):
+        if not mine(entry.character_id, entry.account_id):
+            continue
+        if entry.character_bound and entry.character_id is not None:
+            result.character_bound[entry.character_id] = result.character_bound.get(entry.character_id, 0) + entry.amount
+        else:
             result.tradeable += entry.amount
 
     in_window = lambda moment: since < moment <= until  # noqa: E731

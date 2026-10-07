@@ -2,11 +2,12 @@ import ContentCell from "@/components/ContentCell";
 import DifficultySelect from "@/components/DifficultySelect";
 import EmberCounts from "@/components/EmberCounts";
 import RaidCell from "@/components/RaidCell";
+import LimitCounter from "@/components/LimitCounter";
 import RestGauge from "@/components/RestGauge";
 import RunsCheckbox from "@/components/RunsCheckbox";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, Task } from "@/lib/api";
-import { blessingActive, dailyRunsNeeded } from "@/lib/blessings";
+import { blessingActive, runsNeeded } from "@/lib/blessings";
 import { dropsEmbers, EMBERS_PREFERENCE } from "@/lib/embers";
 import { difficultyOf } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
@@ -107,16 +108,23 @@ export default function TrackerCell({
 
   if (!isAssigned) return dash;
   const isDone = data.completed.has(key);
-  const runsNeeded = dailyRunsNeeded(character, task, data.tracker?.daily_period);
+  const needed = runsNeeded(character, task, data.tracker?.daily_period);
   const rest = task.rest_max > 0 ? data.restByCell.get(key) : undefined;
   const embers = emberLogging && dropsEmbers(task);
   const day = data.tracker?.daily_period;
   return (
     <div className={`flex flex-col items-center gap-1.5 pt-2 ${isDone ? "bg-done/15" : ""} ${rest && !embers ? "" : "pb-2"}`}>
-      {runsNeeded > 1 ? (
+      {task.run_limit > 0 ? (
+        <LimitCounter
+          value={run?.count ?? 0}
+          limit={task.run_limit}
+          label={`${task.name} for ${character.name}`}
+          onChange={(count) => actions.updateRun(character, task, count ? { count } : null)}
+        />
+      ) : needed > 1 ? (
         <RunsCheckbox
           runs={run?.count ?? 0}
-          needed={runsNeeded}
+          needed={needed}
           label={`${task.name} done by ${character.name}`}
           onClick={() => actions.toggleCompletion(character, task)}
         />
