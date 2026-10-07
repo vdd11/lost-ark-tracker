@@ -30,7 +30,7 @@ export default function Nav() {
   // A section's sub-pages (/tools/astrogems) count as being on it.
   const isCurrent = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
   const links = LINKS.filter((link) => !link.key || !hidden.has(link.key) || isCurrent(link.href));
-  const [updateCheck, setUpdateCheck] = useUpdateCheck();
+  const [updateCheck, setUpdateCheck, hasRoster] = useUpdateCheck();
   const openShortcuts = useShortcutHelp();
 
   return (
@@ -65,7 +65,7 @@ export default function Nav() {
           })}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <UpdateNotice enabled={updateCheck === "on"} />
+          <UpdateNotice enabled={updateCheck === "on"} hasRoster={hasRoster} />
           <button
             onClick={openShortcuts}
             aria-label="Keyboard shortcuts"

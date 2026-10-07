@@ -1,5 +1,3 @@
-import { isNewer } from "./version";
-
 /** What the app runs on, as GET /api/ reports it. */
 export type Platform = "windows" | "macos" | "linux";
 
@@ -67,14 +65,6 @@ export function releaseNoteLines(notes: string): NoteLine[] {
     else lines.push({ kind: "text", text: clean(line) });
   }
   return lines.filter((line) => line.text);
-}
-
-/**
- * After an update, say so once. `lastSeen` is the version this browser last
- * ran (empty on a fresh install, which gets no message).
- */
-export function justUpdated(lastSeen: string, running: string) {
-  return lastSeen !== "" && isNewer(running, lastSeen);
 }
 
 /** The release page for a version, which has its notes. A plain link: nothing is fetched. */

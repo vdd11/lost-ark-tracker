@@ -269,6 +269,11 @@ old file, run it. Your data stays where it is (above), so nothing is lost
 either way. Update now needs a copy from 1.19.0 or later; from 1.18.0 and
 earlier, update by hand once. The files aren't code-signed, so a cautious
 antivirus may question an app that replaces itself (see `docs/signing.md`).
+However you update (Update now or by hand, with the update check on or off),
+the first time the new version opens, **What's new** shows that release's
+highlights once, from notes that ship with the app (nothing is fetched). The
+version number in the menu bar, or Settings → About, opens every release's
+notes any time.
 
 **If it won't start or something breaks,** a message box says so (Windows), or
 the terminal window says so and stays open (macOS / Linux).

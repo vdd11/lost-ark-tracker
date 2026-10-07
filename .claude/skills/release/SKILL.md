@@ -20,8 +20,12 @@ and publishes downloads for everyone, so **ask before pushing**.
    minor (`1.13.0` → `1.14.0`) when there's a `feat:`, patch when there are only
    fixes. Major only if the user says so.
 
-4. **Draft the notes:** `python scripts/release_notes.py`. Tidy them for
-   players: merge near-duplicates, drop internal-only items, keep it short.
+4. **Draft the notes:** `python scripts/release_notes.py --whats-new <version>`.
+   Tidy them for players: merge near-duplicates, drop internal-only items,
+   keep it short. The same run puts a draft entry for the version at the top
+   of `frontend/lib/data/whats-new.json` (the What's new dialog players see
+   once after updating): rewrite it in player words, 3-6 highlights, and give
+   each an icon (a `GameIcon` name). A test fails if `APP_VERSION` has no entry.
    The first line of the tag message is a one-line summary, like earlier
    tags: `Lost Ark Tracker 1.14.0: tray icon, update dialog, weekly history`.
    Show the user the version and notes.

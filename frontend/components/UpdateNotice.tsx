@@ -9,22 +9,21 @@ import { UPDATE_CHECK_CHOICES, UPDATE_CHECK_PREFERENCE, updateCheckState, Update
 import {
   assetFor,
   canUpdateInPlace,
-  justUpdated,
   parseRelease,
   Platform,
   platformLabel,
   Release,
   releaseNoteLines,
-  releasePage,
   waitForVersion,
 } from "@/lib/updates";
 import { usePreference } from "@/lib/usePreference";
 import { isNewer } from "@/lib/version";
-import GameIcon from "@/components/GameIcon";
+import { useDialog } from "@/components/useDialog";
+import WhatsNewDialog from "@/components/WhatsNew";
+import { LAST_SEEN_PREFERENCE, LEGACY_LAST_RUN_PREFERENCE, versionsToShow, WHATS_NEW, WhatsNewEntry } from "@/lib/whatsNew";
 
 const RELEASES_API = "https://api.github.com/repos/vdd11/lost-ark-tracker/releases/latest";
 const CACHE_KEY = "latest-release-v2";
-const LAST_VERSION_PREFERENCE = "last-run-version";
 
 type Running = { version: string; platform?: Platform };
 
@@ -48,7 +47,7 @@ async function latestRelease(): Promise<Release | null> {
  * Whether the GitHub update check may run (see lib/online.ts), and a way to
  * answer the one-time question. Null until the roster has loaded.
  */
-export function useUpdateCheck(): [UpdateCheckState | null, (choice: "on" | "off") => void] {
+export function useUpdateCheck(): [UpdateCheckState | null, (choice: "on" | "off") => void, boolean | null] {
   const [stored, setStored] = usePreference<string>(UPDATE_CHECK_PREFERENCE, "", UPDATE_CHECK_CHOICES);
   const [hasCharacters, setHasCharacters] = useState<boolean | null>(null);
 
@@ -58,37 +57,43 @@ export function useUpdateCheck(): [UpdateCheckState | null, (choice: "on" | "off
       .catch(() => {});
   }, []);
 
-  return [hasCharacters === null ? null : updateCheckState(stored, hasCharacters), setStored];
+  return [hasCharacters === null ? null : updateCheckState(stored, hasCharacters), setStored, hasCharacters];
 }
 
 /**
- * A button in the nav when a newer release is on GitHub; it opens what's new
- * and how to update. Only checks when allowed; silent offline. Without the
- * check, the first run after an update still says so (a link, nothing fetched).
+ * In the nav: the version (it opens What's new, from the notes bundled with
+ * the app), What's new by itself once after an update, and a button when a
+ * newer release is on GitHub (only when the update check is on; silent
+ * offline). `hasRoster` keeps What's new out of the way of first-run setup.
  */
-export default function UpdateNotice({ enabled }: { enabled: boolean }) {
+export default function UpdateNotice({ enabled, hasRoster }: { enabled: boolean; hasRoster: boolean | null }) {
   const [running, setRunning] = useState<Running | null>(null);
   const [update, setUpdate] = useState<Release | null>(null);
   const [open, setOpen] = useState(false);
-  const [lastSeen, setLastSeen] = usePreference<string>(LAST_VERSION_PREFERENCE, "");
-  // Decided once per page load, before lastSeen is moved on to this version.
-  const [updatedTo, setUpdatedTo] = useState<string | null>(null);
+  const [lastSeen, setLastSeen] = usePreference<string>(LAST_SEEN_PREFERENCE, "");
+  const [legacyLastRun] = usePreference<string>(LEGACY_LAST_RUN_PREFERENCE, "");
+  // After an update, the releases since the last one seen; or every release, opened from the version.
+  const [whatsNew, setWhatsNew] = useState<{ updated: boolean; entries: WhatsNewEntry[] } | null>(null);
 
-  // The saved value loads after the first render, so read it when the answer comes.
-  const lastSeenRef = useRef(lastSeen);
+  // Saved values load after the first render, so read them when the answer comes.
+  const seen = useRef({ lastSeen, legacyLastRun });
   useEffect(() => {
-    lastSeenRef.current = lastSeen;
-  }, [lastSeen]);
+    seen.current = { lastSeen, legacyLastRun };
+  }, [lastSeen, legacyLastRun]);
 
   useEffect(() => {
     api<Running>("/")
-      .then((info) => {
-        setRunning(info);
-        if (justUpdated(lastSeenRef.current, info.version)) setUpdatedTo(info.version);
-        if (lastSeenRef.current !== info.version) setLastSeen(info.version);
-      })
+      .then((info) => setRunning(info))
       .catch(() => {});
-  }, [setLastSeen]);
+  }, []);
+
+  // Once the version and the roster are known: news after an update, else just remember the version.
+  useEffect(() => {
+    if (!running || hasRoster === null) return;
+    const news = versionsToShow(seen.current.lastSeen || seen.current.legacyLastRun, running.version);
+    if (hasRoster && news.length > 0) setWhatsNew({ updated: true, entries: news });
+    else if (seen.current.lastSeen !== running.version) setLastSeen(running.version);
+  }, [running, hasRoster, setLastSeen]);
 
   useEffect(() => {
     if (!enabled || !running) return;
@@ -99,61 +104,54 @@ export default function UpdateNotice({ enabled }: { enabled: boolean }) {
       .catch(() => {});
   }, [enabled, running]);
 
-  if (update && enabled) {
-    return (
-      <>
+  const closeWhatsNew = () => {
+    if (running) setLastSeen(running.version);
+    setWhatsNew(null);
+  };
+
+  return (
+    <>
+      {running && (
+        <button
+          onClick={() => setWhatsNew({ updated: false, entries: WHATS_NEW })}
+          className="hidden text-xs text-muted underline-offset-2 hover:text-foreground hover:underline sm:inline"
+          title="What's new in each version"
+        >
+          v{running.version}
+        </button>
+      )}
+      {update && enabled && (
         <button
           onClick={() => setOpen(true)}
           className="rounded-md border border-accent/50 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/20"
         >
           Update available: v{update.version}
         </button>
-        {open && <UpdateDialog release={update} running={running} onClose={() => setOpen(false)} />}
-      </>
-    );
-  }
-
-  if (updatedTo) {
-    return (
-      <span className="flex items-center gap-1 rounded-md border border-done/40 bg-done/10 px-2 py-1 text-xs">
-        <GameIcon name="whats-new" size={12} inline alt="" />
-        <a href={releasePage(updatedTo)} target="_blank" rel="noreferrer" className="hover:underline">
-          Updated to v{updatedTo}: what&apos;s new
-        </a>
-        <button onClick={() => setUpdatedTo(null)} aria-label="Dismiss" className="rounded p-0.5 text-muted hover:text-foreground">
-          <X size={12} />
-        </button>
-      </span>
-    );
-  }
-
-  return null;
+      )}
+      {open && update && <UpdateDialog release={update} running={running} onClose={() => setOpen(false)} />}
+      {whatsNew && running && (
+        <WhatsNewDialog
+          entries={whatsNew.entries}
+          updatedTo={whatsNew.updated ? running.version : undefined}
+          onClose={whatsNew.updated ? closeWhatsNew : () => setWhatsNew(null)}
+        />
+      )}
+    </>
+  );
 }
 
 /** What's new in the release, the download for this computer, and how to swap it in. */
 export function UpdateDialog({ release, running, onClose }: { release: Release; running: Running | null; onClose: () => void }) {
-  const closeButton = useRef<HTMLButtonElement>(null);
+  const dialog = useDialog(onClose);
   const platform = running?.platform ?? null;
   const download = assetFor(release.assets, platform);
   const notes = releaseNoteLines(release.notes);
   const [inPlace, setInPlace] = useState(false);
 
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    closeButton.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      previous?.focus?.();
-    };
-  }, [onClose]);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onMouseDown={onClose}>
       <div
+        ref={dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby="update-title"
@@ -164,7 +162,7 @@ export function UpdateDialog({ release, running, onClose }: { release: Release; 
           <h2 id="update-title" className="flex items-center gap-2 font-semibold">
             <RefreshCw size={18} className="text-accent" /> Version {release.version} is out
           </h2>
-          <button ref={closeButton} onClick={onClose} aria-label="Close" className="rounded p-1 text-muted hover:bg-surface-2">
+          <button data-autofocus onClick={onClose} aria-label="Close" className="rounded p-1 text-muted hover:bg-surface-2">
             <X size={16} />
           </button>
         </div>

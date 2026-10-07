@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { assetFor, canUpdateInPlace, justUpdated, parseRelease, releaseNoteLines, waitForVersion } from "./updates";
+import { assetFor, canUpdateInPlace, parseRelease, releaseNoteLines, waitForVersion } from "./updates";
 
 const ASSETS = [
   { name: "LostArkTracker-linux", url: "https://example.test/linux" },
@@ -62,18 +62,6 @@ describe("releaseNoteLines", () => {
 
   it("is empty when the notes are only the changelog link", () => {
     expect(releaseNoteLines("**Full Changelog**: https://github.com/x/compare/a...b")).toEqual([]);
-  });
-});
-
-describe("justUpdated", () => {
-  it("is true once the running version is newer than the last one seen", () => {
-    expect(justUpdated("1.13.0", "1.14.0")).toBe(true);
-    expect(justUpdated("1.14.0", "1.14.0")).toBe(false);
-    expect(justUpdated("1.15.0", "1.14.0")).toBe(false);
-  });
-
-  it("says nothing on a fresh install", () => {
-    expect(justUpdated("", "1.14.0")).toBe(false);
   });
 });
 

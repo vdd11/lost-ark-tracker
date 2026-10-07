@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import AccountsBar from "@/components/AccountsBar";
+import AboutSection from "@/components/settings/AboutSection";
 import AppearanceSection from "@/components/settings/AppearanceSection";
 import { PageSkeleton } from "@/components/Skeleton";
 import ErrorBanner, { describeError } from "@/components/ErrorBanner";
@@ -219,6 +220,8 @@ export default function SettingsPage() {
           load();
         }}
       />
+
+      <AboutSection />
 
       <footer className="border-t border-border pt-4 text-xs text-muted">
         Lost Ark and its images are trademarks and property of Smilegate RPG / Amazon Games. This is an unofficial fan

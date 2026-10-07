@@ -97,6 +97,15 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   actions pinned; `next` and `eslint-config-next` are pinned exactly.
   `LOST_ARK_TRACKER_RELEASES_API` points it at a test server (then loopback
   http is allowed).
+- What's new (`components/WhatsNew.tsx`, `lib/whatsNew.ts`): the release
+  notes ship with the app in `frontend/lib/data/whats-new.json` (newest
+  first; 3-6 highlights with an icon each, optional sections). Every release
+  adds an entry (`scripts/release_notes.py --whats-new <version>` drafts it; a
+  test fails without one for `APP_VERSION`). The nav opens it once after an
+  update (`last-seen-version`, falling back to 1.19's `last-run-version`),
+  never on a first install or over first-run setup; the nav version and
+  Settings → About reopen the full list. Dialogs use `components/useDialog.ts`
+  (focus in, Tab trapped, Esc, focus back).
 - Guides page links are data (`frontend/lib/data/guides.json`, with a
   `checked` date). Check new ones with `python scripts/check_links.py`; a
   weekly workflow (`links.yml`) runs it and opens an issue for dead links or

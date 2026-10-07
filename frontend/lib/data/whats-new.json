@@ -1,0 +1,144 @@
+[
+  {
+    "version": "1.19.0",
+    "date": "2026-10-06",
+    "highlights": [
+      {
+        "icon": "whats-new",
+        "text": "Update now: the app updates itself from here on, and only installs releases signed by the developer."
+      },
+      {
+        "icon": "gold",
+        "text": "Simpler top boxes: Gold this week (raids and other gold) and a new Dailies today."
+      },
+      {
+        "icon": "chaos-dungeon",
+        "text": "Azena's and Inanna's blessings per character. With Inanna's, Chaos Dungeon has two runs a day."
+      },
+      {
+        "icon": "fate-ember",
+        "text": "Log fate and blessed embers from Chaos Dungeon and Guardian Raid (Customize → Today)."
+      },
+      {
+        "icon": "endgame-content",
+        "text": "The Endgame Content badge above every raid, bigger class icons and new game icons."
+      },
+      {
+        "icon": "ebony-cube",
+        "text": "Ebony Cube ticket chips right in the cell, and Sands of Trial as 0-5."
+      }
+    ],
+    "sections": [
+      {
+        "title": "Also new",
+        "items": [
+          "A Today at a glance strip: next resets, gold raids left and reminders.",
+          "Hover a raid's name for each difficulty's item level, gold, bound split and bonus box cost.",
+          "Copy What's left as an image for Discord (made on your computer, nothing uploaded).",
+          "Filter characters by name or class on big rosters.",
+          "A bottom menu bar on phones, and placeholders instead of blank spots while loading."
+        ]
+      },
+      {
+        "title": "Fixes",
+        "items": [
+          "Other websites can no longer send changes to the tracker.",
+          "One clear focus ring, labelled Settings fields and keyboard-readable help.",
+          "Rows no longer shift when the All button disappears, and rest gauges no longer overlap on narrow screens."
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.18.0",
+    "date": "2026-10-06",
+    "highlights": [
+      {
+        "icon": "characters",
+        "text": "Game icons: class emblems beside every name, and item icons for gold, gems and the Ebony Cube."
+      },
+      {
+        "icon": "tracker",
+        "text": "First-run setup: pick how much to track, add your characters and choose your gold earners."
+      },
+      {
+        "icon": "appearance",
+        "text": "Bigger text, with Settings → Appearance for text size and density."
+      },
+      {
+        "icon": "raids",
+        "text": "Raid values come with each update, checked against the patch notes."
+      },
+      {
+        "icon": "field-boss",
+        "text": "Optional Field Boss and Chaos Gate drop logging on their days."
+      }
+    ],
+    "sections": [
+      {
+        "title": "Also new",
+        "items": [
+          "The astrogem tool looks like the game's Processing window.",
+          "Growth Boost Shop: a weekly checkbox per character.",
+          "Customize has Save and Cancel; rearranging the page has its own Done button.",
+          "Item levels are coloured by the best raid tier they reach."
+        ]
+      },
+      {
+        "title": "Changes",
+        "items": [
+          "The Raids page, the honing planner and the Prices tool are gone; Guides links the honing calculators.",
+          "The gold goal counts tradeable gold, or tradeable + roster-bound."
+        ]
+      }
+    ]
+  },
+  {
+    "version": "1.17.0",
+    "date": "2026-10-05",
+    "highlights": [
+      {
+        "icon": "recap",
+        "text": "The new-week recap shows where last week's gold and gems came from."
+      },
+      {
+        "icon": "gold",
+        "text": "A Review link by the gold earner count opens the suggested gold setup."
+      },
+      {
+        "icon": "whats-new",
+        "text": "Pages show a placeholder of their layout while loading."
+      },
+      {
+        "icon": "tracker",
+        "text": "Each tracker widget says in one line what it's for."
+      }
+    ]
+  },
+  {
+    "version": "1.16.0",
+    "date": "2026-10-05",
+    "highlights": [
+      {
+        "icon": "gold",
+        "text": "GOLD beside each name toggles gold earners (6 per account)."
+      },
+      {
+        "icon": "gold",
+        "text": "Character-bound gold is kept apart and set per character."
+      },
+      {
+        "icon": "gold-goal",
+        "text": "The gold goal can count tradeable gold, tradeable + roster-bound, or one character."
+      },
+      {
+        "icon": "tracker",
+        "text": "Rearrange the tracker's blocks and widgets."
+      },
+      {
+        "icon": "auction",
+        "text": "An auction calculator on the tracker, and an astrogem panel laid out like the game's."
+      }
+    ]
+  }
+]
