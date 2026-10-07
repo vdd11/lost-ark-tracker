@@ -17,7 +17,6 @@ import PasteRoster from "@/components/settings/PasteRoster";
 import RaidsSection from "@/components/settings/RaidsSection";
 import RemindersSection from "@/components/settings/RemindersSection";
 import { AddTaskForm, TaskGroup } from "@/components/settings/TaskLists";
-import TaskLibrary from "@/components/settings/TaskLibrary";
 import { useDragReorder } from "@/components/useDragReorder";
 import { Account, api, byPosition, CATEGORIES, Character, MAX_GOLD_EARNERS, send, Task } from "@/lib/api";
 import { renumber } from "@/lib/order";
@@ -180,11 +179,6 @@ export default function SettingsPage() {
         </p>
 
         <AddTaskForm onAdd={(data) => mutate(() => send("POST", "/tasks", data))} />
-        <TaskLibrary
-          taskNames={tasks.map((t) => t.name)}
-          onAddTask={(data) => mutate(() => send("POST", "/tasks", data))}
-          onAddCounter={(data) => mutate(() => send("POST", "/counters", data))}
-        />
 
         <div className="grid gap-4 md:grid-cols-2">
           {CATEGORIES.filter((category) => category.value !== "raid").map((category) => (

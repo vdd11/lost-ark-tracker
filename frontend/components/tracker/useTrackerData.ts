@@ -22,7 +22,7 @@ import {
   WeeklyGold,
   WeekRecap,
 } from "@/lib/api";
-import { fullyDone, runsNeeded } from "@/lib/blessings";
+import { dailyRunsNeeded, fullyDone } from "@/lib/blessings";
 import { OnHand } from "@/lib/goldGoal";
 import { difficultyOf, gatesBody, remainingGates } from "@/lib/raids";
 import { cellKey, isTiered } from "@/lib/trackerSections";
@@ -181,7 +181,7 @@ export function useTrackerData() {
 
   async function toggleCompletion(character: Character, task: Task) {
     const key = cellKey(character.id, task.id);
-    const needed = runsNeeded(character, task, day);
+    const needed = dailyRunsNeeded(character, task, day);
     if (needed > 1) return stepRuns(character, task, needed);
     const wasDone = rawCompleted.has(key);
     const before = runByCell.get(key);
@@ -351,12 +351,12 @@ export function useTrackerData() {
     try {
       for (const task of todo) {
         // Raids clear at the usual difficulty; a daily with two runs today (Inanna's) gets both.
-        const needed = runsNeeded(character, task, day);
+        const runsNeeded = dailyRunsNeeded(character, task, day);
         const body =
           task.category === "raid" && isTiered(task)
             ? { difficulty_id: difficultyOf(character, task)?.id ?? null }
-            : needed > 1
-              ? { count: needed }
+            : runsNeeded > 1
+              ? { count: runsNeeded }
               : {};
         await send("PUT", completionPath(character, task), body);
         ticked.push(task);

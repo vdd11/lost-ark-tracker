@@ -48,14 +48,12 @@ export function AddTaskForm({ onAdd }: { onAdd: (data: object) => Promise<void> 
   const [name, setName] = useState("");
   const [category, setCategory] = useState<TaskCategory>("daily");
   const [gold, setGold] = useState("");
-  const [limit, setLimit] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onAdd({ name: name.trim(), category, gold: Number(gold) || 0, run_limit: Math.max(0, Math.round(Number(limit) || 0)) });
+    await onAdd({ name: name.trim(), category, gold: Number(gold) || 0 });
     setName("");
     setGold("");
-    setLimit("");
   }
 
   return (
@@ -67,16 +65,6 @@ export function AddTaskForm({ onAdd }: { onAdd: (data: object) => Promise<void> 
         ))}
       </select>
       <NumberInput placeholder="Gold" value={gold} onChange={setGold} aria-label="Gold" className="w-28" />
-      <input
-        type="number"
-        min="0"
-        placeholder="Times per reset"
-        value={limit}
-        onChange={(e) => setLimit(e.target.value)}
-        aria-label="Times per reset"
-        title="Done a number of times each reset (Elysian: 5 a week) shows a counter like 0/5. Leave empty for a checkbox."
-        className="w-36"
-      />
       <button type="submit" className="rounded-md bg-accent px-3 py-1.5 font-medium text-background">
         Add task
       </button>
@@ -101,7 +89,6 @@ function TaskRow({
 }) {
   const [name, setName] = useState(task.name);
   const [gold, setGold] = useState(String(task.gold));
-  const [limit, setLimit] = useState(task.run_limit ? String(task.run_limit) : "");
 
   return (
     <li
@@ -126,25 +113,6 @@ function TaskRow({
         />
         g
       </label>
-      {/* Ebony Cube and Hourglass count their own way. */}
-      {!task.counted && task.difficulties.length === 0 && (
-      <label className="flex items-center gap-1 text-muted" title="Times each reset (a counter like 0/5); empty for a checkbox">
-        <input
-          type="number"
-          min="0"
-          value={limit}
-          placeholder="–"
-          onChange={(e) => setLimit(e.target.value)}
-          onBlur={() => {
-            const value = Math.max(0, Math.round(Number(limit) || 0));
-            if (value !== task.run_limit) onSave({ run_limit: value });
-          }}
-          className="w-16 text-foreground"
-          aria-label={`${task.name} times per reset`}
-        />
-        ×
-      </label>
-      )}
       <DeleteButton onDelete={onDelete} />
       {task.category === "daily" && <RestRulesEditor task={task} onSave={onSave} />}
     </li>

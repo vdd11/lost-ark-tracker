@@ -38,15 +38,11 @@ const CHECKBOX_COLUMN = 5.5;
 const CUBE_COLUMN = 15;
 /** A daily with a rest gauge: its − bar value + row is about this wide. */
 const REST_COLUMN = 10;
-/** A task done a number of times (− n / 5 +). */
-const LIMIT_COLUMN = 9.5;
 const columnWidth = (task: Task) =>
   task.counted
     ? CUBE_COLUMN
     : task.rest_max > 0
       ? REST_COLUMN
-      : task.run_limit > 0
-        ? LIMIT_COLUMN
       : task.category !== "raid" && task.difficulties.length === 0
         ? CHECKBOX_COLUMN
         : TASK_COLUMN;

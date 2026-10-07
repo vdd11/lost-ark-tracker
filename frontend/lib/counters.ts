@@ -7,8 +7,6 @@ export type Counter = {
   character_id: number | null;
   account_id: number | null;
   position: number;
-  /** Back to 0 at each daily / weekly reset ("never": it keeps its value). */
-  resets: "never" | "daily" | "weekly";
 };
 
 /** Off until turned on under Customize. */

@@ -28,7 +28,6 @@ export default function CountersWidget({
   const [name, setName] = useState("");
   const [target, setTarget] = useState("");
   const [characterId, setCharacterId] = useState("");
-  const [resets, setResets] = useState<Counter["resets"]>("never");
   const offerUndo = useUndo();
 
   const load = useCallback(() => {
@@ -59,12 +58,10 @@ export default function CountersWidget({
         target: Number(target) > 0 ? Math.round(Number(target)) : null,
         character_id: characterId ? Number(characterId) : null,
         account_id: characterId ? null : accountId || null,
-        resets,
       }),
     );
     setName("");
     setTarget("");
-    setResets("never");
   }
 
   function remove(counter: Counter) {
@@ -77,7 +74,6 @@ export default function CountersWidget({
           target: counter.target,
           character_id: counter.character_id,
           account_id: counter.character_id ? null : counter.account_id,
-          resets: counter.resets,
         });
         load();
       });
@@ -113,7 +109,6 @@ export default function CountersWidget({
               <span className="min-w-0 flex-1 truncate" title={counter.name}>
                 {counter.name}
                 {owner(counter) && <span className="text-xs text-muted"> · {owner(counter)}</span>}
-                {counter.resets !== "never" && <span className="text-xs text-muted"> · resets {counter.resets}</span>}
               </span>
               {progress !== null && (
                 <span className="h-1.5 w-16 overflow-hidden rounded bg-surface-2" aria-hidden>
@@ -157,11 +152,6 @@ export default function CountersWidget({
             {characters.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
-          </select>
-          <select value={resets} onChange={(e) => setResets(e.target.value as Counter["resets"])} aria-label="Counter resets">
-            <option value="never">Keeps its value</option>
-            <option value="daily">Resets daily</option>
-            <option value="weekly">Resets weekly</option>
           </select>
           <button type="submit" disabled={!name.trim()} className="rounded-md bg-accent px-3 py-1.5 font-medium text-background disabled:opacity-50">
             Add counter

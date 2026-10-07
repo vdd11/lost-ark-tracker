@@ -40,8 +40,6 @@ const ALIASES: Record<string, string> = {
   "gold-character": "gold",
   // Haal's Hourglass shows the Sand of Trial that powers it.
   "haals-hourglass": "sand-of-trial",
-  // Library tasks: Elysian is Paradise's.
-  elysian: "paradise",
 };
 
 /** The original glyphs (components/SlotIcon.tsx). */
@@ -91,7 +89,6 @@ export const SLOT_GLYPHS: Record<string, SlotGlyph> = {
   backup: "chest",
   // Game things, until there's a real icon
   "haals-hourglass": "hourglass",
-  "milestone-missions": "tally",
   "sand-of-trial": "hourglass",
   "chaos-dungeon": "portal",
   "field-boss": "skull",
@@ -133,8 +130,6 @@ const LABELS: Record<string, string> = {
   "chaos-gate": "Chaos Gate",
   "fate-ember": "Fate Ember",
   paradise: "Paradise",
-  elysian: "Elysian",
-  "milestone-missions": "Milestone Missions",
   rest: "Rest bonus",
   "endgame-content": "Endgame Content",
   "sand-of-trial": "Sand of Trial",

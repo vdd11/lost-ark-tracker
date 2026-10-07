@@ -172,8 +172,6 @@ def complete_task(
         .first()
     )
 
-    if task.run_limit and body.count is not None and body.count > task.run_limit:
-        raise HTTPException(status_code=400, detail=f"{task.name} can be done {task.run_limit} times a period")
     tiers = counted_tiers(db, task, character, existing, body) if task.counted else None
     gates = cleared_gates_after(db, task, character, existing, body)
     # With tiers, the week's entry goes only when every tier is back to zero;

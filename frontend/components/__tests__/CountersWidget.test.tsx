@@ -44,6 +44,6 @@ describe("CountersWidget", () => {
     await user.type(screen.getByLabelText("Counter target"), "50");
     await user.selectOptions(screen.getByLabelText("Counter for"), "7");
     await user.click(screen.getByRole("button", { name: "Add counter" }));
-    expect(send).toHaveBeenCalledWith("POST", "/counters", { name: "Island tokens", target: 50, character_id: 7, account_id: null, resets: "never" });
+    expect(send).toHaveBeenCalledWith("POST", "/counters", { name: "Island tokens", target: 50, character_id: 7, account_id: null });
   });
 });

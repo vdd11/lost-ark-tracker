@@ -83,8 +83,6 @@ class TaskCreate(BaseModel):
     rest_max: int = Field(default=0, ge=0)
     rest_gain: int = Field(default=0, ge=0)
     rest_cost: int = Field(default=0, ge=0)
-    # Times a period it can be done (a counter like 0/5); 0 = a checkbox.
-    run_limit: int = Field(default=0, ge=0, le=10_000)
 
 
 class TaskUpdate(BaseModel):
@@ -95,7 +93,6 @@ class TaskUpdate(BaseModel):
     rest_max: int | None = Field(default=None, ge=0)
     rest_gain: int | None = Field(default=None, ge=0)
     rest_cost: int | None = Field(default=None, ge=0)
-    run_limit: int | None = Field(default=None, ge=0, le=10_000)
     archived: bool | None = None
 
 
@@ -178,7 +175,6 @@ class TaskRead(BaseModel):
     counted: bool
     sand_scaled: bool
     gate_count: int = 0
-    run_limit: int = 0
     difficulties: list[DifficultyRead] = []
 
 
@@ -306,8 +302,6 @@ class GoldEntryCreate(BaseModel):
     account_id: int | None = None
     note: str | None = Field(default=None, max_length=200)
     earned_at: datetime | None = None
-    # Goes to the character's Bound total (needs character_id).
-    character_bound: bool = False
 
 
 class GoldEntryRead(BaseModel):
@@ -320,7 +314,6 @@ class GoldEntryRead(BaseModel):
     account_id: int | None = None
     note: str | None
     earned_at: datetime
-    character_bound: bool = False
 
 
 class PriceRead(BaseModel):
@@ -388,17 +381,12 @@ def web_address(url: str | None) -> str | None:
     return url
 
 
-# A counter that keeps its value, or goes back to 0 at each daily / weekly reset.
-CounterResets = Literal["never", "daily", "weekly"]
-
-
 class CounterCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     value: int = Field(default=0, ge=0, le=1_000_000_000)
     target: int | None = Field(default=None, ge=1, le=1_000_000_000)
     character_id: int | None = None
     account_id: int | None = None
-    resets: CounterResets = "never"
 
 
 class CounterUpdate(BaseModel):
@@ -408,7 +396,6 @@ class CounterUpdate(BaseModel):
     # Change the value by this much (the +1 / -1 buttons); never below 0.
     add: int | None = Field(default=None, ge=-1_000_000, le=1_000_000)
     position: int | None = None
-    resets: CounterResets | None = None
 
 
 class CounterRead(BaseModel):
@@ -421,7 +408,6 @@ class CounterRead(BaseModel):
     character_id: int | None
     account_id: int | None
     position: int
-    resets: CounterResets = "never"
 
 
 class RaidGroupCreate(BaseModel):

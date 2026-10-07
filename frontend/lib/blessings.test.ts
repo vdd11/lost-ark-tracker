@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Character, Run, Task } from "./api";
-import { blessingActive, chaosRunsPerDay, runsNeeded, fullyDone, gameDay } from "./blessings";
+import { blessingActive, chaosRunsPerDay, dailyRunsNeeded, fullyDone, gameDay } from "./blessings";
 
 const char = (item_level: number, inanna_until: string | null, azena_until: string | null = null) =>
   ({ item_level, inanna_until, azena_until }) as Character;
@@ -35,10 +35,10 @@ describe("Inanna's second run", () => {
   const day = "2026-10-07";
 
   it("needs two Chaos Dungeon runs only while blessed", () => {
-    expect(runsNeeded(blessed, chaos, day)).toBe(2);
-    expect(runsNeeded(blessed, guardian, day)).toBe(1);
-    expect(runsNeeded(plain, chaos, day)).toBe(1);
-    expect(runsNeeded(blessed, chaos, null)).toBe(1);
+    expect(dailyRunsNeeded(blessed, chaos, day)).toBe(2);
+    expect(dailyRunsNeeded(blessed, guardian, day)).toBe(1);
+    expect(dailyRunsNeeded(plain, chaos, day)).toBe(1);
+    expect(dailyRunsNeeded(blessed, chaos, null)).toBe(1);
   });
 
   it("leaves a half-done day out of the done cells", () => {

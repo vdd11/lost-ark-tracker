@@ -15,7 +15,7 @@ export function task(extra: Partial<Task> = {}): Task {
   return {
     id: 1, name: "Serca", category: "raid", gold: 0, position: 0, rest_max: 0, rest_gain: 0, rest_cost: 0,
     catalog_key: null, archived: false, ends_on: null, roster_limited: false, gold_for_everyone: false,
-    note: null, counted: false, sand_scaled: false, gate_count: 0, run_limit: 0, difficulties: [], ...extra,
+    note: null, counted: false, sand_scaled: false, gate_count: 0, difficulties: [], ...extra,
   };
 }
 
