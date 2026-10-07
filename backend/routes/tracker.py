@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from database import get_db
-from gems import run_gems
+from gems import GUARDIAN_RAID, guardian_gems, run_gems
 from models import Character, CharacterTask, Completion, RaidDifficulty, Task
 from resets import daily_reset_before, period_for, utc_now, weekly_reset_before
 from schemas import (
@@ -391,6 +391,9 @@ def run_difficulty(db: Session, task: Task, character: Character, requested: int
 
 
 def completion_gems(db: Session, task: Task, completion: Completion):
+    if task.category == "daily" and task.name == GUARDIAN_RAID:
+        character = db.get(Character, completion.character_id) if completion.character_id else None
+        return guardian_gems(character.item_level) if character else None
     difficulty = db.get(RaidDifficulty, completion.difficulty_id) if completion.difficulty_id else None
     tiers = {d.id: d for d in db.query(RaidDifficulty).filter_by(task_id=task.id)} if task.counted else None
     return run_gems(task, difficulty, completion, tiers)

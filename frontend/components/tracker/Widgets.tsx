@@ -265,7 +265,7 @@ export function GemWidget({
     >
       {total === 0 ? (
         <p className="text-sm text-muted">
-          Run Ebony Cube or Haal&apos;s Hourglass, or log gems from Guardian Raids and Field Bosses, to see when your next
+          Run Ebony Cube, Haal&apos;s Hourglass or Guardian Raids, or log gems from Field Bosses, to see when your next
           big gem lands.
         </p>
       ) : (

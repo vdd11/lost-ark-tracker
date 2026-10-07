@@ -34,8 +34,8 @@ import GameIcon from "@/components/GameIcon";
 
 // Fixed order and colors; anything else folds into "Other". Ebony Cube and
 // Haal's Hourglass are filled in from the tracker, the rest are logged here.
-const TRACKED = ["Ebony Cube", "Haal's Hourglass"];
-const SOURCES = ["Guardian Raid", "Field Boss", "Chaos Gate"];
+const TRACKED = ["Ebony Cube", "Haal's Hourglass", "Guardian Raid"];
+const SOURCES = ["Field Boss", "Chaos Gate"];
 const OTHER = "Other";
 const SERIES: ChartSeries[] = [
   { key: "Ebony Cube", label: "Ebony Cube", color: "var(--series-1)" },
@@ -148,8 +148,9 @@ export default function GemsPage() {
           <AccountTabs accounts={accounts} value={accountId} onChange={setAccountId} />
         </div>
         <p className="mt-1 max-w-3xl text-sm text-muted">
-          Gems from Ebony Cube and Haal&apos;s Hourglass are added from the tracker using the reward table below. Log
-          everything else (Guardian Raids, Field Bosses) here. Totals show what your gems combine into: three of a
+          Gems from Ebony Cube and Haal&apos;s Hourglass are added from the tracker using the reward table below, and
+          Guardian Raids by each character&apos;s item level (the average Level 1 gems of the best Guardian they can run:
+          Argeos 3 up to Shade Level 2 11.5). Log everything else (Field Bosses, Chaos Gates) here. Totals show what your gems combine into: three of a
           level make one of the next, so 15 Lv1 gems are a Lv3 + 2× Lv2.
         </p>
       </div>

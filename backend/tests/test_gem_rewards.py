@@ -166,3 +166,19 @@ def test_gem_total_matches_the_full_weekly_history(client, set_now):
     total = client.get("/api/gems/total").json()["total"]
     assert total == round(sum(w["total"] for w in weekly), 1) == 9 + 2
     assert client.get("/api/gems/total?account_id=999").json()["total"] == 0
+
+
+def test_a_guardian_raid_adds_the_gems_for_the_characters_item_level(client, set_now):
+    from datetime import datetime
+
+    set_now(datetime(2026, 10, 8, 12))
+    guardian = next(t for t in client.get("/api/tasks").json() if t["name"] == "Guardian Raid")
+    for name, item_level in (("Shady", 1752), ("Krath", 1725), ("Argy", 1650), ("Lowbie", 1600)):
+        character = client.post("/api/characters", json={"name": name, "class_name": "Bard", "item_level": item_level}).json()
+        assert client.put(f"/api/characters/{character['id']}/tasks/{guardian['id']}/completion").status_code == 204
+
+    week = client.get("/api/gems/weekly?weeks=1").json()[0]
+    # Shade Lv2 11.5 + Krathios 6.5 + Argeos 3; nothing below the T4 Guardians.
+    assert week["by_source"] == {"Guardian Raid": 21.0}
+    assert week["by_level"] == {"1": 21.0}
+    assert week["by_character"] == {"Shady": 11.5, "Krath": 6.5, "Argy": 3.0}

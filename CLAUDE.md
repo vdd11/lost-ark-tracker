@@ -67,6 +67,10 @@ by FastAPI alongside the API. `backend/app.py` is the packaged entry point;
   any gate's gold uses one of the 3 paid raids. Keep `legacy_names` when renaming so
   existing columns are adopted. After a patch, follow
   `docs/patch-checklist.md` and bump `CATALOG_REVIEWED`.
+- Guardian Raid gems: `gems.GUARDIAN_GEMS` (average Lv1 T4 gems of the best
+  Guardian for the item level, from the user's reward-table screenshots)
+  snapshot onto the completion like other gems; Luminous Gem Shards aren't
+  counted. Change only with a source.
 - Tools live under `app/tools/<tool>/` with their maths in `lib/<tool>.ts`
   and a card in `lib/tools.ts`. There's no Prices tool any more (removed in
   1.18; its `market_prices` table stays, unused, in backups). There's no honing tool (removed in 1.18; Guides links the honing
