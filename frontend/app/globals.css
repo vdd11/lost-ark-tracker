@@ -93,7 +93,7 @@ html[data-text-size="large"] {
   font-size: 118.75%;
 }
 html[data-density="compact"] {
-  --spacing: 0.2rem;
+  --spacing: 0.16rem;
 }
 
 body {

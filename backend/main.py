@@ -5,11 +5,11 @@ from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from accounts import ensure_accounts
 from hosts import LocalHostOnlyMiddleware, SameOriginWritesMiddleware
 from database import Base, SessionLocal, add_missing_columns, backup_database, engine
+from frontend_files import FrontendFiles
 from migrations import run_once, run_schema_migrations
 from raids import (
     backfill_bound_gold,
@@ -113,4 +113,4 @@ for module in (accounts, characters, tasks, tracker, gold, balances, events, gem
 # server. Mounted last so the /api routes above take priority.
 FRONTEND_DIR = os.environ.get("FRONTEND_DIR")
 if FRONTEND_DIR and Path(FRONTEND_DIR).is_dir():
-    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+    app.mount("/", FrontendFiles(directory=FRONTEND_DIR, html=True), name="frontend")
