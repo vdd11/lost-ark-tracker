@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRosterPaste, pickGoldEarners } from "./rosterPaste";
+import { NEEDS_CLASS, parseRosterPaste, pickGoldEarners, withPickedClasses } from "./rosterPaste";
 
 const pick = (text: string, existing: string[] = []) =>
   parseRosterPaste(text, existing).map(({ name, className, itemLevel, problem }) => ({ name, className, itemLevel, problem }));
@@ -74,6 +74,43 @@ describe("parseRosterPaste on a copied roster page", () => {
   it("still flags characters already on the roster", () => {
     const page = ["Header text", "Bardy", "Bard", "1720", "Footer", "more text"].join("\n");
     expect(pick(page, ["bardy"])[0].problem).toBe("Already on your roster");
+  });
+});
+
+describe("parseRosterPaste on a page without classes (lostark.bible)", () => {
+  // As copied from lostark.bible's roster: name, item level, combat power, last seen.
+  const page = [
+    "Lfsorakagf",
+    "1776.67",
+    "5912.65",
+    "Last updated 55 minutes ago",
+    "",
+    "Whomoome",
+    "1702.83",
+    "1483.05",
+    "Last updated 48 minutes ago",
+    "",
+    "Supforjoos",
+    "1700",
+    "1297.66",
+    "Last updated 26 days ago",
+  ].join("\n");
+
+  it("reads names and item levels, skipping combat power, and asks for the class", () => {
+    expect(pick(page)).toEqual([
+      { name: "Lfsorakagf", className: "", itemLevel: 1776.67, problem: NEEDS_CLASS },
+      { name: "Whomoome", className: "", itemLevel: 1702.83, problem: NEEDS_CLASS },
+      { name: "Supforjoos", className: "", itemLevel: 1700, problem: NEEDS_CLASS },
+    ]);
+  });
+
+  it("is ready once a class is picked", () => {
+    const rows = withPickedClasses(parseRosterPaste(page), { 1: "Bard" });
+    expect(rows.map((r) => [r.name, r.className, r.problem])).toEqual([
+      ["Lfsorakagf", "Bard", null],
+      ["Whomoome", "", NEEDS_CLASS],
+      ["Supforjoos", "", NEEDS_CLASS],
+    ]);
   });
 });
 

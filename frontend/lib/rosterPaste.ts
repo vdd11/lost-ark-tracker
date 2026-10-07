@@ -38,6 +38,12 @@ export function parseRosterPaste(text: string, existingNames: string[] = []): Pa
   // A whole page copied (lostark.bible's roster, say): each character spread
   // over several lines with other text around it. Read it in blocks instead.
   if (withClass > 0 && withClass * 2 < filled.length) return checkProblems(parseBlocks(lines), existingNames);
+  // A page that shows classes only as icons (lostark.bible's roster): names
+  // and item levels, and the class is picked in the preview.
+  if (withClass === 0) {
+    const named = parseNamesAndLevels(lines);
+    if (named.length > 0) return checkProblems(named, existingNames);
+  }
   return parseLines(lines, existingNames);
 }
 
@@ -131,12 +137,50 @@ function parseBlocks(lines: string[]): PastedCharacter[] {
   });
 }
 
+/**
+ * Each one-word line followed by a number from 1000 to 2000 is a character
+ * and their item level; the numbers after it (combat power) and other page
+ * text are skipped. No class: the user picks it.
+ */
+function parseNamesAndLevels(lines: string[]): PastedCharacter[] {
+  const result: PastedCharacter[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const word = lines[i].trim();
+    if (!NAME.test(word) || NOT_NAMES.has(word.toLowerCase())) continue;
+    let next = i + 1;
+    while (next < lines.length && !lines[next].trim()) next++;
+    if (next >= lines.length || NOT_ITEM_LEVEL.test(lines[next])) continue;
+    const level = numbersIn(lines[next]).find((n) => n >= 1000 && n < 2000);
+    if (level === undefined) continue;
+    result.push({ line: i + 1, text: `${word} · ${level}`, name: word, className: "", itemLevel: level, problem: null });
+    i = next;
+  }
+  return result;
+}
+
+/** The class a user picked in the preview, for a row the paste had none for. */
+export function withPickedClasses(rows: PastedCharacter[], picked: Record<number, string>): PastedCharacter[] {
+  return rows.map((row) =>
+    !row.className && picked[row.line] ? { ...row, className: picked[row.line], problem: row.problem === NEEDS_CLASS ? null : row.problem } : row,
+  );
+}
+
+export const NEEDS_CLASS = "Pick a class";
+
 function checkProblems(characters: PastedCharacter[], existingNames: string[]): PastedCharacter[] {
   const existing = new Set(existingNames.map((n) => n.trim().toLowerCase()));
   const seen = new Set<string>();
   return characters.map((c) => {
     const key = c.name.toLowerCase();
-    const problem = !c.name ? "No name found" : existing.has(key) ? "Already on your roster" : seen.has(key) ? "Listed twice" : null;
+    const problem = !c.name
+      ? "No name found"
+      : existing.has(key)
+        ? "Already on your roster"
+        : seen.has(key)
+          ? "Listed twice"
+          : !c.className
+            ? NEEDS_CLASS
+            : null;
     if (c.name) seen.add(key);
     return { ...c, problem };
   });

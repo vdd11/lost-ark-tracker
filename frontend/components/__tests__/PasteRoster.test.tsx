@@ -45,3 +45,17 @@ describe("PasteRoster", () => {
     expect(onDone).toHaveBeenCalled();
   });
 });
+
+describe("PasteRoster from a page without classes", () => {
+  it("asks for each class, and adds a character once it's picked", async () => {
+    const user = userEvent.setup();
+    render(<PasteRoster accounts={[{ id: 1, name: "Main", position: 0, characters: 0 }]} characters={[]} raids={[]} onDone={() => {}} onError={() => {}} />);
+    await user.click(screen.getByRole("button", { name: /paste a roster/i }));
+    await user.type(screen.getByLabelText("Characters to add"), "Lfsorakagf{enter}1776.67{enter}5912.65{enter}Last updated 55 minutes ago");
+
+    expect((screen.getByRole("button", { name: "Add 0 characters" }) as HTMLButtonElement).disabled).toBe(true);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Class for Lfsorakagf" }), "Sorceress");
+    await user.click(screen.getByRole("button", { name: "Add 1 character" }));
+    expect(send).toHaveBeenCalledWith("POST", "/characters", expect.objectContaining({ name: "Lfsorakagf", class_name: "Sorceress", item_level: 1776.67 }));
+  });
+});

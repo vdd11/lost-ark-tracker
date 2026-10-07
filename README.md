@@ -154,7 +154,8 @@ The screenshots use made-up characters.
 - **Paste a roster** (Settings): add many characters at once from pasted
   lines of name, class and item level, in any order (typed, or copied from a
   spreadsheet), or a whole roster page selected and copied (lostark.bible, say:
-  the other text on the page is skipped). It previews what it read, skips
+  the other text on the page is skipped; where the page shows classes only as
+  icons, you pick each class in the preview). It previews what it read, skips
   duplicates, and makes the highest item levels gold earners. Nothing is
   looked up online.
 - **Accounts**: play more than one account? Add accounts in Settings and put
