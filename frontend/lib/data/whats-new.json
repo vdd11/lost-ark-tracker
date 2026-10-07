@@ -1,5 +1,35 @@
 [
   {
+    "version": "1.22.0",
+    "date": "2026-10-07",
+    "highlights": [
+      {
+        "icon": "guardian-raid",
+        "text": "Ticking a Guardian Raid adds its average Lv1 gems to the gem total, by the character's item level."
+      },
+      {
+        "icon": "rest",
+        "text": "A rested Guardian Raid counts double gems, like the game's double rewards."
+      },
+      {
+        "icon": "gems",
+        "text": "The Gems page lists Guardian Raid with Ebony Cube and Haal's Hourglass. Luminous Gem Shards aren't counted."
+      },
+      {
+        "icon": "appearance",
+        "text": "A new app icon: a gold gem on the exe, in the tray and on the browser tab."
+      }
+    ],
+    "sections": [
+      {
+        "title": "Fixes",
+        "items": [
+          "Ticking and unticking quickly no longer leaves the box showing the wrong state."
+        ]
+      }
+    ]
+  },
+  {
     "version": "1.21.1",
     "date": "2026-10-07",
     "highlights": [

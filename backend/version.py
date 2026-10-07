@@ -1,2 +1,2 @@
 APP_NAME = "Lost Ark Tracker"
-APP_VERSION = "1.21.1"
+APP_VERSION = "1.22.0"
