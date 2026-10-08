@@ -1,6 +1,5 @@
 
 import {
-  characterBoundColumn,
   eventNote,
   FinishedNote,
   GoldRaidNote,
@@ -50,7 +49,6 @@ export default function WeekCard({
         applies={editMode ? undefined : appliesTo}
         characters={section.rows}
         columns={section.columns}
-        extraColumns={view.isShown(CHARACTER_BOUND_KEY) ? [characterBoundColumn(data.thisWeek)] : []}
         renderCell={(character, task) => (
           <TrackerCell character={character} task={task} data={data} editMode={editMode} compact={!view.isShown(RAID_PICKERS_KEY)} />
         )}
@@ -71,7 +69,7 @@ export default function WeekCard({
         characterGoal={(character) => (
           <>
             <NextUnlockNote character={character} tasks={data.tasks} />
-            <BoundGoldNote character={character} data={data} />
+            {view.isShown(CHARACTER_BOUND_KEY) && <BoundGoldNote character={character} data={data} />}
           </>
         )}
         characterAction={

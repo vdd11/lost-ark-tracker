@@ -68,13 +68,13 @@ describe("BoundGoldNote", () => {
     expect(setBoundGold).toHaveBeenCalledWith(bardy, 20000);
   });
 
-  it("offers to set it for characters whose raids pay it, and stays out of the way otherwise", () => {
+  it("starts at 0 for characters whose raids pay it, and stays out of the way otherwise", () => {
     const runsCathedral = character({ id: 7, name: "Bardy", task_ids: [3], difficulty_ids: { "3": 30 } });
-    render(<BoundGoldNote character={runsCathedral} data={data({})} />);
-    expect(screen.getByRole("button", { name: "Set Bardy's character-bound gold" }).textContent).toContain("set");
+    render(<BoundGoldNote character={runsCathedral} data={data({ "7": 0 })} />);
+    expect(screen.getByRole("button", { name: "Set Bardy's character-bound gold" }).textContent).toBe("0");
     cleanup();
     const other = character({ id: 8, name: "Other", task_ids: [], difficulty_ids: {} });
-    const { container } = render(<BoundGoldNote character={other} data={data({})} />);
+    const { container } = render(<BoundGoldNote character={other} data={data({ "8": 0 })} />);
     expect(container.textContent).toBe("");
   });
 });

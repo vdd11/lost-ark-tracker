@@ -156,7 +156,7 @@ export default function GoldCheckIn({
         </div>
         {boundCharacters.length > 0 && (
           <p className="text-xs text-muted">
-            Character-bound gold is set per character on the tracker (&ldquo;Bound&rdquo; under the name) and kept up to date
+            Character-bound gold is set per character on the tracker (the gold chip under the name) and kept up to date
             from there.
           </p>
         )}

@@ -113,7 +113,7 @@ export default function CustomizePanel({
       title: "This week",
       items: [
         ...taskItems("week"),
-        { key: CHARACTER_BOUND_KEY, label: "Character-bound gold" },
+        { key: CHARACTER_BOUND_KEY, label: "Character-bound gold (under the name)" },
         { key: RAID_PICKERS_KEY, label: "Difficulty pickers on usual raids" },
       ],
     },

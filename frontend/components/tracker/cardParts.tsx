@@ -1,8 +1,7 @@
 import { Check, CheckCheck, TrendingUp } from "lucide-react";
 
-import { ExtraColumn } from "@/components/tracker/TaskTable";
 import { TrackerData } from "@/components/tracker/useTrackerData";
-import { Character, formatGold, Task, WeeklyGold } from "@/lib/api";
+import { Character, formatGold, Task } from "@/lib/api";
 import { formatGap, nextUnlock } from "@/lib/itemLevelGoals";
 import { formatItemLevel, GOLD_RAIDS_PER_WEEK, goldRaidWeek, paidRaids } from "@/lib/raids";
 import { cellKey } from "@/lib/trackerSections";
@@ -108,23 +107,4 @@ export function eventNote(task: Task) {
       event · until {new Date(`${task.ends_on}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
     </div>
   ) : null;
-}
-
-/** Each character's character-bound gold left this week. */
-export function characterBoundColumn(thisWeek: WeeklyGold | null): ExtraColumn {
-  return {
-    key: "character-bound",
-    header: "Char-bound gold",
-    title: "Character-bound gold left this week, after bonus boxes bought on that character",
-    cell: (character) => {
-      const gold = thisWeek?.character_bound[String(character.id)];
-      if (!gold) return <span className="text-muted/40">–</span>;
-      return (
-        <span title={`Earned ${formatGold(gold.earned)}, ${formatGold(gold.spent)} spent on bonus boxes`}>
-          <span className="block">{formatGold(gold.left)}</span>
-          {gold.spent > 0 && <span className="block text-xs text-muted">of {formatGold(gold.earned)}</span>}
-        </span>
-      );
-    },
-  };
 }

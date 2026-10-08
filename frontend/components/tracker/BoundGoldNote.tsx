@@ -3,6 +3,7 @@
 import { Pencil } from "lucide-react";
 import { KeyboardEvent, useRef, useState } from "react";
 
+import GameIcon from "@/components/GameIcon";
 import NumberInput from "@/components/NumberInput";
 import { TrackerData } from "@/components/tracker/useTrackerData";
 import { Character, formatGold } from "@/lib/api";
@@ -17,15 +18,17 @@ function earnsCharacterBound(character: Character, data: TrackerData) {
 }
 
 /**
- * "Bound: 12,300" under a character's name: their character-bound gold,
- * kept up to date from what they earn and spend. Click to enter what the game
- * shows. Shown once set, or for characters whose raids pay it.
+ * A gold chip under a character's name: their character-bound gold, starting
+ * at 0, going up with Cathedral clears and down with bonus boxes bought on
+ * them (which use it before roster-bound or tradeable gold). Click to enter
+ * what the game shows. Shown when there is some, or for characters whose
+ * raids pay it.
  */
 export default function BoundGoldNote({ character, data }: { character: Character; data: TrackerData }) {
-  const value = data.boundGold[String(character.id)] ?? null;
+  const value = data.boundGold[String(character.id)] ?? 0;
   const [draft, setDraft] = useState<string | null>(null);
   const closed = useRef(false);
-  if (value === null && !earnsCharacterBound(character, data)) return null;
+  if (value <= 0 && !earnsCharacterBound(character, data)) return null;
 
   function commit() {
     if (draft === null || closed.current) return;
@@ -44,8 +47,7 @@ export default function BoundGoldNote({ character, data }: { character: Characte
   }
 
   return (
-    <div className="mt-0.5 flex h-5 items-center gap-1 text-xs text-muted">
-      Bound:
+    <div className="mt-0.5 flex h-5 items-center text-xs">
       {draft !== null ? (
         <NumberInput
           autoFocus
@@ -60,14 +62,15 @@ export default function BoundGoldNote({ character, data }: { character: Characte
         <button
           onClick={() => {
             closed.current = false;
-            setDraft(value === null ? "" : String(value));
+            setDraft(String(value));
           }}
-          title="Character-bound gold now, kept up to date from clears and spending. Click to enter what the game shows."
+          title="Character-bound gold. Cathedral clears add to it; bonus boxes bought on this character use it first, then roster-bound, then tradeable gold. Click to enter what the game shows."
           aria-label={`Set ${character.name}'s character-bound gold`}
-          className="flex items-center gap-1 rounded px-0.5 tabular-nums hover:text-foreground"
+          className="group flex items-center gap-1 rounded border border-accent/40 bg-accent/10 px-1.5 font-medium tabular-nums text-foreground hover:border-accent"
         >
-          {value === null ? "set" : formatGold(value)}
-          <Pencil size={10} />
+          <GameIcon name="gold-character" size={12} alt="" />
+          {formatGold(value)}
+          <Pencil size={10} className="text-muted group-hover:text-foreground" />
         </button>
       )}
     </div>

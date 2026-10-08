@@ -198,7 +198,8 @@ def seeded(db: Session, check: BalanceCheck) -> Balances:
 def character_bound_at(db: Session, character_id: int, at: datetime) -> int | None:
     """A character's character-bound gold at a moment: their latest figure
     (a tracker check-in, or an older weekly check-in that listed them) rolled
-    forward with what they earned and spent since. None if never entered."""
+    forward with what they earned and spent since. Never entered, it starts
+    at 0, so a Cathedral clear counts straight away. None for no such character."""
     character = db.get(Character, character_id)
     if character is None:
         return None
@@ -219,8 +220,6 @@ def character_bound_at(db: Session, character_id: int, at: datetime) -> int | No
             if start is None or check.checked_at > start[0]:
                 start = (check.checked_at, check.character_bound[key])
             break
-    if start is None:
-        return None
-    since, amount = start
+    since, amount = start or (datetime.min, 0)
     rolled = project(db, Balances(character_bound={character_id: amount}), since, at, character.account_id)
     return rolled.character_bound.get(character_id, 0)

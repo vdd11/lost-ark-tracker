@@ -10,10 +10,18 @@ def bound(client, character_id):
     return client.get("/api/bound-gold").json()[str(character_id)]
 
 
-def test_unknown_until_entered_then_follows_earnings_and_spending(client, set_now):
+def test_starts_at_zero_and_a_cathedral_clear_adds_to_it(client, set_now):
     cathedral = task_named(client, "Horizon Cathedral")
     main = add_character(client, 1755, [{"task_id": cathedral["id"]}], name="Main")
-    assert bound(client, main["id"]) is None
+    assert bound(client, main["id"]) == 0
+    set_now(datetime(2026, 9, 30, 12))
+    complete(client, main["id"], cathedral["id"], bought_bonus=True)  # Lv3: +50,000 bound, chest -16,000 from it
+    assert bound(client, main["id"]) == 34000
+
+
+def test_entered_then_follows_earnings_and_spending(client, set_now):
+    cathedral = task_named(client, "Horizon Cathedral")
+    main = add_character(client, 1755, [{"task_id": cathedral["id"]}], name="Main")
 
     set_now(datetime(2026, 10, 1, 12))
     assert client.put(f"/api/characters/{main['id']}/bound-gold", json={"amount": 12300}).status_code == 204

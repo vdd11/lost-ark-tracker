@@ -177,7 +177,8 @@ The screenshots use made-up characters.
     chests. Like the game, they're paid from that character's
     character-bound gold first, then roster-bound, then tradeable. The
     tracker's top-right box shows the tradeable and roster-bound gold left;
-    each character's row shows its character-bound gold left.
+    a gold chip under each character's name shows their character-bound
+    gold (from 0; a Cathedral clear adds to it, a bonus box takes from it).
   - **Settings → Raids → Event raids** adds limited-time raids (e.g. "Act 3
     Extreme"). Pick the raid, check the pre-filled difficulties, done. Events are one clear
     per account, pay any character, and disappear when they end.
@@ -190,9 +191,9 @@ The screenshots use made-up characters.
   market fee).
   - **Gold on hand**: once a week (or whenever you like), enter how much
     tradeable and roster-bound gold you have. Character-bound gold is set
-    per character on the tracker ("Bound" under the name, shown for
+    per character on the tracker (the gold chip under the name, shown for
     characters whose raids pay it) and kept up to date from their clears and
-    spending, so you only enter it again if it drifts. The app
+    spending, so you only enter it if it drifts from the game. The app
     compares it with your last check-in plus everything it tracked since, so
     you see how much went to things it doesn't track (honing, the market, ...)
     without logging each one. The tracker reminds you after the weekly reset.
